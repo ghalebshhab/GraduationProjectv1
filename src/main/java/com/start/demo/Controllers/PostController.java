@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -22,6 +23,13 @@ public class PostController {
     @GetMapping("/{postId}")
     public Post findById(@PathVariable Long postId){
         return postServices.findById(postId);
+    }
+    @GetMapping("/feed/summary")
+    public List<Map<String, Object>> feedSummary(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return postServices.feedSummary(page, size);
     }
     @PostMapping()
     public Post createPost(@RequestBody Post post){
