@@ -7,7 +7,8 @@ import com.start.demo.Services.Community.Posts.Likes.LikesService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/posts")
 public class PostLikesController {

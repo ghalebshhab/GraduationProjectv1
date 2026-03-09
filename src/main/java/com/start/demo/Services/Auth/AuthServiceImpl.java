@@ -54,25 +54,34 @@ public class AuthServiceImpl implements AuthService {
                 savedUser.getRole().name()
         );
     }
-
     @Override
     public LoginResponse login(LoginRequest request) {
 
+        // 1️⃣ Find user by email
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User with this email does not exist")
+                );
 
-        boolean matches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
+        // 2️⃣ Check password
+        boolean passwordMatches = passwordEncoder.matches(
+                request.getPassword(),
+                user.getPasswordHash()
+        );
 
-        if (!matches) {
-            throw new BadRequestException("Invalid email or password");
+        if (!passwordMatches) {
+            throw new BadRequestException("Incorrect password");
         }
 
+        // 3️⃣ Check if account is active
         if (!Boolean.TRUE.equals(user.getActive())) {
             throw new BadRequestException("User account is inactive");
         }
 
+        // 4️⃣ Generate JWT token
         String token = jwtService.generateToken(user.getEmail());
 
+        // 5️⃣ Return login response
         return new LoginResponse(
                 token,
                 user.getId(),
