@@ -26,7 +26,7 @@ public class UserServiceImplimintation implements UserServices {
     }
 
     @Override
-    public User findById(int id) {
+    public User findById(Long id) {
         Optional<User> user=userrepo.findById(id);
         User theUser=null;
         if(user.isPresent())

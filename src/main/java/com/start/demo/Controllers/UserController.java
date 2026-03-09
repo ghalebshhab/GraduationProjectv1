@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api")
 public class UserController {
@@ -20,7 +20,7 @@ public class UserController {
         return userService.findAll();
     }
     @GetMapping("/users/{userId}")
-    public User findById(@PathVariable int userId){
+    public User findById(@PathVariable Long userId){
         if(userId<0 || userId>findAll().size())
             throw new RuntimeException("The user id is not found");
         User theUser=userService.findById(userId);

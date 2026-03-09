@@ -1,30 +1,29 @@
-package com.start.demo.Entities.Posts.postLikes;
+package com.start.demo.Entities.Stories;
 
-import com.start.demo.Entities.Posts.Post;
-import com.start.demo.Entities.Users.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.start.demo.Entities.Users.User;
 import jakarta.persistence.*;
 
 import java.time.Instant;
 
 @Entity
 @Table(
-        name = "post_likes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"post_id", "user_id"})
+        name = "story_likes",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"story_id", "user_id"})
 )
-public class PostLikes {
+public class StoryLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Many likes belong to one post
+    // Many story likes belong to one story
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "story_id", nullable = false)
     @JsonIgnore
-    private Post post;
+    private Story story;
 
-    // Many likes belong to one user
+    // Many story likes belong to one user
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
@@ -38,23 +37,18 @@ public class PostLikes {
         this.createdAt = Instant.now();
     }
 
-    public PostLikes() {}
-
-    public PostLikes(Post post, User user) {
-        this.post = post;
-        this.user = user;
-    }
+    public StoryLike() {}
 
     public Long getId() {
         return id;
     }
 
-    public Post getPost() {
-        return post;
+    public Story getStory() {
+        return story;
     }
 
-    public void setPost(Post post) {
-        this.post = post;
+    public void setStory(Story story) {
+        this.story = story;
     }
 
     public User getUser() {
@@ -67,5 +61,15 @@ public class PostLikes {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    @Transient
+    public Long getStoryId() {
+        return story != null ? story.getId() : null;
+    }
+
+    @Transient
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
     }
 }

@@ -1,27 +1,26 @@
-package com.start.demo.Entities.Posts.postComments;
+package com.start.demo.Entities.Stories;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.start.demo.Entities.Posts.Post;
 import com.start.demo.Entities.Users.User;
 import jakarta.persistence.*;
 
 import java.time.Instant;
 
 @Entity
-@Table(name = "post_comments")
-public class PostComment {
+@Table(name = "story_replies")
+public class StoryReply {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Many comments belong to one post
+    // Many replies belong to one story
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "story_id", nullable = false)
     @JsonIgnore
-    private Post post;
+    private Story story;
 
-    // Many comments belong to one user
+    // Many replies belong to one user
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
@@ -36,38 +35,23 @@ public class PostComment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
     @PrePersist
     public void onCreate() {
         this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
     }
 
-    @PreUpdate
-    public void onUpdate() {
-        this.updatedAt = Instant.now();
-    }
-
-    public PostComment() {}
-
-    public PostComment(Post post, User user, String content) {
-        this.post = post;
-        this.user = user;
-        this.content = content;
-    }
+    public StoryReply() {}
 
     public Long getId() {
         return id;
     }
 
-    public Post getPost() {
-        return post;
+    public Story getStory() {
+        return story;
     }
 
-    public void setPost(Post post) {
-        this.post = post;
+    public void setStory(Story story) {
+        this.story = story;
     }
 
     public User getUser() {
@@ -98,11 +82,13 @@ public class PostComment {
         return createdAt;
     }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
+    @Transient
+    public Long getStoryId() {
+        return story != null ? story.getId() : null;
     }
 
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
+    @Transient
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
     }
 }

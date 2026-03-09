@@ -1,6 +1,14 @@
 package com.start.demo.Entities.Posts;
+
+import com.start.demo.Entities.Posts.postLikes.PostLikes;
+import com.start.demo.Entities.Users.User;
+import com.start.demo.Entities.Posts.postComments.PostComment;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "posts")
@@ -12,21 +20,32 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // مؤقتًا بدون security: نخزن ايميل/اسم الكاتب كنص
-    @Column(nullable = false, length = 120)
-    private String authorEmail;
+    // Many posts belong to one user
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
+
+    // One post can have many comments
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = false)
+    @JsonIgnore
+    private List<PostComment> comments = new ArrayList<>();
+
+    // One post can have many likes
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = false)
+    @JsonIgnore
+    private List<PostLikes> likes = new ArrayList<>();
 
     @Column(nullable = false, length = 2000)
     private String content;
 
-    @Column(length = 500)
-    private String mediaUrl; // optional
+    @Column(name = "media_url", length = 500)
+    private String mediaUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PostType type = PostType.COMMUNITY;
 
-    @Column(nullable = false)
+    @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
     @Column(nullable = false, name = "created_at", updatable = false)
@@ -38,6 +57,7 @@ public class Post {
     @PrePersist
     public void onCreate() {
         this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 
     @PreUpdate
@@ -47,8 +67,8 @@ public class Post {
 
     public Post() {}
 
-    public Post(String authorEmail, String content, String mediaUrl, PostType type) {
-        this.authorEmail = authorEmail;
+    public Post(User author, String content, String mediaUrl, PostType type) {
+        this.author = author;
         this.content = content;
         this.mediaUrl = mediaUrl;
         this.type = type;
@@ -62,12 +82,28 @@ public class Post {
         this.id = id;
     }
 
-    public String getAuthorEmail() {
-        return authorEmail;
+    public User getAuthor() {
+        return author;
     }
 
-    public void setAuthorEmail(String authorEmail) {
-        this.authorEmail = authorEmail;
+    public void setAuthor(User author) {
+        this.author = author;
+    }
+
+    public List<PostComment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<PostComment> comments) {
+        this.comments = comments;
+    }
+
+    public List<PostLikes> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(List<PostLikes> likes) {
+        this.likes = likes;
     }
 
     public String getContent() {

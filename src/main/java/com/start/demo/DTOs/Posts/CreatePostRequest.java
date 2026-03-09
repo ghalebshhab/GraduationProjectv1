@@ -1,13 +1,11 @@
 package com.start.demo.DTOs.Posts;
-
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class CreatePostRequest {
-    @NotBlank
-    @Email
-    private String authorEmail;
+
+
 
     @NotBlank
     @Size(max = 2000)
@@ -16,15 +14,9 @@ public class CreatePostRequest {
     @Size(max = 500)
     private String mediaUrl; // optional
 
-    private String type;
+    private String type;     // COMMUNITY / EVENT / OFFER
 
-    public String getAuthorEmail() {
-        return authorEmail;
-    }
 
-    public void setAuthorEmail(String authorEmail) {
-        this.authorEmail = authorEmail;
-    }
 
     public String getContent() {
         return content;
