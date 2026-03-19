@@ -4,21 +4,22 @@ import com.start.demo.Entities.Users.User;
 import com.start.demo.Entities.Users.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class UserServiceImplimintation implements UserServices {
-    UserRepository userrepo;
-    EntityManager entity;
-    @Autowired
-    public UserServiceImplimintation(UserRepository userrepo,EntityManager entity){
-        this.userrepo=userrepo;
-        this.entity=entity;
-    }
+
+    private final UserRepository userrepo;
+    private final EntityManager entity;
+
 
     @Override
     public List<User> findAll() {
@@ -26,33 +27,46 @@ public class UserServiceImplimintation implements UserServices {
     }
 
     @Override
-    public User findById(Long id) {
-        Optional<User> user=userrepo.findById(id);
-        User theUser=null;
-        if(user.isPresent())
-            theUser=user.get();
-        else
-            throw new RuntimeException("The user can not be found with the id -" + id);
-        return theUser;
+    public ResponseEntity<?> findById(Long id) {
+        Optional<User> user = userrepo.findById(id);
+
+        if (user.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "The user cannot be found with the id - " + id));
+        }
+
+        return ResponseEntity.ok(user.get());
     }
 
     @Override
-    public User findByEmail(String email) {
-        TypedQuery<User> query=entity.createQuery("FROM User WHERE email=:email",User.class);
-        query.setParameter("email",email);
-        return query.getSingleResult();
+    public ResponseEntity<?> findByEmail(String email) {
+        TypedQuery<User> query = entity.createQuery(
+                "FROM User WHERE email = :email",
+                User.class
+        );
+        query.setParameter("email", email);
+
+        List<User> users = query.getResultList();
+
+        if (users.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "User not found with email: " + email));
+        }
+
+        return ResponseEntity.ok(users.get(0));
     }
 
     @Override
     public boolean existsByEmail(String email) {
-         TypedQuery<User> query=entity.createQuery("FROM User WHERE email=:email",User.class);
-         query.setParameter("email",email);
-         User theUser=query.getSingleResult();
-         Boolean isExist=true;
-         if (theUser==null)
-             isExist=false;
-         return isExist;
+        TypedQuery<User> query = entity.createQuery(
+                "FROM User WHERE email = :email",
+                User.class
+        );
+        query.setParameter("email", email);
 
+        List<User> users = query.getResultList();
+
+        return !users.isEmpty();
     }
 
     @Override

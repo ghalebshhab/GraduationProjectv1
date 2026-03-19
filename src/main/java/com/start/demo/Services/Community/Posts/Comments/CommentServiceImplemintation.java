@@ -3,17 +3,18 @@ package com.start.demo.Services.Community.Posts.Comments;
 import com.start.demo.Entities.Posts.Post;
 import com.start.demo.Entities.Posts.postComments.PostComment;
 import com.start.demo.Entities.Users.User;
-import com.start.demo.Exciptions.BadRequestException;
-import com.start.demo.Exciptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class CommentServiceImplemintation implements CommentsServices {
@@ -33,12 +34,15 @@ public class CommentServiceImplemintation implements CommentsServices {
     }
 
     @Override
-    public PostComment findById(Long commentId) {
+    public ResponseEntity<?> findById(Long commentId) {
         PostComment c = entity.find(PostComment.class, commentId);
+
         if (c == null || Boolean.TRUE.equals(c.getDeleted())) {
-            throw new ResourceNotFoundException("Comment not found with id: " + commentId);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Comment not found"));
         }
-        return c;
+
+        return ResponseEntity.ok(c);
     }
 
     @Override
@@ -55,18 +59,26 @@ public class CommentServiceImplemintation implements CommentsServices {
 
     @Override
     @Transactional
-    public PostComment addComment(Long postId, String content) {
+    public ResponseEntity<?> addComment(Long postId, String content) {
 
         if (content == null || content.isBlank()) {
-            throw new BadRequestException("Content is required");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Comment cannot be empty"));
         }
 
         Post post = entity.find(Post.class, postId);
         if (post == null || Boolean.TRUE.equals(post.getDeleted())) {
-            throw new ResourceNotFoundException("Post not found with id: " + postId);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Post not found"));
         }
 
-        User user = getCurrentUser();
+        Optional<User> optionalUser = getCurrentUser();
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User user = optionalUser.get();
 
         PostComment comment = new PostComment();
         comment.setPost(post);
@@ -74,50 +86,80 @@ public class CommentServiceImplemintation implements CommentsServices {
         comment.setContent(content);
 
         entity.persist(comment);
-        return comment;
+
+        return ResponseEntity.ok(comment);
     }
 
     @Override
     @Transactional
-    public PostComment updateComment(Long commentId, String content) {
+    public ResponseEntity<?> updateComment(Long commentId, String content) {
 
-        PostComment existing = findById(commentId);
+        PostComment existing = entity.find(PostComment.class, commentId);
 
-        if (content == null || content.isBlank()) {
-            throw new BadRequestException("Content is required");
+        if (existing == null || Boolean.TRUE.equals(existing.getDeleted())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Comment not found"));
         }
 
-        User currentUser = getCurrentUser();
+        if (content == null || content.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Content is required"));
+        }
+
+        Optional<User> optionalUser = getCurrentUser();
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
 
         if (!existing.getUser().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You can only edit your own comment");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "You can only edit your own comment"));
         }
 
         existing.setContent(content);
-        return existing;
+
+        return ResponseEntity.ok(existing);
     }
 
     @Override
     @Transactional
-    public String deleteComment(Long commentId) {
+    public ResponseEntity<?> deleteComment(Long commentId) {
 
-        PostComment existing = findById(commentId);
-        User currentUser = getCurrentUser();
+        PostComment existing = entity.find(PostComment.class, commentId);
+
+        if (existing == null || Boolean.TRUE.equals(existing.getDeleted())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Comment not found"));
+        }
+
+        Optional<User> optionalUser = getCurrentUser();
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
 
         if (!existing.getUser().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You can only delete your own comment");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "You can only delete your own comment"));
         }
 
         existing.setDeleted(true);
 
-        return "The comment with the id - " + commentId + " is deleted";
+        return ResponseEntity.ok(
+                Map.of("message", "The comment with id " + commentId + " was deleted")
+        );
     }
 
-    private User getCurrentUser() {
+    private Optional<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getName() == null) {
-            throw new BadRequestException("Authenticated user not found");
+            return Optional.empty();
         }
 
         String email = authentication.getName();
@@ -131,9 +173,9 @@ public class CommentServiceImplemintation implements CommentsServices {
         List<User> users = query.getResultList();
 
         if (users.isEmpty()) {
-            throw new ResourceNotFoundException("User not found with email: " + email);
+            return Optional.empty();
         }
 
-        return users.get(0);
+        return Optional.of(users.get(0));
     }
 }

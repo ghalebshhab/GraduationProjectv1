@@ -3,7 +3,11 @@ package com.start.demo.DTOs.Stories.Replies;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 public class CreateStoryReplyRequest {
 
 
@@ -13,11 +17,5 @@ public class CreateStoryReplyRequest {
 
 
 
-    public String getContent() {
-        return content;
-    }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
 }

@@ -4,90 +4,128 @@ import com.start.demo.DTOs.Auth.Login.LoginRequest;
 import com.start.demo.DTOs.Auth.Login.LoginResponse;
 import com.start.demo.DTOs.Auth.Register.RegisterRequest;
 import com.start.demo.DTOs.Auth.Register.RegisterResponse;
-import com.start.demo.Entities.Users.Role;
-import com.start.demo.Entities.Users.User;
-import com.start.demo.Entities.Users.UserRepository;
+import com.start.demo.Entities.Users.*;
 import com.start.demo.Exciptions.BadRequestException;
 import com.start.demo.Exciptions.ResourceNotFoundException;
+import com.start.demo.Services.Notefications.EmailService;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.Optional;
+
 @Service
+@AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
-    public AuthServiceImpl(UserRepository userRepository,
-                           BCryptPasswordEncoder passwordEncoder,
-                           JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-    }
+    private final EmailService emailService;
+    private final UserProfileRepository userProfileRepository;
 
     @Override
-    public RegisterResponse register(RegisterRequest request) {
+    public ResponseEntity<?> register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email already exists");
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("Error", "Email already exists"));
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BadRequestException("Username already exists");
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("Error", "Username already used "));
+        }
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Phone number already used"));
         }
 
         User user = new User();
         user.setEmail(request.getEmail());
         user.setUsername(request.getUsername());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
         user.setActive(true);
 
         User savedUser = userRepository.save(user);
 
-        return new RegisterResponse(
-                savedUser.getId(),
-                savedUser.getEmail(),
-                savedUser.getUsername(),
-                savedUser.getRole().name()
+        UserProfile profile = new UserProfile();
+        profile.setUser(savedUser);
+
+        userProfileRepository.save(profile);
+
+        try {
+            emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(
+                new RegisterResponse(
+                        savedUser.getId(),
+                        savedUser.getEmail(),
+                        savedUser.getUsername(),
+                        savedUser.getRole().name()
+                )
         );
     }
+
     @Override
-    public LoginResponse login(LoginRequest request) {
+    public ResponseEntity<?> login(LoginRequest request) {
 
-        // 1️⃣ Find user by email
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User with this email does not exist")
-                );
+        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
 
-        // 2️⃣ Check password
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "User with this email does not exist"));
+        }
+
+        User user = optionalUser.get();
+
         boolean passwordMatches = passwordEncoder.matches(
                 request.getPassword(),
                 user.getPasswordHash()
         );
 
         if (!passwordMatches) {
-            throw new BadRequestException("Incorrect password");
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Incorrect password"));
         }
 
-        // 3️⃣ Check if account is active
         if (!Boolean.TRUE.equals(user.getActive())) {
-            throw new BadRequestException("User account is inactive");
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "User account is inactive"));
+        }
+        if (!userProfileRepository.existsByUserId(user.getId())) {
+            UserProfile profile = new UserProfile();
+            profile.setUser(user);
+            userProfileRepository.save(profile);
         }
 
-        // 4️⃣ Generate JWT token
         String token = jwtService.generateToken(user.getEmail());
-
-        // 5️⃣ Return login response
-        return new LoginResponse(
+        try {
+            emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        LoginResponse response = new LoginResponse(
                 token,
+                "Bearer",
                 user.getId(),
                 user.getEmail(),
                 user.getUsername(),
                 user.getRole().name()
         );
+
+        return ResponseEntity.ok(response);
     }
 }

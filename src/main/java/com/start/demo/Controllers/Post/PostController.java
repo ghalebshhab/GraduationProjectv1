@@ -1,6 +1,8 @@
 package com.start.demo.Controllers.Post;
+
 import com.start.demo.Services.Community.Posts.PostsServices;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.start.demo.DTOs.Posts.CreatePostRequest;
 import com.start.demo.DTOs.Posts.PostResponse;
@@ -8,6 +10,7 @@ import com.start.demo.DTOs.Posts.UpdatePostRequest;
 import jakarta.validation.Valid;
 
 import java.util.List;
+
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 @RestController
 @RequestMapping("/api/posts")
@@ -20,19 +23,19 @@ public class PostController {
         this.postServices = postService;
     }
 
-    // ✅ Get all (اختياري: عادةً تستخدم feed بدلها)
+    // GET /api/posts
     @GetMapping
     public List<PostResponse> findAll() {
         return postServices.findAllResponses();
     }
 
-    // ✅ Get one post
+    // GET /api/posts/{postId}
     @GetMapping("/{postId}")
-    public PostResponse findById(@PathVariable Long postId) {
+    public ResponseEntity<?> findById(@PathVariable Long postId) {
         return postServices.findResponseById(postId);
     }
 
-    // ✅ Feed summary (post + counts)
+    // GET /api/posts/feed/summary
     @GetMapping("/feed/summary")
     public List<PostResponse> feedSummary(
             @RequestParam(defaultValue = "0") int page,
@@ -41,22 +44,22 @@ public class PostController {
         return postServices.feedSummary(page, size);
     }
 
-    // ✅ Create post (authorId داخل ال DTO)
+    // POST /api/posts
     @PostMapping
-    public PostResponse createPost(@Valid @RequestBody CreatePostRequest request) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody CreatePostRequest request) {
         return postServices.create(request);
     }
 
-    // ✅ Update post (بدون تغيير author)
+    // PUT /api/posts/{postId}
     @PutMapping("/{postId}")
-    public PostResponse editPost(@PathVariable Long postId,
-                                 @Valid @RequestBody UpdatePostRequest request) {
+    public ResponseEntity<?> editPost(@PathVariable Long postId,
+                                      @Valid @RequestBody UpdatePostRequest request) {
         return postServices.update(postId, request);
     }
 
+    // DELETE /api/posts/{postId}
     @DeleteMapping("/{postId}")
-    public String deletePost(@PathVariable Long postId) {
-        postServices.deletePost(postId);
-        return "The post with the id -" + postId + " is deleted";
+    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
+        return postServices.deletePost(postId);
     }
 }

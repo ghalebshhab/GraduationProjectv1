@@ -7,6 +7,7 @@ import com.start.demo.DTOs.Auth.Register.RegisterResponse;
 import com.start.demo.Services.Auth.AuthService;
 
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 //@CrossOrigin(origins = "http://localhost:3000")
@@ -22,12 +23,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 }

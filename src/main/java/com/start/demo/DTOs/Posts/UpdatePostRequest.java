@@ -1,7 +1,11 @@
 package com.start.demo.DTOs.Posts;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
+@Data
+@AllArgsConstructor
 public class UpdatePostRequest {
 
     @NotBlank
@@ -13,12 +17,5 @@ public class UpdatePostRequest {
 
     private String type; // COMMUNITY / EVENT / OFFER
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
 
-    public String getMediaUrl() { return mediaUrl; }
-    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
 }

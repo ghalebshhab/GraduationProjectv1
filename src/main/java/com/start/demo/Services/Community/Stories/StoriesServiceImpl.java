@@ -11,6 +11,7 @@ import com.start.demo.Exciptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class StoriesServiceImpl implements StoryService {
 
     private final Storyrepo storyRepository;
@@ -29,10 +31,7 @@ public class StoriesServiceImpl implements StoryService {
     @PersistenceContext
     private EntityManager entity;
 
-    public StoriesServiceImpl(Storyrepo storyRepository, UserRepository userRepository) {
-        this.storyRepository = storyRepository;
-        this.userRepository = userRepository;
-    }
+
 
     @Override
     @Transactional

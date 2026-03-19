@@ -4,17 +4,18 @@ import com.start.demo.Entities.Posts.Post;
 import com.start.demo.Entities.Posts.postLikes.PostLikes;
 import com.start.demo.Entities.Posts.postLikes.PostLikesRepository;
 import com.start.demo.Entities.Users.User;
-import com.start.demo.Exciptions.DuplicateResourceException;
-import com.start.demo.Exciptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class LikesServices implements LikesService {
@@ -40,8 +41,15 @@ public class LikesServices implements LikesService {
     }
 
     @Override
-    public Boolean existsByPostId(Long postId) {
-        User currentUser = getCurrentUser();
+    public ResponseEntity<?> existsByPostId(Long postId) {
+        Optional<User> optionalUser = getCurrentUser();
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
 
         TypedQuery<Long> query = entity.createQuery(
                 "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
@@ -50,22 +58,42 @@ public class LikesServices implements LikesService {
         query.setParameter("postId", postId);
         query.setParameter("userId", currentUser.getId());
 
-        return query.getSingleResult() > 0;
+        boolean exists = query.getSingleResult() > 0;
+
+        return ResponseEntity.ok(Map.of("liked", exists));
     }
 
     @Override
     @Transactional
-    public PostLikes addLike(Long postId) {
+    public ResponseEntity<?> addLike(Long postId) {
 
         Post post = entity.find(Post.class, postId);
         if (post == null || Boolean.TRUE.equals(post.getDeleted())) {
-            throw new ResourceNotFoundException("Post not found with id: " + postId);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Post not found"));
         }
 
-        User currentUser = getCurrentUser();
+        Optional<User> optionalUser = getCurrentUser();
 
-        if (existsByPostId(postId)) {
-            throw new DuplicateResourceException("Already liked");
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
+
+        TypedQuery<Long> query = entity.createQuery(
+                "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
+                Long.class
+        );
+        query.setParameter("postId", postId);
+        query.setParameter("userId", currentUser.getId());
+
+        boolean alreadyLiked = query.getSingleResult() > 0;
+
+        if (alreadyLiked) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Already liked"));
         }
 
         PostLikes like = new PostLikes();
@@ -74,14 +102,21 @@ public class LikesServices implements LikesService {
 
         entity.persist(like);
 
-        return like;
+        return ResponseEntity.ok(like);
     }
 
     @Override
     @Transactional
-    public String deleteByPostId(Long postId) {
+    public ResponseEntity<?> deleteByPostId(Long postId) {
 
-        User currentUser = getCurrentUser();
+        Optional<User> optionalUser = getCurrentUser();
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
 
         TypedQuery<PostLikes> q = entity.createQuery(
                 "FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
@@ -93,19 +128,22 @@ public class LikesServices implements LikesService {
         List<PostLikes> list = q.getResultList();
 
         if (list.isEmpty()) {
-            throw new ResourceNotFoundException("Like not found for this user on post id: " + postId);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Like not found for this user on this post"));
         }
 
         entity.remove(list.get(0));
 
-        return "Unliked successfully";
+        return ResponseEntity.ok(
+                Map.of("message", "Unliked successfully")
+        );
     }
 
-    private User getCurrentUser() {
+    private Optional<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getName() == null) {
-            throw new ResourceNotFoundException("Authenticated user not found");
+            return Optional.empty();
         }
 
         String email = authentication.getName();
@@ -119,9 +157,9 @@ public class LikesServices implements LikesService {
         List<User> users = query.getResultList();
 
         if (users.isEmpty()) {
-            throw new ResourceNotFoundException("User not found with email: " + email);
+            return Optional.empty();
         }
 
-        return users.get(0);
+        return Optional.of(users.get(0));
     }
 }

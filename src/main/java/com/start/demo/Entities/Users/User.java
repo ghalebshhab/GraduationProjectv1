@@ -10,6 +10,8 @@ import com.start.demo.Entities.Stories.StoryView;
 import com.start.demo.Entities.Stories.StoryLike;
 import com.start.demo.Entities.Stories.StoryView;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,26 +21,48 @@ import java.util.List;
 @Table(name = "users")
 public class User {
 
+    @Getter
+    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
+    @Getter
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
+    @Setter
+    @Getter
     @Column(nullable = false, unique = true, length = 120)
     private String username;
 
+    @Setter
+    @Getter
     @Column(nullable = false, name = "password_hash", length = 255)
     private String passwordHash;
 
+    @Setter
+    @Getter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Getter
+    @Setter
+    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
+    private String phoneNumber;
+
+    @Getter
+    @Setter
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     @Column(nullable = false, name = "is_active")
     private Boolean isActive = true;
 
+    @Setter
+    @Getter
     @Column(nullable = false, name = "created_at", updatable = false)
     private Instant createdAt;
 
@@ -50,26 +74,35 @@ public class User {
     // =========================
 
     // One user can create many posts
+    @Setter
+    @Getter
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<Post> posts = new ArrayList<>();
 
     // One user can write many post comments
+    @Getter
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<PostComment> comments = new ArrayList<>();
 
     // One user can make many post likes
+    @Setter
+    @Getter
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<PostLikes> likes = new ArrayList<>();
 
     // One user can create many stories
+    @Setter
+    @Getter
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<Story> stories = new ArrayList<>();
 
     // One user can view many stories
+    @Getter
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<StoryView> storyViews = new ArrayList<>();
 
     // One user can react to many stories
+    @Getter
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<StoryLike> storyReactions = new ArrayList<>();
 
@@ -97,60 +130,12 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
     public Boolean getActive() {
         return isActive;
     }
 
     public void setActive(Boolean active) {
         isActive = active;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
     }
 
     public Instant getUpdatedAt() {
@@ -161,48 +146,12 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
-    public List<Post> getPosts() {
-        return posts;
-    }
-
-    public void setPosts(List<Post> posts) {
-        this.posts = posts;
-    }
-
-    public List<PostComment> getComments() {
-        return comments;
-    }
-
     public void setComments(List<PostComment> comments) {
         this.comments = comments;
     }
 
-    public List<PostLikes> getLikes() {
-        return likes;
-    }
-
-    public void setLikes(List<PostLikes> likes) {
-        this.likes = likes;
-    }
-
-    public List<Story> getStories() {
-        return stories;
-    }
-
-    public void setStories(List<Story> stories) {
-        this.stories = stories;
-    }
-
-    public List<StoryView> getStoryViews() {
-        return storyViews;
-    }
-
     public void setStoryViews(List<StoryView> storyViews) {
         this.storyViews = storyViews;
-    }
-
-    public List<StoryLike> getStoryReactions() {
-        return storyReactions;
     }
 
     public void setStoryReactions(List<StoryLike> storyReactions) {

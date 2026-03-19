@@ -2,7 +2,12 @@ package com.start.demo.DTOs.Stories;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 public class CreateStoryRequest {
 
 
@@ -18,12 +23,5 @@ public class CreateStoryRequest {
 
 
 
-    public String getMediaUrl() { return mediaUrl; }
-    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
 
-    public String getCaption() { return caption; }
-    public void setCaption(String caption) { this.caption = caption; }
-
-    public Integer getExpiresInHours() { return expiresInHours; }
-    public void setExpiresInHours(Integer expiresInHours) { this.expiresInHours = expiresInHours; }
 }

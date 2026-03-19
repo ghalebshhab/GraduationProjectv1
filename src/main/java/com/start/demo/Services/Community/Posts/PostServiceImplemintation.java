@@ -7,21 +7,24 @@ import com.start.demo.Entities.Posts.Post;
 import com.start.demo.Entities.Posts.PostRepository;
 import com.start.demo.Entities.Users.User;
 import com.start.demo.Entities.Users.UserRepository;
-import com.start.demo.Exciptions.BadRequestException;
-import com.start.demo.Exciptions.ResourceNotFoundException;
 import com.start.demo.Services.Community.Posts.Comments.CommentsServices;
 import com.start.demo.Services.Community.Posts.Likes.LikesService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class PostServiceImplemintation implements PostsServices {
 
     private final PostRepository postRepository;
@@ -29,24 +32,22 @@ public class PostServiceImplemintation implements PostsServices {
     private final LikesService likesService;
     private final CommentsServices commentsService;
 
-    @Autowired
-    public PostServiceImplemintation(PostRepository postRepository,
-                                     UserRepository userRepository,
-                                     LikesService likesService,
-                                     CommentsServices commentsService) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-        this.likesService = likesService;
-        this.commentsService = commentsService;
-    }
+
 
     @Override
-    public PostResponse create(CreatePostRequest request) {
+    public ResponseEntity<?> create(CreatePostRequest request) {
 
-        User author = getCurrentUser();
+        Optional<User> optionalUser = getCurrentUser();
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User author = optionalUser.get();
 
         if (request.getContent() == null || request.getContent().isBlank()) {
-            throw new BadRequestException("Content is required");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Content is required"));
         }
 
         Post post = new Post();
@@ -58,34 +59,45 @@ public class PostServiceImplemintation implements PostsServices {
             try {
                 post.setType(Post.PostType.valueOf(request.getType().toUpperCase()));
             } catch (IllegalArgumentException ex) {
-                throw new BadRequestException("Invalid post type: " + request.getType());
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid post type: " + request.getType()));
             }
         } else {
             post.setType(Post.PostType.COMMUNITY);
         }
 
         Post saved = postRepository.save(post);
-        return toResponse(saved);
+        return ResponseEntity.ok(toResponse(saved));
     }
 
     @Override
-    public PostResponse update(Long postId, UpdatePostRequest request) {
+    public ResponseEntity<?> update(Long postId, UpdatePostRequest request) {
 
-        Post existing = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+        Optional<Post> optionalPost = postRepository.findById(postId);
 
-        if (Boolean.TRUE.equals(existing.getDeleted())) {
-            throw new ResourceNotFoundException("Post not found with id: " + postId);
+        if (optionalPost.isEmpty() || Boolean.TRUE.equals(optionalPost.get().getDeleted())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Post not found with id: " + postId));
         }
 
-        User currentUser = getCurrentUser();
+        Post existing = optionalPost.get();
+
+        Optional<User> optionalUser = getCurrentUser();
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
 
         if (!existing.getAuthor().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You can only update your own post");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "You can only update your own post"));
         }
 
         if (request.getContent() == null || request.getContent().isBlank()) {
-            throw new BadRequestException("Content is required");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Content is required"));
         }
 
         existing.setContent(request.getContent());
@@ -95,24 +107,25 @@ public class PostServiceImplemintation implements PostsServices {
             try {
                 existing.setType(Post.PostType.valueOf(request.getType().toUpperCase()));
             } catch (IllegalArgumentException ex) {
-                throw new BadRequestException("Invalid post type: " + request.getType());
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid post type: " + request.getType()));
             }
         }
 
         Post saved = postRepository.save(existing);
-        return toResponse(saved);
+        return ResponseEntity.ok(toResponse(saved));
     }
 
     @Override
-    public PostResponse findResponseById(Long postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+    public ResponseEntity<?> findResponseById(Long postId) {
+        Optional<Post> optionalPost = postRepository.findById(postId);
 
-        if (Boolean.TRUE.equals(post.getDeleted())) {
-            throw new ResourceNotFoundException("Post not found with id: " + postId);
+        if (optionalPost.isEmpty() || Boolean.TRUE.equals(optionalPost.get().getDeleted())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Post not found with id: " + postId));
         }
 
-        return toResponse(post);
+        return ResponseEntity.ok(toResponse(optionalPost.get()));
     }
 
     @Override
@@ -131,7 +144,6 @@ public class PostServiceImplemintation implements PostsServices {
 
     @Override
     public List<PostResponse> feedSummary(int page, int size) {
-
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         var postsPage = postRepository.findAll(pageable);
 
@@ -145,26 +157,38 @@ public class PostServiceImplemintation implements PostsServices {
     }
 
     @Override
-    public void deletePost(Long postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+    public ResponseEntity<?> deletePost(Long postId) {
+        Optional<Post> optionalPost = postRepository.findById(postId);
 
-        if (Boolean.TRUE.equals(post.getDeleted())) {
-            throw new ResourceNotFoundException("Post not found with id: " + postId);
+        if (optionalPost.isEmpty() || Boolean.TRUE.equals(optionalPost.get().getDeleted())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Post not found with id: " + postId));
         }
 
-        User currentUser = getCurrentUser();
+        Post post = optionalPost.get();
+
+        Optional<User> optionalUser = getCurrentUser();
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Authenticated user not found"));
+        }
+
+        User currentUser = optionalUser.get();
 
         if (!post.getAuthor().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You can only delete your own post");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "You can only delete your own post"));
         }
 
         post.setDeleted(true);
         postRepository.save(post);
+
+        return ResponseEntity.ok(
+                Map.of("message", "Post deleted successfully")
+        );
     }
 
     private PostResponse toResponse(Post post) {
-
         PostResponse r = new PostResponse();
         r.setId(post.getId());
         r.setContent(post.getContent());
@@ -189,15 +213,15 @@ public class PostServiceImplemintation implements PostsServices {
     }
 
     @Override
-    public Post findById(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + id));
+    public ResponseEntity<?> findById(Long id) {
+        Optional<Post> optionalPost = postRepository.findById(id);
 
-        if (Boolean.TRUE.equals(post.getDeleted())) {
-            throw new ResourceNotFoundException("Post not found with id: " + id);
+        if (optionalPost.isEmpty() || Boolean.TRUE.equals(optionalPost.get().getDeleted())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Post not found with id: " + id));
         }
 
-        return post;
+        return ResponseEntity.ok(optionalPost.get());
     }
 
     @Override
@@ -205,16 +229,15 @@ public class PostServiceImplemintation implements PostsServices {
         return postRepository.save(post);
     }
 
-    private User getCurrentUser() {
+    private Optional<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getName() == null) {
-            throw new BadRequestException("Authenticated user not found");
+            return Optional.empty();
         }
 
         String email = authentication.getName();
 
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return userRepository.findByEmail(email);
     }
 }

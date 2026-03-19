@@ -1,38 +1,30 @@
 package com.start.demo.Services.Community.Posts;
 
-import com.start.demo.Entities.Posts.Post;
-
-import java.util.List;
-import java.util.Map;
-
 import com.start.demo.DTOs.Posts.CreatePostRequest;
-import com.start.demo.DTOs.Posts.UpdatePostRequest;
 import com.start.demo.DTOs.Posts.PostResponse;
+import com.start.demo.DTOs.Posts.UpdatePostRequest;
 import com.start.demo.Entities.Posts.Post;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
 public interface PostsServices {
 
-    // -------- DTO-based methods (used by controller) --------
+    ResponseEntity<?> create(CreatePostRequest request);
 
-    PostResponse create(CreatePostRequest request);
+    ResponseEntity<?> update(Long postId, UpdatePostRequest request);
 
-    PostResponse update(Long postId, UpdatePostRequest request);
-
-    PostResponse findResponseById(Long postId);
+    ResponseEntity<?> findResponseById(Long postId);
 
     List<PostResponse> findAllResponses();
 
     List<PostResponse> feedSummary(int page, int size);
 
-    void deletePost(Long postId);
-
-    // -------- Optional: keep if used somewhere else --------
+    ResponseEntity<?> deletePost(Long postId);
 
     List<Post> findAll();
 
-    Post findById(Long id);
+    ResponseEntity<?> findById(Long id);
 
     Post savePost(Post post);
 }

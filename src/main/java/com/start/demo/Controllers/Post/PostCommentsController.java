@@ -7,9 +7,11 @@ import com.start.demo.Entities.Posts.postComments.PostComment;
 import com.start.demo.Services.Community.Posts.Comments.CommentsServices;
 
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 //@CrossOrigin(origins = "http://localhost:3000")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -34,9 +36,15 @@ public class PostCommentsController {
 
     // GET /api/posts/comments/{commentId}
     @GetMapping("/posts/comments/{commentId}")
-    public PostCommentResponse findById(@PathVariable Long commentId) {
-        PostComment comment = service.findById(commentId);
-        return mapToResponse(comment);
+    public ResponseEntity<?> findById(@PathVariable Long commentId) {
+        ResponseEntity<?> response = service.findById(commentId);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            return response;
+        }
+
+        PostComment comment = (PostComment) response.getBody();
+        return ResponseEntity.ok(mapToResponse(comment));
     }
 
     // GET /api/posts/{postId}/comments/count
@@ -47,25 +55,37 @@ public class PostCommentsController {
 
     // POST /api/posts/{postId}/comments
     @PostMapping("/posts/{postId}/comments")
-    public PostCommentResponse addComment(@PathVariable Long postId,
-                                          @Valid @RequestBody CreatePostCommentRequest request) {
+    public ResponseEntity<?> addComment(@PathVariable Long postId,
+                                        @Valid @RequestBody CreatePostCommentRequest request) {
 
-        PostComment comment = service.addComment(postId, request.getContent());
-        return mapToResponse(comment);
+        ResponseEntity<?> response = service.addComment(postId, request.getContent());
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            return response;
+        }
+
+        PostComment comment = (PostComment) response.getBody();
+        return ResponseEntity.ok(mapToResponse(comment));
     }
 
     // PUT /api/posts/comments/{commentId}
     @PutMapping("/posts/comments/{commentId}")
-    public PostCommentResponse editComment(@PathVariable Long commentId,
-                                           @Valid @RequestBody UpdatePostCommentRequest request) {
+    public ResponseEntity<?> editComment(@PathVariable Long commentId,
+                                         @Valid @RequestBody UpdatePostCommentRequest request) {
 
-        PostComment comment = service.updateComment(commentId, request.getContent());
-        return mapToResponse(comment);
+        ResponseEntity<?> response = service.updateComment(commentId, request.getContent());
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            return response;
+        }
+
+        PostComment comment = (PostComment) response.getBody();
+        return ResponseEntity.ok(mapToResponse(comment));
     }
 
     // DELETE /api/posts/comments/{commentId}
     @DeleteMapping("/posts/comments/{commentId}")
-    public String deleteComment(@PathVariable Long commentId) {
+    public ResponseEntity<?> deleteComment(@PathVariable Long commentId) {
         return service.deleteComment(commentId);
     }
 

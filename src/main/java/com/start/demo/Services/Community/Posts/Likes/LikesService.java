@@ -1,18 +1,15 @@
 package com.start.demo.Services.Community.Posts.Likes;
 
 import com.start.demo.Entities.Posts.postLikes.PostLikes;
+import org.springframework.http.ResponseEntity;
 
 public interface LikesService {
 
-    // عدد اللايكات على بوست
     Long countByPostId(Long postId);
 
-    // هل هذا المستخدم عمل لايك على هذا البوست؟
-    Boolean existsByPostId(Long postId);
+    ResponseEntity<?> existsByPostId(Long postId);
 
-    // إضافة لايك
-    PostLikes addLike(Long postId);
+    ResponseEntity<?> addLike(Long postId);
 
-    // حذف لايك
-    String deleteByPostId(Long postId);
+    ResponseEntity<?> deleteByPostId(Long postId);
 }

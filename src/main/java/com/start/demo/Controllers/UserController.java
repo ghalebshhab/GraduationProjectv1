@@ -3,6 +3,7 @@ package com.start.demo.Controllers;
 import com.start.demo.Entities.Users.User;
 import com.start.demo.Services.Users.UserServices;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,16 +18,13 @@ public class UserController {
         this.userService=userService;
     }
     @GetMapping("/users")
-    public List<User> findAll(){
+    public List<User> findAll() {
         return userService.findAll();
     }
-    @GetMapping("/users/{userId}")
-    public User findById(@PathVariable Long userId){
-        if(userId<0 || userId>findAll().size())
-            throw new RuntimeException("The user id is not found");
-        User theUser=userService.findById(userId);
-        return theUser;
 
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<?> findById(@PathVariable Long userId) {
+        return userService.findById(userId);
     }
     @PostMapping("/users")
     public User createUser(@RequestBody User requestBody){

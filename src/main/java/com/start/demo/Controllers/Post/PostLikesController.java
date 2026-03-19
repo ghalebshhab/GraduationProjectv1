@@ -1,10 +1,9 @@
 package com.start.demo.Controllers.Post;
 
-import com.start.demo.DTOs.Posts.Likes.CreatePostLikeRequest;
 import com.start.demo.DTOs.Posts.Likes.PostLikeResponse;
+import com.start.demo.Entities.Posts.postLikes.PostLikes;
 import com.start.demo.Services.Community.Posts.Likes.LikesService;
-
-import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 //@CrossOrigin(origins = "http://localhost:3000")
@@ -19,42 +18,39 @@ public class PostLikesController {
         this.likes = likes;
     }
 
-    // GET /api/posts/{postId}/likes/count
     @GetMapping("/{postId}/likes/count")
     public Long likesCount(@PathVariable Long postId) {
         return likes.countByPostId(postId);
     }
 
-    // POST /api/posts/{postId}/likes
     @PostMapping("/{postId}/likes")
-    public PostLikeResponse addLike(@PathVariable Long postId,
-                                    @Valid @RequestBody CreatePostLikeRequest request) {
+    public ResponseEntity<?> addLike(@PathVariable Long postId) {
+        ResponseEntity<?> response = likes.addLike(postId);
 
-        var like = likes.addLike(postId);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            return response;
+        }
 
-        return new PostLikeResponse(
-                like.getId(),
-                like.getPost().getId(),
-                like.getUser().getId(),
-                like.getUser().getUsername(),
-                like.getCreatedAt()
+        PostLikes like = (PostLikes) response.getBody();
+
+        return ResponseEntity.ok(
+                new PostLikeResponse(
+                        like.getId(),
+                        like.getPost().getId(),
+                        like.getUser().getId(),
+                        like.getUser().getUsername(),
+                        like.getCreatedAt()
+                )
         );
-
     }
 
-
-    // GET /api/posts/{postId}/likes/exist?userId=1
     @GetMapping("/{postId}/likes/exist")
-    public Boolean existByUserIdAndPostId(@PathVariable Long postId,
-                                          @RequestParam Long userId) {
+    public ResponseEntity<?> existByUserIdAndPostId(@PathVariable Long postId) {
         return likes.existsByPostId(postId);
     }
 
-    // DELETE /api/posts/{postId}/likes
     @DeleteMapping("/{postId}/likes")
-    public String deleteByPostId(@PathVariable Long postId,
-                                          @Valid @RequestBody CreatePostLikeRequest request) {
-
+    public ResponseEntity<?> deleteByPostId(@PathVariable Long postId) {
         return likes.deleteByPostId(postId);
     }
 }
