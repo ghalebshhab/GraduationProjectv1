@@ -3,21 +3,21 @@ package com.start.demo.Services.Users;
 import com.start.demo.Entities.Users.User;
 import com.start.demo.Entities.Users.UserRepository;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserServiceImplimintation implements UserServices {
-    UserRepository userrepo;
-    EntityManager entity;
+
+    private final UserRepository userrepo;
+    private final EntityManager entity;
+
     @Autowired
-    public UserServiceImplimintation(UserRepository userrepo,EntityManager entity){
-        this.userrepo=userrepo;
-        this.entity=entity;
+    public UserServiceImplimintation(UserRepository userrepo, EntityManager entity) {
+        this.userrepo = userrepo;
+        this.entity = entity;
     }
 
     @Override
@@ -27,36 +27,33 @@ public class UserServiceImplimintation implements UserServices {
 
     @Override
     public User findById(Long id) {
-        Optional<User> user=userrepo.findById(id);
-        User theUser=null;
-        if(user.isPresent())
-            theUser=user.get();
-        else
-            throw new RuntimeException("The user can not be found with the id -" + id);
-        return theUser;
+        if (id == null || id <= 0) {
+            return null;
+        }
+        return userrepo.findById(id).orElse(null);
     }
 
     @Override
     public User findByEmail(String email) {
-        TypedQuery<User> query=entity.createQuery("FROM User WHERE email=:email",User.class);
-        query.setParameter("email",email);
-        return query.getSingleResult();
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return userrepo.findByEmail(email).orElse(null);
     }
 
     @Override
     public boolean existsByEmail(String email) {
-         TypedQuery<User> query=entity.createQuery("FROM User WHERE email=:email",User.class);
-         query.setParameter("email",email);
-         User theUser=query.getSingleResult();
-         Boolean isExist=true;
-         if (theUser==null)
-             isExist=false;
-         return isExist;
-
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+        return userrepo.existsByEmail(email);
     }
 
     @Override
     public User saveUser(User user) {
+        if (user == null) {
+            return null;
+        }
         return userrepo.save(user);
     }
 }

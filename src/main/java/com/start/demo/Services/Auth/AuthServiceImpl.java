@@ -7,8 +7,6 @@ import com.start.demo.DTOs.Auth.Register.RegisterResponse;
 import com.start.demo.Entities.Users.Role;
 import com.start.demo.Entities.Users.User;
 import com.start.demo.Entities.Users.UserRepository;
-import com.start.demo.Exciptions.BadRequestException;
-import com.start.demo.Exciptions.ResourceNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,13 +27,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public RegisterResponse register(RegisterRequest request) {
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email already exists");
+        if (request == null
+                || request.getEmail() == null || request.getEmail().isBlank()
+                || request.getUsername() == null || request.getUsername().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            return null;
         }
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BadRequestException("Username already exists");
+        if (userRepository.existsByEmail(request.getEmail())
+                || userRepository.existsByUsername(request.getUsername())) {
+            return null;
         }
 
         User user = new User();
@@ -54,34 +55,27 @@ public class AuthServiceImpl implements AuthService {
                 savedUser.getRole().name()
         );
     }
+
     @Override
     public LoginResponse login(LoginRequest request) {
-
-        // 1️⃣ Find user by email
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User with this email does not exist")
-                );
-
-        // 2️⃣ Check password
-        boolean passwordMatches = passwordEncoder.matches(
-                request.getPassword(),
-                user.getPasswordHash()
-        );
-
-        if (!passwordMatches) {
-            throw new BadRequestException("Incorrect password");
+        if (request == null
+                || request.getEmail() == null || request.getEmail().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            return null;
         }
 
-        // 3️⃣ Check if account is active
-        if (!Boolean.TRUE.equals(user.getActive())) {
-            throw new BadRequestException("User account is inactive");
+        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (user == null) {
+            return null;
         }
 
-        // 4️⃣ Generate JWT token
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
+        if (!passwordMatches || !Boolean.TRUE.equals(user.getActive())) {
+            return null;
+        }
+
         String token = jwtService.generateToken(user.getEmail());
 
-        // 5️⃣ Return login response
         return new LoginResponse(
                 token,
                 user.getId(),
