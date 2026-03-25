@@ -15,13 +15,11 @@ public class UpdateUserProfileRequest {
     @Pattern(regexp = "^07[789][0-9]{7}$", message = "Invalid Jordanian phone number")
     private String phoneNumber;
 
-    @Size(max = 500, message = "Profile image URL too long")
     private String profileImageUrl;
 
     @Size(max = 500, message = "Bio must be at most 500 characters")
     private String bio;
 
-    @Size(max = 500, message = "Cover image URL too long")
     private String coverImageUrl;
 
     @Size(max = 50, message = "Location must be at most 150 characters")

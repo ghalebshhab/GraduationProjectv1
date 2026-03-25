@@ -51,12 +51,12 @@ public class AuthServiceImpl implements AuthService {
         user.setPhoneNumber(request.getPhoneNumber());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
-        user.setActive(true);
+        user.setIsActive(true);
 
         User savedUser = userRepository.save(user);
 
         UserProfile profile = new UserProfile();
-        profile.setUserId(savedUser.getId());
+        profile.setUser(savedUser);
 
         userProfileRepository.save(profile);
 
@@ -99,14 +99,14 @@ public class AuthServiceImpl implements AuthService {
                     .body(Map.of("error", "Incorrect password"));
         }
 
-        if (!Boolean.TRUE.equals(user.getActive())) {
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
             return ResponseEntity
                     .badRequest()
                     .body(Map.of("error", "User account is inactive"));
         }
         if (!userProfileRepository.existsByUserId(user.getId())) {
             UserProfile profile = new UserProfile();
-            profile.setUserId(user.getId());
+            profile.setUser(user);
             userProfileRepository.save(profile);
         }
 

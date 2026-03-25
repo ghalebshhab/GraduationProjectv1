@@ -1,16 +1,17 @@
 package com.jomap.backend.Services.Community.Posts.Comments;
 
+import com.jomap.backend.DTOs.Posts.Comments.PostCommentResponse;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.postComments.PostComment;
 import com.jomap.backend.Entities.Users.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -42,11 +43,11 @@ public class CommentServiceImplemintation implements CommentsServices {
                     .body(Map.of("error", "Comment not found"));
         }
 
-        return ResponseEntity.ok(c);
+        return ResponseEntity.ok(toResponse(c));
     }
 
     @Override
-    public List<PostComment> findByPostId(Long postId) {
+    public List<PostCommentResponse> findByPostId(Long postId) {
         TypedQuery<PostComment> q = entity.createQuery(
                 "FROM PostComment c " +
                         "WHERE c.post.id = :postId AND c.isDeleted = false " +
@@ -54,7 +55,11 @@ public class CommentServiceImplemintation implements CommentsServices {
                 PostComment.class
         );
         q.setParameter("postId", postId);
-        return q.getResultList();
+
+        return q.getResultList()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Override
@@ -86,8 +91,9 @@ public class CommentServiceImplemintation implements CommentsServices {
         comment.setContent(content);
 
         entity.persist(comment);
+        entity.flush();
 
-        return ResponseEntity.ok(comment);
+        return ResponseEntity.ok(toResponse(comment));
     }
 
     @Override
@@ -121,7 +127,7 @@ public class CommentServiceImplemintation implements CommentsServices {
 
         existing.setContent(content);
 
-        return ResponseEntity.ok(existing);
+        return ResponseEntity.ok(toResponse(existing));
     }
 
     @Override
@@ -153,6 +159,24 @@ public class CommentServiceImplemintation implements CommentsServices {
         return ResponseEntity.ok(
                 Map.of("message", "The comment with id " + commentId + " was deleted")
         );
+    }
+
+    private PostCommentResponse toResponse(PostComment comment) {
+        PostCommentResponse r = new PostCommentResponse();
+
+        r.setId(comment.getId());
+        r.setPostId(comment.getPost() != null ? comment.getPost().getId() : null);
+
+        if (comment.getUser() != null) {
+            r.setUserId(comment.getUser().getId());
+            r.setUsername(comment.getUser().getUsername());
+            r.setUserProfileImageUrl(comment.getUser().getProfileImageUrl());
+        }
+
+        r.setContent(comment.getContent());
+        r.setCreatedAt(comment.getCreatedAt());
+
+        return r;
     }
 
     private Optional<User> getCurrentUser() {

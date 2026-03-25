@@ -31,8 +31,6 @@ public class PostServiceImplemintation implements PostsServices {
     private final LikesService likesService;
     private final CommentsServices commentsService;
 
-
-
     @Override
     public ResponseEntity<?> createPost(CreatePostRequest request) {
 
@@ -183,8 +181,7 @@ public class PostServiceImplemintation implements PostsServices {
         postRepository.save(post);
 
         return ResponseEntity.ok(
-                Map.of("message", "Post deleted successfully")
-        );
+                Map.of("message", "Post deleted successfully"));
     }
 
     private PostResponse toResponse(Post post) {
@@ -198,6 +195,8 @@ public class PostServiceImplemintation implements PostsServices {
         if (post.getAuthor() != null) {
             r.setAuthorId(post.getAuthor().getId());
             r.setAuthorEmail(post.getAuthor().getEmail());
+            r.setAuthorUsername(post.getAuthor().getUsername());
+            r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
         }
 
         r.setLikeCount(likesService.countByPostId(post.getId()));

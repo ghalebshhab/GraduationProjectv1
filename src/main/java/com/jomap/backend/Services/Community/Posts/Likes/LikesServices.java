@@ -34,8 +34,7 @@ public class LikesServices implements LikesService {
     public Long countByPostId(Long postId) {
         TypedQuery<Long> query = entity.createQuery(
                 "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId",
-                Long.class
-        );
+                Long.class);
         query.setParameter("postId", postId);
         return query.getSingleResult();
     }
@@ -53,8 +52,7 @@ public class LikesServices implements LikesService {
 
         TypedQuery<Long> query = entity.createQuery(
                 "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
-                Long.class
-        );
+                Long.class);
         query.setParameter("postId", postId);
         query.setParameter("userId", currentUser.getId());
 
@@ -84,8 +82,7 @@ public class LikesServices implements LikesService {
 
         TypedQuery<Long> query = entity.createQuery(
                 "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
-                Long.class
-        );
+                Long.class);
         query.setParameter("postId", postId);
         query.setParameter("userId", currentUser.getId());
 
@@ -120,8 +117,7 @@ public class LikesServices implements LikesService {
 
         TypedQuery<PostLikes> q = entity.createQuery(
                 "FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
-                PostLikes.class
-        );
+                PostLikes.class);
         q.setParameter("postId", postId);
         q.setParameter("userId", currentUser.getId());
 
@@ -135,8 +131,7 @@ public class LikesServices implements LikesService {
         entity.remove(list.get(0));
 
         return ResponseEntity.ok(
-                Map.of("message", "Unliked successfully")
-        );
+                Map.of("message", "Unliked successfully"));
     }
 
     private Optional<User> getCurrentUser() {
@@ -150,8 +145,7 @@ public class LikesServices implements LikesService {
 
         TypedQuery<User> query = entity.createQuery(
                 "SELECT u FROM User u WHERE u.email = :email",
-                User.class
-        );
+                User.class);
         query.setParameter("email", email);
 
         List<User> users = query.getResultList();
