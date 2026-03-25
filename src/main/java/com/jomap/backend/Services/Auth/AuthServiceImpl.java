@@ -28,6 +28,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<?> register(RegisterRequest request) {
 
+        if (request.getPhoneNumber() == null || !request.getPhoneNumber().matches("^\\+9627\\d{8}$")) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("Error", "Phone number must be like +9627XXXXXXXX"));
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity
                     .badRequest()

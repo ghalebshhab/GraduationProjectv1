@@ -24,10 +24,6 @@ public class RegisterRequest {
     @Size(min = 6, max = 100)
     private String password;
     @NotBlank
-    @Pattern(
-            regexp = "^\\+9627\\d{8}$",
-            message = "Phone number must be like +9627XXXXXXXX"
-    )
     private String phoneNumber;
 
 
