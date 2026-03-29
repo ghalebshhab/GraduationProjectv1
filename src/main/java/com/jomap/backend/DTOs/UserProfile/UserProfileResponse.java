@@ -6,17 +6,12 @@ import java.time.LocalDate;
 public class UserProfileResponse {
 
     private Long userId;
-
     private String username;
-    private String email;
-    private String phoneNumber;
-
-
     private String profileImageUrl;
-
+    private String email;
     private String bio;
-    private String coverImageUrl;
     private String location;
-    private LocalDate birthDate;
-    private String website;
+    private int followersCount;
+    private int followingCount;
+    private int postsCount;
 }

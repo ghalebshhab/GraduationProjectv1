@@ -1,18 +1,21 @@
 package com.jomap.backend.Services.Auth;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Auth.Login.LoginRequest;
 import com.jomap.backend.DTOs.Auth.Login.LoginResponse;
 import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
 import com.jomap.backend.DTOs.Auth.Register.RegisterResponse;
-import com.jomap.backend.Entities.Users.*;
-import com.jomap.backend.Entities.Users.*;
+import com.jomap.backend.Entities.Users.Role;
+import com.jomap.backend.Entities.Users.User;
+import com.jomap.backend.Entities.Users.UserProfile;
+import com.jomap.backend.Entities.Users.UserProfileRepository;
+import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Notefications.EmailService;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -26,35 +29,31 @@ public class AuthServiceImpl implements AuthService {
     private final UserProfileRepository userProfileRepository;
 
     @Override
-    public ResponseEntity<?> register(RegisterRequest request) {
+    @Transactional
+    public ApiResponse<RegisterResponse> register(RegisterRequest request) {
 
-        if (request.getPhoneNumber() == null || !request.getPhoneNumber().matches("^\\+9627\\d{8}$")) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("Error", "Phone number must be like +9627XXXXXXXX"));
+        if (request.getPhoneNumber() == null ||
+                (!request.getPhoneNumber().matches("^\\+9627\\d{8}$")
+                        && !request.getPhoneNumber().matches("^07\\d{8}$"))) {
+            return ApiResponse.error("Phone number must be like +9627XXXXXXXX or 07XXXXXXXX");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("Error", "Email already exists"));
+            return ApiResponse.error("Email already exists");
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("Error", "Username already used "));
+            return ApiResponse.error("UserName is already used");
         }
+
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "Phone number already used"));
+            return ApiResponse.error("Phone number is already used");
         }
 
         User user = new User();
-        user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPhoneNumber(request.getPhoneNumber());
+        user.setEmail(request.getEmail().trim());
+        user.setUsername(request.getUsername().trim());
+        user.setPhoneNumber(request.getPhoneNumber().trim());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
         user.setIsActive(true);
@@ -63,7 +62,6 @@ public class AuthServiceImpl implements AuthService {
 
         UserProfile profile = new UserProfile();
         profile.setUser(savedUser);
-
         userProfileRepository.save(profile);
 
         try {
@@ -71,25 +69,25 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ResponseEntity.ok(
-                new RegisterResponse(
-                        savedUser.getId(),
-                        savedUser.getEmail(),
-                        savedUser.getUsername(),
-                        savedUser.getRole().name()
-                )
+
+        RegisterResponse response = new RegisterResponse(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                savedUser.getUsername(),
+                savedUser.getRole().name()
         );
+
+        return ApiResponse.success("Registered successfully", response);
     }
 
     @Override
-    public ResponseEntity<?> login(LoginRequest request) {
+    @Transactional
+    public ApiResponse<LoginResponse> login(LoginRequest request) {
 
         Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
 
         if (optionalUser.isEmpty()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "User with this email does not exist"));
+            return ApiResponse.error("User with this email does not exist");
         }
 
         User user = optionalUser.get();
@@ -100,16 +98,13 @@ public class AuthServiceImpl implements AuthService {
         );
 
         if (!passwordMatches) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "Incorrect password"));
+            return ApiResponse.error("Incorrect password");
         }
 
         if (!Boolean.TRUE.equals(user.getIsActive())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "User account is inactive"));
+            return ApiResponse.error("This user account is not active");
         }
+
         if (!userProfileRepository.existsByUserId(user.getId())) {
             UserProfile profile = new UserProfile();
             profile.setUser(user);
@@ -117,11 +112,13 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail());
+
         try {
             emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         LoginResponse response = new LoginResponse(
                 token,
                 "Bearer",
@@ -131,6 +128,6 @@ public class AuthServiceImpl implements AuthService {
                 user.getRole().name()
         );
 
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Logged in successfully", response);
     }
 }

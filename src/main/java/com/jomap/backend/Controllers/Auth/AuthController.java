@@ -5,28 +5,25 @@ import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
 import com.jomap.backend.Services.Auth.AuthService;
 
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 //@CrossOrigin(origins = "http://localhost:3000")
-@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/auth")
+@AllArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 }

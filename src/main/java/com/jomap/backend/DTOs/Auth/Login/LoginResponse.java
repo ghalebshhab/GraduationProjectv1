@@ -10,7 +10,6 @@ public class LoginResponse {
 
     private String token;
     private String type = "Bearer";
-
     private Long id;
     private String email;
     private String username;

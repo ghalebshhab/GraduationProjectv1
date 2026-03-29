@@ -7,14 +7,11 @@ import lombok.*;
 @NoArgsConstructor
 public class ApiResponse<T> {
 
-    @Getter
-    @Setter
+
     private boolean success;
-    @Getter
-    @Setter
+
     private String message;
-    @Getter
-    @Setter
+
     private T data;
 
 
