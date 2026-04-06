@@ -1,56 +1,52 @@
 package com.jomap.backend.Controllers.Post;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.Likes.PostLikeResponse;
-import com.jomap.backend.Entities.Posts.postLikes.PostLikes;
-import com.jomap.backend.Services.Community.Posts.Likes.LikesService;
+import com.jomap.backend.Services.Community.Posts.Likes.PostLikeService;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-//@CrossOrigin(origins = "http://localhost:3000")
-@CrossOrigin(origins = "http://localhost:5173")
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/posts")
+@AllArgsConstructor
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class PostLikesController {
 
-    private final LikesService likes;
-
-    public PostLikesController(LikesService likes) {
-        this.likes = likes;
-    }
+    private final PostLikeService postLikeService;
 
     @GetMapping("/{postId}/likes/count")
-    public Long likesCount(@PathVariable Long postId) {
-        return likes.countByPostId(postId);
-    }
-
-    @PostMapping("/{postId}/likes")
-    public ResponseEntity<?> addLike(@PathVariable Long postId) {
-        ResponseEntity<?> response = likes.addLike(postId);
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            return response;
-        }
-
-        PostLikes like = (PostLikes) response.getBody();
-
-        return ResponseEntity.ok(
-                new PostLikeResponse(
-                        like.getUser().getId(),
-                        like.getPost().getId(),
-                        like.getUser().getId(),
-                        like.getUser().getUsername(),
-                        like.getCreatedAt()
-                )
-        );
+    public ResponseEntity<ApiResponse<Long>> likesCount(@PathVariable Long postId) {
+        return ResponseEntity.ok(postLikeService.countByPostId(postId));
     }
 
     @GetMapping("/{postId}/likes/exist")
-    public ResponseEntity<?> existByUserIdAndPostId(@PathVariable Long postId) {
-        return likes.existsByPostId(postId);
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> existByUserIdAndPostId(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(postLikeService.existsByPostId(emailFromToken, postId));
+    }
+
+    @PostMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<PostLikeResponse>> addLike(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(postLikeService.addLike(emailFromToken, postId));
     }
 
     @DeleteMapping("/{postId}/likes")
-    public ResponseEntity<?> deleteByPostId(@PathVariable Long postId) {
-        return likes.deleteByPostId(postId);
+    public ResponseEntity<ApiResponse<String>> deleteByPostId(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(postLikeService.deleteByPostId(emailFromToken, postId));
     }
 }

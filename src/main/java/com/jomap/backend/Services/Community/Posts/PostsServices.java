@@ -1,5 +1,6 @@
 package com.jomap.backend.Services.Community.Posts;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
 import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
@@ -10,21 +11,17 @@ import java.util.List;
 
 public interface PostsServices {
 
-    ResponseEntity<?> createPost(CreatePostRequest request);
 
-    ResponseEntity<?> update(Long postId, UpdatePostRequest request);
+        ApiResponse<List<PostResponse>> getAllPosts();
 
-    ResponseEntity<?> findResponseById(Long postId);
+        ApiResponse<PostResponse> getPostById(Long postId);
 
-    List<PostResponse> findAllResponses();
+        ApiResponse<List<PostResponse>> getFeedSummary(int page, int size);
 
-    List<PostResponse> feedSummary(int page, int size);
+        ApiResponse<PostResponse> createPost(String emailFromToken, CreatePostRequest request);
 
-    ResponseEntity<?> deletePost(Long postId);
+        ApiResponse<PostResponse> updatePost(String emailFromToken, Long postId, UpdatePostRequest request);
 
-    List<Post> findAll();
+        ApiResponse<String> deletePost(String emailFromToken, Long postId);
 
-    ResponseEntity<?> findById(Long id);
-
-    Post savePost(Post post);
 }

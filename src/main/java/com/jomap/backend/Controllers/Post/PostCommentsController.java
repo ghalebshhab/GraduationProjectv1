@@ -1,63 +1,67 @@
 package com.jomap.backend.Controllers.Post;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.Comments.CreatePostCommentRequest;
 import com.jomap.backend.DTOs.Posts.Comments.PostCommentResponse;
 import com.jomap.backend.DTOs.Posts.Comments.UpdatePostCommentRequest;
-import com.jomap.backend.Entities.Posts.postComments.PostComment;
-import com.jomap.backend.Services.Community.Posts.Comments.CommentsServices;
-
+import com.jomap.backend.Services.Community.Posts.Comments.PostCommentService;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/posts")
+@AllArgsConstructor
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class PostCommentsController {
 
-    private final CommentsServices service;
+    private final PostCommentService postCommentService;
 
-    public PostCommentsController(CommentsServices service) {
-        this.service = service;
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<ApiResponse<List<PostCommentResponse>>> getCommentsByPostId(@PathVariable Long postId) {
+        return ResponseEntity.ok(postCommentService.getCommentsByPostId(postId));
     }
 
-    // GET /api/posts/{postId}/comments
-    @GetMapping("/posts/{postId}/comments")
-    public List<PostCommentResponse> findAll(@PathVariable Long postId) {
-        return service.findByPostId(postId);
+    @GetMapping("/comments/{commentId}")
+    public ResponseEntity<ApiResponse<PostCommentResponse>> getCommentById(@PathVariable Long commentId) {
+        return ResponseEntity.ok(postCommentService.getCommentById(commentId));
     }
 
-    // GET /api/posts/comments/{commentId}
-    @GetMapping("/posts/comments/{commentId}")
-    public ResponseEntity<?> findById(@PathVariable Long commentId) {
-        return service.findById(commentId);
+    @GetMapping("/{postId}/comments/count")
+    public ResponseEntity<ApiResponse<Long>> countByPostId(@PathVariable Long postId) {
+        return ResponseEntity.ok(postCommentService.countByPostId(postId));
     }
 
-    // GET /api/posts/{postId}/comments/count
-    @GetMapping("/posts/{postId}/comments/count")
-    public Long countByPostId(@PathVariable Long postId) {
-        return service.countByPostId(postId);
+    @PostMapping("/{postId}/comments")
+    public ResponseEntity<ApiResponse<PostCommentResponse>> addComment(
+            Authentication authentication,
+            @PathVariable Long postId,
+            @Valid @RequestBody CreatePostCommentRequest request
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(postCommentService.addComment(emailFromToken, postId, request));
     }
 
-    // POST /api/posts/{postId}/comments
-    @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<?> addComment(@PathVariable Long postId,
-                                        @Valid @RequestBody CreatePostCommentRequest request) {
-        return service.addComment(postId, request.getContent());
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<ApiResponse<PostCommentResponse>> updateComment(
+            Authentication authentication,
+            @PathVariable Long commentId,
+            @Valid @RequestBody UpdatePostCommentRequest request
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(postCommentService.updateComment(emailFromToken, commentId, request));
     }
 
-    // PUT /api/posts/comments/{commentId}
-    @PutMapping("/posts/comments/{commentId}")
-    public ResponseEntity<?> editComment(@PathVariable Long commentId,
-                                         @Valid @RequestBody UpdatePostCommentRequest request) {
-        return service.updateComment(commentId, request.getContent());
-    }
-
-    // DELETE /api/posts/comments/{commentId}
-    @DeleteMapping("/posts/comments/{commentId}")
-    public ResponseEntity<?> deleteComment(@PathVariable Long commentId) {
-        return service.deleteComment(commentId);
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<ApiResponse<String>> deleteComment(
+            Authentication authentication,
+            @PathVariable Long commentId
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(postCommentService.deleteComment(emailFromToken, commentId));
     }
 }

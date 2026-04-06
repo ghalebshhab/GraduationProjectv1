@@ -1,8 +1,11 @@
 package com.jomap.backend.Controllers.Post;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.Services.Community.Posts.PostsServices;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
@@ -11,55 +14,54 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 @RestController
 @RequestMapping("/api/posts")
+@AllArgsConstructor
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class PostController {
 
-    private final PostsServices postServices;
+    private final PostsServices postService;
 
-    @Autowired
-    public PostController(PostsServices postService) {
-        this.postServices = postService;
-    }
-
-    // GET /api/posts
     @GetMapping
-    public List<PostResponse> findAll() {
-        return postServices.findAllResponses();
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts() {
+        return ResponseEntity.ok(postService.getAllPosts());
     }
 
-    // GET /api/posts/{postId}
     @GetMapping("/{postId}")
-    public ResponseEntity<?> findById(@PathVariable Long postId) {
-        return postServices.findResponseById(postId);
+    public ResponseEntity<ApiResponse<PostResponse>> getPostById(@PathVariable Long postId) {
+        return ResponseEntity.ok(postService.getPostById(postId));
     }
 
-    // GET /api/posts/feed/summary
     @GetMapping("/feed/summary")
-    public List<PostResponse> feedSummary(
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getFeedSummary(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return postServices.feedSummary(page, size);
+        return ResponseEntity.ok(postService.getFeedSummary(page, size));
     }
 
-    // POST /api/posts
     @PostMapping
-    public ResponseEntity<?> createPost(@Valid @RequestBody CreatePostRequest request) {
-        return postServices.createPost(request);
+    public ResponseEntity<ApiResponse<PostResponse>> createPost(
+            Authentication authentication,
+            @Valid @RequestBody CreatePostRequest request
+    ) {
+        return ResponseEntity.ok(postService.createPost(authentication.getName(), request));
     }
 
-    // PUT /api/posts/{postId}
     @PutMapping("/{postId}")
-    public ResponseEntity<?> editPost(@PathVariable Long postId,
-                                      @Valid @RequestBody UpdatePostRequest request) {
-        return postServices.update(postId, request);
+    public ResponseEntity<ApiResponse<PostResponse>> updatePost(
+            Authentication authentication,
+            @PathVariable Long postId,
+            @Valid @RequestBody UpdatePostRequest request
+    ) {
+        return ResponseEntity.ok(postService.updatePost(authentication.getName(), postId, request));
     }
 
-    // DELETE /api/posts/{postId}
     @DeleteMapping("/{postId}")
-    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
-        return postServices.deletePost(postId);
+    public ResponseEntity<ApiResponse<String>> deletePost(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        return ResponseEntity.ok(postService.deletePost(authentication.getName(), postId));
     }
 }
