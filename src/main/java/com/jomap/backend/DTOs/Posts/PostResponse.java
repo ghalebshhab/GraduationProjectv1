@@ -28,4 +28,10 @@ public class PostResponse {
     private Long commentCount;
 
     private boolean likedByCurrentUser;
+    private boolean savedByCurrentUser;
+    private Double latitude;
+    private Double longitude;
+    private String category;
+    private Double distanceKm;
+    private String scoreReason;
 }

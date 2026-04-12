@@ -6,6 +6,7 @@ import com.jomap.backend.Entities.Posts.postLikes.PostLikes;
 import com.jomap.backend.Entities.Stories.Story;
 import com.jomap.backend.Entities.Stories.StoryLike;
 import com.jomap.backend.Entities.Stories.StoryView;
+import com.jomap.backend.Entities.Users.Profile.UserProfile;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -64,7 +65,7 @@ public class User {
     private List<Post> posts = new ArrayList<>();
 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = false)
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<PostComment> comments = new ArrayList<>();
 
 

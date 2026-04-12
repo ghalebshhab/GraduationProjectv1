@@ -1,16 +1,15 @@
 package com.jomap.backend.Controllers.Post;
 
 import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.Services.Community.Posts.PostsServices;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
 import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
+import com.jomap.backend.Services.Community.Posts.PostsServices;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -38,6 +37,17 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(postService.getFeedSummary(page, size));
+    }
+
+    @GetMapping("/feed/personalized")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getPersonalizedFeed(
+            Authentication authentication,
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(postService.getPersonalizedFeed(authentication.getName(), lat, lng, page, size));
     }
 
     @PostMapping

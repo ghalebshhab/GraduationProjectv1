@@ -1,4 +1,4 @@
-package com.jomap.backend.Entities.Users;
+package com.jomap.backend.Entities.Users.Profile;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

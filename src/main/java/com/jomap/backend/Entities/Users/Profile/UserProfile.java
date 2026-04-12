@@ -1,10 +1,8 @@
-package com.jomap.backend.Entities.Users;
+package com.jomap.backend.Entities.Users.Profile;
 
+import com.jomap.backend.Entities.Users.User;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.sql.results.graph.Fetch;
 
 import java.time.LocalDate;
 

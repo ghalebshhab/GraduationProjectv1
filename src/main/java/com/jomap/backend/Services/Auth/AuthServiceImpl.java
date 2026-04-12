@@ -7,8 +7,8 @@ import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
 import com.jomap.backend.DTOs.Auth.Register.RegisterResponse;
 import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
-import com.jomap.backend.Entities.Users.UserProfile;
-import com.jomap.backend.Entities.Users.UserProfileRepository;
+import com.jomap.backend.Entities.Users.Profile.UserProfile;
+import com.jomap.backend.Entities.Users.Profile.UserProfileRepository;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Notefications.EmailService;
 import lombok.AllArgsConstructor;
@@ -112,12 +112,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail());
-
-        try {
-            emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         LoginResponse response = new LoginResponse(
                 token,

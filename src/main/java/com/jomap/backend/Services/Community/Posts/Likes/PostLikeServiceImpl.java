@@ -3,129 +3,133 @@ package com.jomap.backend.Services.Community.Posts.Likes;
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.Likes.PostLikeResponse;
 import com.jomap.backend.Entities.Posts.Post;
+import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Posts.postLikes.PostLikes;
+import com.jomap.backend.Entities.Posts.postLikes.PostLikesRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class PostLikeServiceImpl implements PostLikeService {
 
-    private final UserRepository userRepository;
+    private final PostLikesRepository postLikesRepository;
+    private final PostRepository      postRepository;
+    private final UserRepository      userRepository;
 
-    @PersistenceContext
-    private EntityManager entity;
+    // ── Count likes for a single post ─────────────────────────────────────────
 
     @Override
-    @Transactional
     public ApiResponse<Long> countByPostId(Long postId) {
-        TypedQuery<Long> query = entity.createQuery(
-                "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId",
-                Long.class
-        );
-        query.setParameter("postId", postId);
-
-        return ApiResponse.success("Likes count fetched successfully", query.getSingleResult());
+        long count = postLikesRepository.countByPostId(postId);
+        return ApiResponse.success("Like count fetched", count);
     }
 
+    // ── Check if the current user has already liked a post ────────────────────
+    // Returns Map<"liked", true/false> — matches the controller's
+    // ResponseEntity<ApiResponse<Map<String, Boolean>>> signature.
+
     @Override
-    @Transactional
     public ApiResponse<Map<String, Boolean>> existsByPostId(String emailFromToken, Long postId) {
-        User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
-        if (currentUser == null) {
+        User user = userRepository.findByEmail(emailFromToken).orElse(null);
+        if (user == null) {
             return ApiResponse.error("User not found");
         }
 
-        TypedQuery<Long> query = entity.createQuery(
-                "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
-                Long.class
-        );
-        query.setParameter("postId", postId);
-        query.setParameter("userId", currentUser.getId());
-
-        boolean exists = query.getSingleResult() > 0;
-
-        return ApiResponse.success("Like status fetched successfully", Map.of("liked", exists));
+        boolean liked = postLikesRepository.existsByPostIdAndUserId(postId, user.getId());
+        return ApiResponse.success("Like status fetched", Map.of("liked", liked));
     }
+
+    // ── Add a like ────────────────────────────────────────────────────────────
+    // Idempotent: if the user already liked the post, returns the existing like.
 
     @Override
     @Transactional
     public ApiResponse<PostLikeResponse> addLike(String emailFromToken, Long postId) {
-        User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
-        if (currentUser == null) {
+        User user = userRepository.findByEmail(emailFromToken).orElse(null);
+        if (user == null) {
             return ApiResponse.error("User not found");
         }
 
-        Post post = entity.find(Post.class, postId);
+        Post post = postRepository.findById(postId).orElse(null);
         if (post == null || Boolean.TRUE.equals(post.getIsDeleted())) {
             return ApiResponse.error("Post not found");
         }
 
-        TypedQuery<Long> query = entity.createQuery(
-                "SELECT COUNT(l) FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
-                Long.class
-        );
-        query.setParameter("postId", postId);
-        query.setParameter("userId", currentUser.getId());
-
-        boolean alreadyLiked = query.getSingleResult() > 0;
-        if (alreadyLiked) {
-            return ApiResponse.error("Already liked");
-        }
-
-        PostLikes like = new PostLikes();
-        like.setPost(post);
-        like.setUser(currentUser);
-
-        entity.persist(like);
-        entity.flush();
-
-        return ApiResponse.success("Post liked successfully", toResponse(like));
+        // Check for duplicate — return existing like rather than throwing an error
+        return postLikesRepository.findByPostIdAndUserId(postId, user.getId())
+                .map(existing -> ApiResponse.success("Already liked", toResponse(existing)))
+                .orElseGet(() -> {
+                    PostLikes saved = postLikesRepository.save(new PostLikes(post, user));
+                    return ApiResponse.success("Post liked successfully", toResponse(saved));
+                });
     }
+
+    // ── Delete a like ─────────────────────────────────────────────────────────
 
     @Override
     @Transactional
     public ApiResponse<String> deleteByPostId(String emailFromToken, Long postId) {
-        User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
-        if (currentUser == null) {
+        User user = userRepository.findByEmail(emailFromToken).orElse(null);
+        if (user == null) {
             return ApiResponse.error("User not found");
         }
 
-        TypedQuery<PostLikes> q = entity.createQuery(
-                "FROM PostLikes l WHERE l.post.id = :postId AND l.user.id = :userId",
-                PostLikes.class
-        );
-        q.setParameter("postId", postId);
-        q.setParameter("userId", currentUser.getId());
-
-        List<PostLikes> list = q.getResultList();
-
-        if (list.isEmpty()) {
-            return ApiResponse.error("Like not found for this user on this post");
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null || Boolean.TRUE.equals(post.getIsDeleted())) {
+            return ApiResponse.error("Post not found");
         }
 
-        entity.remove(list.get(0));
-        entity.flush();
-
-        return ApiResponse.success("Post unliked successfully", "Post unliked successfully");
+        return postLikesRepository.findByPostIdAndUserId(postId, user.getId())
+                .map(like -> {
+                    postLikesRepository.delete(like);
+                    return ApiResponse.success("Post unliked successfully", "unliked");
+                })
+                .orElse(ApiResponse.error("Like not found — you haven't liked this post"));
     }
 
+    // ── Feed algorithm helpers ────────────────────────────────────────────────
+
+    @Override
+    public List<Long> getPostIdsLikedByUser(Long userId) {
+        List<Long> ids = postLikesRepository.findPostIdsLikedByUser(userId);
+        return ids != null ? ids : Collections.emptyList();
+    }
+
+    @Override
+    public Map<Long, Long> countByPostIds(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return postLikesRepository.countLikesByPostIds(postIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    // ── Response mapper ───────────────────────────────────────────────────────
+
     private PostLikeResponse toResponse(PostLikes like) {
-        return new PostLikeResponse(
-                like.getId(),
-                like.getPost() != null ? like.getPost().getId() : null,
-                like.getUser() != null ? like.getUser().getId() : null,
-                like.getUser() != null ? like.getUser().getUsername() : null,
-                like.getCreatedAt()
-        );
+        PostLikeResponse r = new PostLikeResponse();
+        r.setId(like.getId());
+        r.setPostId(like.getPost() != null ? like.getPost().getId() : null);
+        r.setCreatedAt(like.getCreatedAt());
+
+        if (like.getUser() != null) {
+            r.setUserId(like.getUser().getId());
+            r.setUsername(like.getUser().getUsername());
+        }
+
+        return r;
     }
 }

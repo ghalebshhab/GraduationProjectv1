@@ -1,40 +1,34 @@
 package com.jomap.backend.Entities.Posts.postComments;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Users.User;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "post_comments")
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
-@Data
-
 public class PostComment {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "post_id", nullable = false)
-    @JsonIgnore
     private Post post;
 
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
-    private User user;
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
 
-
-    @Column(nullable = false, length = 1000)
+    @Column(name = "content", nullable = false, length = 1000)
     private String content;
 
     @Column(name = "is_deleted", nullable = false)
@@ -43,12 +37,21 @@ public class PostComment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public PostComment(Post post, User author, String content) {
+        this.post = post;
+        this.author = author;
+        this.content = content;
+        this.isDeleted = false;
+    }
 
     @PrePersist
     public void onCreate() {
+        if (this.isDeleted == null) {
+            this.isDeleted = false;
+        }
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
@@ -57,9 +60,4 @@ public class PostComment {
     public void onUpdate() {
         this.updatedAt = Instant.now();
     }
-
-
-
-
-
 }

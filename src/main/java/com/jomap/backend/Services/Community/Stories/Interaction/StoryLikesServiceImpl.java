@@ -1,39 +1,42 @@
 package com.jomap.backend.Services.Community.Stories.Interaction;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.Entities.Stories.Story;
 import com.jomap.backend.Entities.Stories.StoryLike;
 import com.jomap.backend.Entities.Users.User;
-import com.jomap.backend.Exciptions.DuplicateResourceException;
-import com.jomap.backend.Exciptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class StoryLikesServiceImpl implements StoryLikesService {
 
     @PersistenceContext
     private EntityManager entity;
 
     @Override
-    public Long countByStoryId(Long storyId) {
+    public ApiResponse<Long> countByStoryId(Long storyId) {
         TypedQuery<Long> q = entity.createQuery(
                 "SELECT COUNT(l) FROM StoryLike l WHERE l.story.id = :storyId",
                 Long.class
         );
         q.setParameter("storyId", storyId);
-        return q.getSingleResult();
+
+        return ApiResponse.success("Story likes count fetched successfully", q.getSingleResult());
     }
 
     @Override
-    public Boolean existsByStoryId(Long storyId) {
+    public ApiResponse<Boolean> existsByStoryId(Long storyId) {
         User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
         TypedQuery<Long> q = entity.createQuery(
                 "SELECT COUNT(l) FROM StoryLike l WHERE l.story.id = :storyId AND l.user.id = :userId",
@@ -42,38 +45,48 @@ public class StoryLikesServiceImpl implements StoryLikesService {
         q.setParameter("storyId", storyId);
         q.setParameter("userId", currentUser.getId());
 
-        return q.getSingleResult() > 0;
+        return ApiResponse.success("Story like existence checked successfully", q.getSingleResult() > 0);
     }
 
     @Override
     @Transactional
-    public StoryLike addLike(Long storyId) {
-
+    public ApiResponse<String> addLike(Long storyId) {
         Story story = entity.find(Story.class, storyId);
         if (story == null || Boolean.TRUE.equals(story.getDeleted())) {
-            throw new ResourceNotFoundException("Story not found with id: " + storyId);
+            return ApiResponse.error("Story not found with id: " + storyId);
         }
 
         User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
-        if (existsByStoryId(storyId)) {
-            throw new DuplicateResourceException("User already liked this story");
+        TypedQuery<Long> q = entity.createQuery(
+                "SELECT COUNT(l) FROM StoryLike l WHERE l.story.id = :storyId AND l.user.id = :userId",
+                Long.class
+        );
+        q.setParameter("storyId", storyId);
+        q.setParameter("userId", currentUser.getId());
+
+        if (q.getSingleResult() > 0) {
+            return ApiResponse.error("User already liked this story");
         }
 
         StoryLike like = new StoryLike();
         like.setStory(story);
         like.setUser(currentUser);
-
         entity.persist(like);
 
-        return like;
+        return ApiResponse.success("Story liked successfully", "Story liked successfully");
     }
 
     @Override
     @Transactional
-    public String deleteByStoryId(Long storyId) {
-
+    public ApiResponse<String> deleteByStoryId(Long storyId) {
         User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
         TypedQuery<StoryLike> q = entity.createQuery(
                 "FROM StoryLike l WHERE l.story.id = :storyId AND l.user.id = :userId",
@@ -85,18 +98,18 @@ public class StoryLikesServiceImpl implements StoryLikesService {
         List<StoryLike> list = q.getResultList();
 
         if (list.isEmpty()) {
-            throw new ResourceNotFoundException("Like not found for this user on story id: " + storyId);
+            return ApiResponse.error("Like not found for this user on story id: " + storyId);
         }
 
         entity.remove(list.get(0));
-        return "Unliked successfully";
+        return ApiResponse.success("Story unliked successfully", "Story unliked successfully");
     }
 
     private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getName() == null) {
-            throw new ResourceNotFoundException("Authenticated user not found");
+            return null;
         }
 
         String email = authentication.getName();
@@ -108,11 +121,6 @@ public class StoryLikesServiceImpl implements StoryLikesService {
         q.setParameter("email", email);
 
         List<User> users = q.getResultList();
-
-        if (users.isEmpty()) {
-            throw new ResourceNotFoundException("User not found with email: " + email);
-        }
-
-        return users.get(0);
+        return users.isEmpty() ? null : users.get(0);
     }
 }

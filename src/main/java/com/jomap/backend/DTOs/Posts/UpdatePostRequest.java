@@ -1,11 +1,16 @@
 package com.jomap.backend.DTOs.Posts;
+
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class UpdatePostRequest {
 
     @NotBlank
@@ -15,7 +20,16 @@ public class UpdatePostRequest {
     @Size(max = 500)
     private String mediaUrl;
 
-    private String type; // COMMUNITY / EVENT / OFFER
+    private String type;
 
+    @Size(max = 100)
+    private String category;
 
+    @DecimalMin(value = "-90.0",  message = "Latitude must be >= -90")
+    @DecimalMax(value = "90.0",   message = "Latitude must be <= 90")
+    private Double latitude;           // optional
+
+    @DecimalMin(value = "-180.0", message = "Longitude must be >= -180")
+    @DecimalMax(value = "180.0",  message = "Longitude must be <= 180")
+    private Double longitude;          // optional
 }

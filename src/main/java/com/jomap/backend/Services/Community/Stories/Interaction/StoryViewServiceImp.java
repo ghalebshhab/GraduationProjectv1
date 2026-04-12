@@ -1,39 +1,42 @@
 package com.jomap.backend.Services.Community.Stories.Interaction;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.Entities.Stories.Story;
 import com.jomap.backend.Entities.Stories.StoryView;
 import com.jomap.backend.Entities.Users.User;
-import com.jomap.backend.Exciptions.DuplicateResourceException;
-import com.jomap.backend.Exciptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class StoryViewServiceImp implements StoryViewService {
 
     @PersistenceContext
     private EntityManager entity;
 
     @Override
-    public Long countByStoryId(Long storyId) {
+    public ApiResponse<Long> countByStoryId(Long storyId) {
         TypedQuery<Long> q = entity.createQuery(
                 "SELECT COUNT(v) FROM StoryView v WHERE v.story.id = :storyId",
                 Long.class
         );
         q.setParameter("storyId", storyId);
-        return q.getSingleResult();
+
+        return ApiResponse.success("Story views count fetched successfully", q.getSingleResult());
     }
 
     @Override
-    public Boolean existsByStoryId(Long storyId) {
+    public ApiResponse<Boolean> existsByStoryId(Long storyId) {
         User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
         TypedQuery<Long> q = entity.createQuery(
                 "SELECT COUNT(v) FROM StoryView v WHERE v.story.id = :storyId AND v.user.id = :userId",
@@ -42,38 +45,46 @@ public class StoryViewServiceImp implements StoryViewService {
         q.setParameter("storyId", storyId);
         q.setParameter("userId", currentUser.getId());
 
-        return q.getSingleResult() > 0;
+        return ApiResponse.success("Story view existence checked successfully", q.getSingleResult() > 0);
     }
 
     @Override
     @Transactional
-    public StoryView addView(Long storyId) {
-
+    public ApiResponse<String> addView(Long storyId) {
         Story story = entity.find(Story.class, storyId);
         if (story == null || Boolean.TRUE.equals(story.getDeleted())) {
-            throw new ResourceNotFoundException("Story not found with id: " + storyId);
+            return ApiResponse.error("Story not found with id: " + storyId);
         }
 
         User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
-        if (existsByStoryId(storyId)) {
-            throw new DuplicateResourceException("Already viewed");
+        TypedQuery<Long> q = entity.createQuery(
+                "SELECT COUNT(v) FROM StoryView v WHERE v.story.id = :storyId AND v.user.id = :userId",
+                Long.class
+        );
+        q.setParameter("storyId", storyId);
+        q.setParameter("userId", currentUser.getId());
+
+        if (q.getSingleResult() > 0) {
+            return ApiResponse.error("Already viewed");
         }
 
         StoryView view = new StoryView();
         view.setStory(story);
         view.setUser(currentUser);
-
         entity.persist(view);
 
-        return view;
+        return ApiResponse.success("Story viewed successfully", "Story viewed successfully");
     }
 
     private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getName() == null) {
-            throw new ResourceNotFoundException("Authenticated user not found");
+            return null;
         }
 
         String email = authentication.getName();
@@ -85,11 +96,6 @@ public class StoryViewServiceImp implements StoryViewService {
         q.setParameter("email", email);
 
         List<User> users = q.getResultList();
-
-        if (users.isEmpty()) {
-            throw new ResourceNotFoundException("User not found with email: " + email);
-        }
-
-        return users.get(0);
+        return users.isEmpty() ? null : users.get(0);
     }
 }

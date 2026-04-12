@@ -1,21 +1,20 @@
 package com.jomap.backend.Services.Community.Stories;
 
+import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Stories.CreateStoryRequest;
 import com.jomap.backend.DTOs.Stories.StoryResponse;
 import com.jomap.backend.Entities.Stories.Story;
 import com.jomap.backend.Entities.Stories.Storyrepo;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import com.jomap.backend.Exciptions.BadRequestException;
-import com.jomap.backend.Exciptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,38 +30,37 @@ public class StoriesServiceImpl implements StoryService {
     @PersistenceContext
     private EntityManager entity;
 
-
-
     @Override
     @Transactional
-    public StoryResponse create(CreateStoryRequest request) {
-
+    public ApiResponse<StoryResponse> create(CreateStoryRequest request) {
         User author = getCurrentUser();
+        if (author == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
         if (request.getMediaUrl() == null || request.getMediaUrl().isBlank()) {
-            throw new BadRequestException("Media URL is required");
+            return ApiResponse.error("Media URL is required");
         }
 
         Story story = new Story();
         story.setAuthor(author);
-        story.setMediaUrl(request.getMediaUrl());
+        story.setMediaUrl(request.getMediaUrl().trim());
         story.setCaption(request.getCaption());
 
         Integer h = request.getExpiresInHours();
         if (h != null) {
             if (h <= 0) {
-                throw new BadRequestException("expiresInHours must be greater than 0");
+                return ApiResponse.error("expiresInHours must be greater than 0");
             }
             story.setExpiresAt(Instant.now().plusSeconds((long) h * 3600));
         }
 
         Story saved = storyRepository.save(story);
-        return toResponse(saved);
+        return ApiResponse.success("Story created successfully", toResponse(saved));
     }
 
     @Override
-    public List<StoryResponse> getActiveStories(int page, int size) {
-
+    public ApiResponse<List<StoryResponse>> getActiveStories(int page, int size) {
         Instant now = Instant.now();
 
         TypedQuery<Story> q = entity.createQuery(
@@ -79,12 +77,12 @@ public class StoriesServiceImpl implements StoryService {
         for (Story s : q.getResultList()) {
             res.add(toResponse(s));
         }
-        return res;
+
+        return ApiResponse.success("Active stories fetched successfully", res);
     }
 
     @Override
-    public List<StoryResponse> getActiveStoriesByUser(Long userId, int page, int size) {
-
+    public ApiResponse<List<StoryResponse>> getActiveStoriesByUser(Long userId, int page, int size) {
         Instant now = Instant.now();
 
         TypedQuery<Story> q = entity.createQuery(
@@ -102,26 +100,30 @@ public class StoriesServiceImpl implements StoryService {
         for (Story s : q.getResultList()) {
             res.add(toResponse(s));
         }
-        return res;
+
+        return ApiResponse.success("User active stories fetched successfully", res);
     }
 
     @Override
     @Transactional
-    public String deleteStory(Long storyId) {
+    public ApiResponse<String> deleteStory(Long storyId) {
         Story story = entity.find(Story.class, storyId);
 
         if (story == null || Boolean.TRUE.equals(story.getDeleted())) {
-            throw new ResourceNotFoundException("Story not found with id: " + storyId);
+            return ApiResponse.error("Story not found with id: " + storyId);
         }
 
         User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
 
-        if (!story.getAuthor().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You can only delete your own story");
+        if (story.getAuthor() == null || !story.getAuthor().getId().equals(currentUser.getId())) {
+            return ApiResponse.error("You can only delete your own story");
         }
 
         story.setDeleted(true);
-        return "Story deleted successfully";
+        return ApiResponse.success("Story deleted successfully", "Story deleted successfully");
     }
 
     private StoryResponse toResponse(Story s) {
@@ -144,12 +146,10 @@ public class StoriesServiceImpl implements StoryService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getName() == null) {
-            throw new BadRequestException("Authenticated user not found");
+            return null;
         }
 
         String email = authentication.getName();
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return userRepository.findByEmail(email).orElse(null);
     }
 }

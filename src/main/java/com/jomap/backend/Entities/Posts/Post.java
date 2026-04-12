@@ -64,6 +64,13 @@ public class Post {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "category")
+    private String category;
+    @Column(name = "lat")
+    private Double latitude;
+    @Column(name = "lon")
+    private Double longitude;
+
     @PrePersist
     public void onCreate() {
         this.createdAt = Instant.now();

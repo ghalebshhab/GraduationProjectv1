@@ -5,44 +5,43 @@ import com.jomap.backend.DTOs.Posts.Comments.CreatePostCommentRequest;
 import com.jomap.backend.DTOs.Posts.Comments.PostCommentResponse;
 import com.jomap.backend.DTOs.Posts.Comments.UpdatePostCommentRequest;
 import com.jomap.backend.Entities.Posts.Post;
+import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Posts.postComments.PostComment;
+import com.jomap.backend.Entities.Posts.postComments.PostCommentRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class PostCommentServiceImpl implements PostCommentService {
 
+    private final PostCommentRepository postCommentRepository;
+    private final PostRepository postRepository;
     private final UserRepository userRepository;
 
-    @PersistenceContext
-    private EntityManager entity;
-
     @Override
-    @Transactional
-    public ApiResponse<Long> countByPostId(Long postId) {
-        TypedQuery<Long> q = entity.createQuery(
-                "SELECT COUNT(c) FROM PostComment c " +
-                        "WHERE c.post.id = :postId AND c.isDeleted = false",
-                Long.class
-        );
-        q.setParameter("postId", postId);
+    public ApiResponse<List<PostCommentResponse>> getCommentsByPostId(Long postId) {
+        List<PostCommentResponse> responses = postCommentRepository
+                .findActiveByPostId(postId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
 
-        return ApiResponse.success("Comments count fetched successfully", q.getSingleResult());
+        return ApiResponse.success("Comments fetched successfully", responses);
     }
 
     @Override
-    @Transactional
     public ApiResponse<PostCommentResponse> getCommentById(Long commentId) {
-        PostComment comment = entity.find(PostComment.class, commentId);
+        PostComment comment = postCommentRepository.findById(commentId).orElse(null);
 
         if (comment == null || Boolean.TRUE.equals(comment.getIsDeleted())) {
             return ApiResponse.error("Comment not found");
@@ -52,120 +51,178 @@ public class PostCommentServiceImpl implements PostCommentService {
     }
 
     @Override
-    @Transactional
-    public ApiResponse<List<PostCommentResponse>> getCommentsByPostId(Long postId) {
-        TypedQuery<PostComment> q = entity.createQuery(
-                "FROM PostComment c " +
-                        "WHERE c.post.id = :postId AND c.isDeleted = false " +
-                        "ORDER BY c.createdAt DESC",
-                PostComment.class
-        );
-        q.setParameter("postId", postId);
-
-        List<PostCommentResponse> responses = q.getResultList()
-                .stream()
-                .map(this::toResponse)
-                .toList();
-
-        return ApiResponse.success("Comments fetched successfully", responses);
+    public ApiResponse<Long> countByPostId(Long postId) {
+        long count = postCommentRepository.countActiveByPostId(postId);
+        return ApiResponse.success("Comment count fetched", count);
     }
 
     @Override
-    @Transactional
-    public ApiResponse<PostCommentResponse> addComment(String emailFromToken, Long postId, CreatePostCommentRequest request) {
-        User user = userRepository.findByEmail(emailFromToken).orElse(null);
-        if (user == null) {
-            return ApiResponse.error("User not found");
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<PostCommentResponse> addComment(String emailFromToken,
+                                                       Long postId,
+                                                       CreatePostCommentRequest request) {
+        try {
+            System.out.println("=== addComment START ===");
+            System.out.println("emailFromToken = " + emailFromToken);
+            System.out.println("postId = " + postId);
+            System.out.println("request = " + request);
+            System.out.println("content = " + (request != null ? request.getContent() : null));
+
+            if (emailFromToken == null || emailFromToken.isBlank()) {
+                System.out.println("FAILED: emailFromToken is null or blank");
+                return ApiResponse.error("Unauthorized user");
+            }
+
+            if (request == null || request.getContent() == null || request.getContent().trim().isEmpty()) {
+                System.out.println("FAILED: comment content is empty");
+                return ApiResponse.error("Comment content is required");
+            }
+
+            User user = userRepository.findByEmail(emailFromToken).orElse(null);
+            System.out.println("user found = " + (user != null ? user.getId() : null));
+
+            if (user == null) {
+                System.out.println("FAILED: user not found");
+                return ApiResponse.error("User not found");
+            }
+
+            Post post = postRepository.findById(postId).orElse(null);
+            System.out.println("post found = " + (post != null ? post.getId() : null));
+            System.out.println("post deleted = " + (post != null ? post.getIsDeleted() : null));
+
+            if (post == null || Boolean.TRUE.equals(post.getIsDeleted())) {
+                System.out.println("FAILED: post not found or deleted");
+                return ApiResponse.error("Post not found");
+            }
+
+            PostComment comment = new PostComment();
+            comment.setPost(post);
+            comment.setAuthor(user);
+            comment.setContent(request.getContent().trim());
+            comment.setIsDeleted(false);
+
+            System.out.println("Before saveAndFlush...");
+            PostComment saved = postCommentRepository.saveAndFlush(comment);
+            System.out.println("After saveAndFlush, saved id = " + saved.getId());
+
+            return ApiResponse.success("Comment added successfully", toResponse(saved));
+
+        } catch (Exception e) {
+            System.out.println("EXCEPTION IN addComment: " + e.getMessage());
+            e.printStackTrace();
+            return ApiResponse.error("Failed to add comment: " + e.getMessage());
         }
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<PostCommentResponse> updateComment(String emailFromToken,
+                                                          Long commentId,
+                                                          UpdatePostCommentRequest request) {
+        try {
+            if (emailFromToken == null || emailFromToken.isBlank()) {
+                return ApiResponse.error("Unauthorized user");
+            }
 
-        if (request.getContent() == null || request.getContent().isBlank()) {
-            return ApiResponse.error("Comment cannot be empty");
+            if (request == null || request.getContent() == null || request.getContent().trim().isEmpty()) {
+                return ApiResponse.error("Comment content is required");
+            }
+
+            User user = userRepository.findByEmail(emailFromToken).orElse(null);
+            if (user == null) {
+                return ApiResponse.error("User not found");
+            }
+
+            PostComment comment = postCommentRepository.findById(commentId).orElse(null);
+            if (comment == null || Boolean.TRUE.equals(comment.getIsDeleted())) {
+                return ApiResponse.error("Comment not found");
+            }
+
+            if (!comment.getAuthor().getId().equals(user.getId())) {
+                return ApiResponse.error("You can only edit your own comments");
+            }
+
+            comment.setContent(request.getContent().trim());
+
+            PostComment saved = postCommentRepository.saveAndFlush(comment);
+
+            return ApiResponse.success("Comment updated successfully", toResponse(saved));
+
+        } catch (DataAccessException e) {
+            return ApiResponse.error("Database error while updating comment: " + e.getMostSpecificCause().getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update comment: " + e.getMessage());
         }
-
-        Post post = entity.find(Post.class, postId);
-        if (post == null || Boolean.TRUE.equals(post.getIsDeleted())) {
-            return ApiResponse.error("Post not found");
-        }
-
-        PostComment comment = new PostComment();
-        comment.setPost(post);
-        comment.setUser(user);
-        comment.setContent(request.getContent().trim());
-        comment.setIsDeleted(false);
-
-        entity.persist(comment);
-        entity.flush();
-
-        return ApiResponse.success("Comment added successfully", toResponse(comment));
     }
 
     @Override
-    @Transactional
-    public ApiResponse<PostCommentResponse> updateComment(String emailFromToken, Long commentId, UpdatePostCommentRequest request) {
-        User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
-        if (currentUser == null) {
-            return ApiResponse.error("User not found");
-        }
-
-        PostComment existing = entity.find(PostComment.class, commentId);
-        if (existing == null || Boolean.TRUE.equals(existing.getIsDeleted())) {
-            return ApiResponse.error("Comment not found");
-        }
-
-        if (!existing.getUser().getId().equals(currentUser.getId())) {
-            return ApiResponse.error("You can only edit your own comment");
-        }
-
-        if (request.getContent() == null || request.getContent().isBlank()) {
-            return ApiResponse.error("Content is required");
-        }
-
-        existing.setContent(request.getContent().trim());
-        entity.merge(existing);
-        entity.flush();
-
-        return ApiResponse.success("Comment updated successfully", toResponse(existing));
-    }
-
-    @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ApiResponse<String> deleteComment(String emailFromToken, Long commentId) {
-        User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
-        if (currentUser == null) {
-            return ApiResponse.error("User not found");
+        try {
+            if (emailFromToken == null || emailFromToken.isBlank()) {
+                return ApiResponse.error("Unauthorized user");
+            }
+
+            User user = userRepository.findByEmail(emailFromToken).orElse(null);
+            if (user == null) {
+                return ApiResponse.error("User not found");
+            }
+
+            PostComment comment = postCommentRepository.findById(commentId).orElse(null);
+            if (comment == null || Boolean.TRUE.equals(comment.getIsDeleted())) {
+                return ApiResponse.error("Comment not found");
+            }
+
+            if (!comment.getAuthor().getId().equals(user.getId())) {
+                return ApiResponse.error("You can only delete your own comments");
+            }
+
+            comment.setIsDeleted(true);
+            postCommentRepository.saveAndFlush(comment);
+
+            return ApiResponse.success("Comment deleted successfully", "Comment deleted successfully");
+
+        } catch (DataAccessException e) {
+            return ApiResponse.error("Database error while deleting comment: " + e.getMostSpecificCause().getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to delete comment: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Long> getPostIdsCommentedByUser(Long userId) {
+        List<Long> ids = postCommentRepository.findPostIdsCommentedByUser(userId);
+        return ids != null ? ids : Collections.emptyList();
+    }
+
+    @Override
+    public Map<Long, Long> countByPostIds(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Collections.emptyMap();
         }
 
-        PostComment existing = entity.find(PostComment.class, commentId);
-        if (existing == null || Boolean.TRUE.equals(existing.getIsDeleted())) {
-            return ApiResponse.error("Comment not found");
-        }
-
-        if (!existing.getUser().getId().equals(currentUser.getId())) {
-            return ApiResponse.error("You can only delete your own comment");
-        }
-
-        existing.setIsDeleted(true);
-        entity.merge(existing);
-        entity.flush();
-
-        return ApiResponse.success("Comment deleted successfully", "Comment deleted successfully");
+        return postCommentRepository.countCommentsByPostIds(postIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
     }
 
     private PostCommentResponse toResponse(PostComment comment) {
-        PostCommentResponse response = new PostCommentResponse();
+        PostCommentResponse r = new PostCommentResponse();
+        r.setId(comment.getId());
+        r.setPostId(comment.getPost() != null ? comment.getPost().getId() : null);
+        r.setContent(comment.getContent());
+        r.setCreatedAt(comment.getCreatedAt());
+        r.setUpdatedAt(comment.getUpdatedAt());
 
-        response.setId(comment.getId());
-        response.setPostId(comment.getPost() != null ? comment.getPost().getId() : null);
-
-        if (comment.getUser() != null) {
-            response.setUserId(comment.getUser().getId());
-            response.setUsername(comment.getUser().getUsername());
-            response.setUserProfileImageUrl(comment.getUser().getProfileImageUrl());
+        if (comment.getAuthor() != null) {
+            r.setAuthorId(comment.getAuthor().getId());
+            r.setAuthorUsername(comment.getAuthor().getUsername());
+            r.setAuthorEmail(comment.getAuthor().getEmail());
+            r.setAuthorProfileImageUrl(comment.getAuthor().getProfileImageUrl());
         }
 
-        response.setContent(comment.getContent());
-        response.setCreatedAt(comment.getCreatedAt());
-
-        return response;
+        return r;
     }
 }

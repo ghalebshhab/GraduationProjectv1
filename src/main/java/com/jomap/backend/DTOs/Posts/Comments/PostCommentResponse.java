@@ -10,13 +10,22 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PostCommentResponse {
-    private Long id;
-    private Long postId;
-    private Long userId;
-    private String username;
-    private String userProfileImageUrl;
-    private String content;
-    private Boolean isDeleted;
+
+    private Long    id;
+
+    // Post this comment belongs to
+    private Long    postId;
+
+    // Author info
+    private Long    authorId;
+    private String  authorUsername;
+    private String  authorEmail;
+    private String  authorProfileImageUrl;
+
+    // Content
+    private String  content;
+
+    // Timestamps
     private Instant createdAt;
     private Instant updatedAt;
 }

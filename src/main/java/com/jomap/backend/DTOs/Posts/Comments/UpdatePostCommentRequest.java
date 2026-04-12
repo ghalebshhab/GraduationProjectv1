@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdatePostCommentRequest {
 
-    @NotBlank
-    @Size(max = 1000)
+    @NotBlank(message = "Comment content cannot be blank")
+    @Size(max = 1000, message = "Comment must be 1000 characters or fewer")
     private String content;
-
-
 }
