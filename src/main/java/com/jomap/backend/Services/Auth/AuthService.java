@@ -11,4 +11,7 @@ import org.springframework.http.ResponseEntity;
 public interface AuthService {
     ApiResponse<RegisterResponse> register(RegisterRequest request);
     ApiResponse<LoginResponse>  login(LoginRequest request);
+//    ApiResponse<LoginResponse> loginWithGoogle(String idToken);
+//
+//    ApiResponse<LoginResponse> loginWithFacebook(String accessToken);
 }
