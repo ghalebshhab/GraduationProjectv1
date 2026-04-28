@@ -78,11 +78,11 @@ public class AuthServiceImpl implements AuthService {
         profile.setUser(savedUser);
         userProfileRepository.save(profile);
 
-//        try {
-//            emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+            emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         RegisterResponse response = new RegisterResponse(
                 savedUser.getId(),
@@ -93,6 +93,7 @@ public class AuthServiceImpl implements AuthService {
 
         return ApiResponse.success("Registered successfully", response);
     }
+    //new edits
 
     @Override
     @Transactional
@@ -124,7 +125,11 @@ public class AuthServiceImpl implements AuthService {
             profile.setUser(user);
             userProfileRepository.save(profile);
         }
-
+        try {
+            emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         String token = jwtService.generateToken(user.getEmail());
 
         LoginResponse response = new LoginResponse(

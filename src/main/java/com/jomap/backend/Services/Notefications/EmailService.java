@@ -199,4 +199,5 @@ public class EmailService {
                 </html>
                 """.formatted(username);
     }
+
 }
