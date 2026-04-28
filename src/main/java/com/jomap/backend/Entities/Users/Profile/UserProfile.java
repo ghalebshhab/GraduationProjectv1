@@ -1,10 +1,19 @@
 package com.jomap.backend.Entities.Users.Profile;
 
-import com.jomap.backend.Entities.Users.User;
-import jakarta.persistence.*;
-import lombok.Data;
-
 import java.time.LocalDate;
+
+import com.jomap.backend.Entities.Users.User;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Table(name = "user_profiles")
@@ -22,7 +31,7 @@ public class UserProfile {
     @Column(length = 500)
     private String bio;
 
-    @Column(name = "cover_image_url", columnDefinition = "LONGTEXT")
+    @Column(name = "cover_image_url", columnDefinition = "TEXT")
     private String coverImageUrl;
 
     @Column(length = 150)
