@@ -19,4 +19,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
     long countByIsActiveTrue();
 
     long countByIsActiveFalse();
+    Optional<User> findByProviderAndProviderId(String provider, String providerId);
+
 }

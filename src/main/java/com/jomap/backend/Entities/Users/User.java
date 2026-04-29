@@ -41,7 +41,7 @@ public class User {
     private Role role;
 
 
-    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
+    @Column(name = "phone_number", unique = true, length = 20)
     private String phoneNumber;
 
 
@@ -51,6 +51,10 @@ public class User {
     @Column(nullable = false, name = "is_active")
     private Boolean isActive = true;
 
+    @Column(nullable = false)
+    private String provider = "LOCAL";
+
+    private String providerId;
 
     @Column(nullable = false, name = "created_at", updatable = false)
     private Instant createdAt;
