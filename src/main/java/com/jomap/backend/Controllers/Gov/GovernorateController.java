@@ -3,6 +3,7 @@ package com.jomap.backend.Controllers.Gov;
 
 import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Gove.GovernorateImage;
+import com.jomap.backend.Entities.Gove.Place;
 import com.jomap.backend.Services.Gove.GovernorateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,20 @@ public class GovernorateController {
         try {
             GovernorateImage savedImage = governorateService.addImageToGovernorate(id, imageUrl);
             return ResponseEntity.ok(savedImage);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @PostMapping("/{id}/places")
+    public ResponseEntity<?> addPlace(
+            @PathVariable Long id,
+            @RequestParam String name,
+            @RequestParam String description,
+            @RequestParam(required = false) String imageUrl) {
+
+        try {
+            Place savedPlace = governorateService.addPlaceToGovernorate(id, name, description, imageUrl);
+            return ResponseEntity.ok(savedPlace);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

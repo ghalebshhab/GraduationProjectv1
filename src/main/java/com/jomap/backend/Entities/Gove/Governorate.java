@@ -31,4 +31,8 @@ public class Governorate {
     @OneToMany(mappedBy = "governorate", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<GovernorateImage> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "governorate", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("governorate-places")
+    private List<Place> places = new ArrayList<>();
 }

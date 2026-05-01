@@ -1,9 +1,6 @@
 package com.jomap.backend.Services.Gove;
 
-import com.jomap.backend.Entities.Gove.Governorate;
-import com.jomap.backend.Entities.Gove.GovernorateImage;
-import com.jomap.backend.Entities.Gove.GovernorateImageRepository;
-import com.jomap.backend.Entities.Gove.GovernorateRepository;
+import com.jomap.backend.Entities.Gove.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +13,7 @@ public class GovernorateService {
 
     private final GovernorateRepository governorateRepository;
     private final GovernorateImageRepository imageRepository;
-
+    private final PlaceRepository placeRepository;
 
     public List<Governorate> getAllGovernorates() {
         return governorateRepository.findAll();
@@ -36,4 +33,17 @@ public class GovernorateService {
 
         return imageRepository.save(image);
     }
+    public Place addPlaceToGovernorate(Long governorateId, String name, String description, String imageUrl) {
+        Governorate governorate = governorateRepository.findById(governorateId)
+                .orElseThrow(() -> new RuntimeException("المحافظة غير موجودة"));
+
+        Place place = new Place();
+        place.setName(name);
+        place.setDescription(description);
+        place.setImageUrl(imageUrl);
+        place.setGovernorate(governorate);
+
+        return placeRepository.save(place);
+    }
+
 }
