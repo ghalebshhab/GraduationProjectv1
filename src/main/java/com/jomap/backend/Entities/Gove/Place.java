@@ -1,6 +1,7 @@
 package com.jomap.backend.Entities.Gove;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,5 +33,6 @@ public class Place {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "governorate_id", nullable = false)
     @JsonBackReference("governorate-places")
+    @JsonIgnore
     private Governorate governorate;
 }

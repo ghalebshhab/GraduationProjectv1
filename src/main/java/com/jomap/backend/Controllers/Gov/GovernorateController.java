@@ -1,9 +1,12 @@
 package com.jomap.backend.Controllers.Gov;
 
 
+import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Gove.ImageRequestDto;
 import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Gove.GovernorateImage;
 import com.jomap.backend.Entities.Gove.Place;
+import com.jomap.backend.DTOs.Gove.PlaceRequestDto;
 import com.jomap.backend.Services.Gove.GovernorateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,28 +34,33 @@ public class GovernorateController {
     }
 
     @PostMapping("/{id}/images")
-    public ResponseEntity<?> addImageUrl(
+    public ResponseEntity<ApiResponse<?>> addImageUrl(
             @PathVariable Long id,
-            @RequestParam String imageUrl) {
-        try {
-            GovernorateImage savedImage = governorateService.addImageToGovernorate(id, imageUrl);
-            return ResponseEntity.ok(savedImage);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            @RequestBody ImageRequestDto request) {
+
+        ApiResponse<?> response = governorateService.addImageToGovernorate(id, request.getImageUrl());
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
-    @PostMapping("/{id}/places")
-    public ResponseEntity<?> addPlace(
-            @PathVariable Long id,
-            @RequestParam String name,
-            @RequestParam String description,
-            @RequestParam(required = false) String imageUrl) {
 
-        try {
-            Place savedPlace = governorateService.addPlaceToGovernorate(id, name, description, imageUrl);
-            return ResponseEntity.ok(savedPlace);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+    @PostMapping("/{id}/places")
+    public ResponseEntity<ApiResponse<?>> addPlace(
+            @PathVariable Long id,
+            @RequestBody PlaceRequestDto request) {
+
+        ApiResponse<?> response = governorateService.addPlaceToGovernorate(
+                id,
+                request.getName(),
+                request.getDescription(),
+                request.getImageUrl()
+        );
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }
