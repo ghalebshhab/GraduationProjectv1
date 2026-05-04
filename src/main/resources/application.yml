@@ -1,0 +1,36 @@
+server:
+  port: 8088
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  datasource:
+    url: jdbc:postgresql://ep-hidden-dew-annaq7wt-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: "npg_vQzxhjDuq2i6"
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: jomap.noreply@gmail.com
+    password: wygkpqjrrfjbmfed
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+            logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
