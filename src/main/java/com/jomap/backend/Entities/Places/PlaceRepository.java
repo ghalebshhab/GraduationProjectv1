@@ -28,4 +28,5 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
     long countByApprovedTrueAndActiveTrue();
 
     long countByApprovedFalseAndActiveTrue();
+    long findById();
 }
