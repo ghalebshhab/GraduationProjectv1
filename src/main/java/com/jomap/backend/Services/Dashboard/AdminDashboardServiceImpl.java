@@ -6,8 +6,8 @@ import com.jomap.backend.DTOs.Dashboard.AdminReportResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminStatsResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminUserResponse;
 import com.jomap.backend.DTOs.Places.PlaceResponse;
-import com.jomap.backend.Entities.Places.Place;
-import com.jomap.backend.Entities.Places.PlaceRepository;
+import com.jomap.backend.Entities.Places.LocationList;
+import com.jomap.backend.Entities.Places.LocationListRepo;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
@@ -25,7 +25,7 @@ import java.util.Optional;
 public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     private final UserRepository userRepository;
-    private final PlaceRepository placeRepository;
+    private final LocationListRepo placeRepository;
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
 
@@ -126,17 +126,17 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     @Override
     public ApiResponse<PlaceResponse> approvePlace(Long placeId) {
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
         place.setApproved(true);
         place.setActive(true);
 
-        Place savedPlace = placeRepository.save(place);
+        LocationList savedPlace = placeRepository.save(place);
 
         return ApiResponse.success("Place approved successfully", mapPlaceToResponse(savedPlace));
     }
@@ -144,17 +144,17 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     @Override
     public ApiResponse<PlaceResponse> rejectPlace(Long placeId) {
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
         place.setApproved(false);
         place.setActive(false);
 
-        Place savedPlace = placeRepository.save(place);
+        LocationList savedPlace = placeRepository.save(place);
 
         return ApiResponse.success("Place rejected successfully", mapPlaceToResponse(savedPlace));
     }
@@ -162,16 +162,16 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     @Override
     public ApiResponse<PlaceResponse> deactivatePlace(Long placeId) {
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
         place.setActive(false);
 
-        Place savedPlace = placeRepository.save(place);
+        LocationList savedPlace = placeRepository.save(place);
 
         return ApiResponse.success("Place deactivated successfully", mapPlaceToResponse(savedPlace));
     }
@@ -245,7 +245,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return response;
     }
 
-    private PlaceResponse mapPlaceToResponse(Place place) {
+    private PlaceResponse mapPlaceToResponse(LocationList place) {
 
         PlaceResponse response = new PlaceResponse();
 

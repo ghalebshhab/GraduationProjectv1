@@ -58,9 +58,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
-                .oauth2Login(oauth -> oauth
-                        .successHandler(oAuth2LoginSuccessHandler)
-                )
+//                .oauth2Login(oauth -> oauth
+//                        .successHandler(oAuth2LoginSuccessHandler)
+//                )
 
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

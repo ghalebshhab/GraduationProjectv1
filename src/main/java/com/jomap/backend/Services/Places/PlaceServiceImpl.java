@@ -3,9 +3,9 @@ import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Places.CreatePlaceRequest;
 import com.jomap.backend.DTOs.Places.PlaceResponse;
 import com.jomap.backend.DTOs.Places.UpdatePlaceRequest;
-import com.jomap.backend.Entities.Places.Place;
+import com.jomap.backend.Entities.Places.LocationList;
 import com.jomap.backend.Entities.Places.PlaceCategory;
-import com.jomap.backend.Entities.Places.PlaceRepository;
+import com.jomap.backend.Entities.Places.LocationListRepo;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import lombok.AllArgsConstructor;
@@ -16,7 +16,7 @@ import java.util.Optional;
 @Service
 @AllArgsConstructor
 public class PlaceServiceImpl implements PlaceService {
-    private final PlaceRepository placeRepository;
+    private final LocationListRepo placeRepository;
     private final UserRepository userRepository;
 
 
@@ -41,7 +41,7 @@ public class PlaceServiceImpl implements PlaceService {
             return ApiResponse.error("You already have a place. You can edit your existing place instead.");
         }
 
-        Place place = new Place();
+        LocationList place = new LocationList();
 
         place.setName(request.getName());
         place.setDescription(request.getDescription());
@@ -59,7 +59,7 @@ public class PlaceServiceImpl implements PlaceService {
         place.setRating(0.0);
         place.setReviewCount(0);
 
-        Place savedPlace = placeRepository.save(place);
+        LocationList savedPlace = placeRepository.save(place);
 
         return ApiResponse.success(
                 "Place created successfully. Waiting for admin approval.",
@@ -79,13 +79,13 @@ public class PlaceServiceImpl implements PlaceService {
 
         User currentUser = userResponse.getData();
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
 
         if (place.getOwner() == null || !place.getOwner().getId().equals(currentUser.getId())) {
             return ApiResponse.error("You are not allowed to update this place");
@@ -138,7 +138,7 @@ public class PlaceServiceImpl implements PlaceService {
         */
         place.setApproved(false);
 
-        Place updatedPlace = placeRepository.save(place);
+        LocationList updatedPlace = placeRepository.save(place);
 
         return ApiResponse.success(
                 "Place updated successfully. Waiting for admin approval.",
@@ -149,13 +149,13 @@ public class PlaceServiceImpl implements PlaceService {
     @Override
     public ApiResponse<PlaceResponse> getPlaceById(Long placeId) {
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
 
         if (!Boolean.TRUE.equals(place.getActive())) {
             return ApiResponse.error("Place is not active");
@@ -170,7 +170,7 @@ public class PlaceServiceImpl implements PlaceService {
     @Override
     public ApiResponse<List<PlaceResponse>> getPlaces(String governorate, PlaceCategory category) {
 
-        List<Place> places;
+        List<LocationList> places;
 
         boolean hasGovernorate = governorate != null && !governorate.isBlank();
         boolean hasCategory = category != null;
@@ -206,7 +206,7 @@ public class PlaceServiceImpl implements PlaceService {
 
         User currentUser = userResponse.getData();
 
-        Optional<Place> placeOptional = placeRepository.findByOwnerId(currentUser.getId());
+        Optional<LocationList> placeOptional = placeRepository.findByOwnerId(currentUser.getId());
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("You do not have a place yet");
@@ -221,17 +221,17 @@ public class PlaceServiceImpl implements PlaceService {
     @Override
     public ApiResponse<PlaceResponse> approvePlace(Long placeId) {
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
 
         place.setApproved(true);
 
-        Place savedPlace = placeRepository.save(place);
+        LocationList savedPlace = placeRepository.save(place);
 
         return ApiResponse.success(
                 "Place approved successfully",
@@ -250,13 +250,13 @@ public class PlaceServiceImpl implements PlaceService {
 
         User currentUser = userResponse.getData();
 
-        Optional<Place> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
 
         if (placeOptional.isEmpty()) {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
 
         if (place.getOwner() == null || !place.getOwner().getId().equals(currentUser.getId())) {
             return ApiResponse.error("You are not allowed to delete this place");
@@ -264,7 +264,7 @@ public class PlaceServiceImpl implements PlaceService {
 
         place.setActive(false);
 
-        Place savedPlace = placeRepository.save(place);
+        LocationList savedPlace = placeRepository.save(place);
 
         return ApiResponse.success(
                 "Place deactivated successfully",
@@ -308,7 +308,7 @@ public class PlaceServiceImpl implements PlaceService {
         return ApiResponse.success("User fetched successfully", userOptional.get());
     }
 
-    private PlaceResponse mapToResponse(Place place) {
+    private PlaceResponse mapToResponse(LocationList place) {
 
         PlaceResponse response = new PlaceResponse();
 

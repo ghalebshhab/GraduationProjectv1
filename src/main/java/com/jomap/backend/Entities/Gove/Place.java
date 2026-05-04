@@ -26,8 +26,8 @@ public class Place {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "image_url_places")
+    private String imageUrlForPlaces;
 
 
     @ManyToOne(fetch = FetchType.LAZY)

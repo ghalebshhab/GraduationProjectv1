@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "places")
 @Data
 @NoArgsConstructor
-public class Place {
+public class LocationList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

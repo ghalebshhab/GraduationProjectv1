@@ -7,10 +7,9 @@ import com.jomap.backend.DTOs.Ai.AiChatResponse;
 import com.jomap.backend.DTOs.Ai.ImprovePlaceDescriptionRequest;
 import com.jomap.backend.DTOs.Ai.PlaceRecommendationRequest;
 import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.Entities.Places.Place;
+import com.jomap.backend.Entities.Places.LocationList;
 import com.jomap.backend.Entities.Places.PlaceCategory;
-import com.jomap.backend.Entities.Places.PlaceRepository;
-import lombok.AllArgsConstructor;
+import com.jomap.backend.Entities.Places.LocationListRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -21,13 +20,13 @@ import java.util.List;
 @Service
 public class AiServiceImpl implements AiService {
 
-    private final PlaceRepository placeRepository;
+    private final LocationListRepo placeRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
     @Value("${openai.api.key}")
     private String openAiApiKey;
-    public AiServiceImpl(PlaceRepository placeRepository) {
+    public AiServiceImpl(LocationListRepo placeRepository) {
         this.placeRepository = placeRepository;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
@@ -66,7 +65,7 @@ public class AiServiceImpl implements AiService {
             return ApiResponse.error("User message is required");
         }
 
-        List<Place> places = getPlacesForRecommendation(request);
+        List<LocationList> places = getPlacesForRecommendation(request);
 
         if (places.isEmpty()) {
             AiChatResponse response = new AiChatResponse();
@@ -126,7 +125,7 @@ public class AiServiceImpl implements AiService {
             return ApiResponse.error("Place not found");
         }
 
-        Place place = placeOptional.get();
+        LocationList place = placeOptional.get();
 
         String prompt = """
                 You are JO MAP AI assistant.
@@ -193,7 +192,7 @@ public class AiServiceImpl implements AiService {
         return generateAnswer(prompt);
     }
 
-    private List<Place> getPlacesForRecommendation(PlaceRecommendationRequest request) {
+    private List<LocationList> getPlacesForRecommendation(PlaceRecommendationRequest request) {
 
         boolean hasGovernorate = request.getGovernorate() != null && !request.getGovernorate().isBlank();
         boolean hasCategory = request.getCategory() != null && !request.getCategory().isBlank();

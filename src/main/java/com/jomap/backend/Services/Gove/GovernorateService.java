@@ -52,7 +52,7 @@ public class GovernorateService {
         Place place = new Place();
         place.setName(name);
         place.setDescription(description);
-        place.setImageUrl(imageUrl);
+        place.setImageUrlForPlaces(imageUrl);
         place.setGovernorate(governorate);
 
         Place savedPlace = placeRepository.save(place);
