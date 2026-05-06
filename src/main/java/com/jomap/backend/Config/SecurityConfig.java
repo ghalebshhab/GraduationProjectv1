@@ -39,13 +39,21 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/admin/auth/**").permitAll()
                         .requestMatchers("/api/test/**").authenticated()
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers("/api/governorates/**").permitAll() 
+                        .requestMatchers("/api/dev/**").permitAll()
+                        .requestMatchers("/api/governorates/**").permitAll()
+                        .requestMatchers("/api/events/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/events/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/events").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/upcoming").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/governorate/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
