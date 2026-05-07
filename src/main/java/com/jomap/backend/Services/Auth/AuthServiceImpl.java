@@ -125,11 +125,11 @@ public class AuthServiceImpl implements AuthService {
             profile.setUser(user);
             userProfileRepository.save(profile);
         }
-        try {
-            emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
         String token = jwtService.generateToken(user.getEmail());
 
         LoginResponse response = new LoginResponse(

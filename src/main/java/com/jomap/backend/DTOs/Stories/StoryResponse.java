@@ -11,7 +11,6 @@ public class StoryResponse {
 
     private Long id;
     private Long authorId;
-    private String authorEmail; // optional
     private String mediaUrl;
     private String caption;
     private Instant createdAt;

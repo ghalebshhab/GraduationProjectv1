@@ -88,22 +88,23 @@ public class StoriesServiceImpl implements StoryService {
         TypedQuery<Story> q = entity.createQuery(
                 "FROM Story s " +
                         "WHERE s.isDeleted = false AND s.expiresAt > :now AND s.author.id = :userId " +
-                        "ORDER BY s.createdAt DESC",
+                        "ORDER BY s.createdAt ASC",
                 Story.class
         );
+
         q.setParameter("now", now);
         q.setParameter("userId", userId);
         q.setFirstResult(page * size);
         q.setMaxResults(size);
 
         List<StoryResponse> res = new ArrayList<>();
+
         for (Story s : q.getResultList()) {
             res.add(toResponse(s));
         }
 
         return ApiResponse.success("User active stories fetched successfully", res);
     }
-
     @Override
     @Transactional
     public ApiResponse<String> deleteStory(Long storyId) {
@@ -136,7 +137,6 @@ public class StoriesServiceImpl implements StoryService {
 
         if (s.getAuthor() != null) {
             r.setAuthorId(s.getAuthor().getId());
-            r.setAuthorEmail(s.getAuthor().getEmail());
         }
 
         return r;
