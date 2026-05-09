@@ -1,15 +1,19 @@
 package com.jomap.backend.Entities.Posts;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
-import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post,Long> {
+
+    @Query("SELECT p FROM Post p WHERE p.author.Id = :author_id AND p.isDeleted = false ORDER BY p.createdAt DESC")
+    List<Post> findActivePostsByUserId(@Param("author_id") int userId);
+
     long countByIsDeletedFalse();
 
     long countByIsDeletedTrue();
-//
-//    Optional<Post> findAllByOrderByCreatedAtDesc();
-List<Post> findAll();
+
+    List<Post> findAll();
 }

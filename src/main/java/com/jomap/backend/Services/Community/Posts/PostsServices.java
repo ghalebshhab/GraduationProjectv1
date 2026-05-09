@@ -1,18 +1,16 @@
 package com.jomap.backend.Services.Community.Posts;
 
+import java.util.List;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
 import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
-import com.jomap.backend.Entities.Posts.Post;
-import org.springframework.http.ResponseEntity;
-
-import java.util.List;
 
 public interface PostsServices {
 
 
-        ApiResponse<List<PostResponse>> getAllPosts();
+        ApiResponse<List<PostResponse>> getAllPosts(int userid);
 
         ApiResponse<PostResponse> getPostById(Long postId);
 

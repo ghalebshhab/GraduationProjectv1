@@ -1,25 +1,30 @@
 package com.jomap.backend.Services.Community.Posts;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
 import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
 import com.jomap.backend.Entities.Posts.Post;
-import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Posts.PostRepository;
+import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Community.Posts.Comments.PostCommentService;
 import com.jomap.backend.Services.Community.Posts.Likes.PostLikeService;
+
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -60,13 +65,12 @@ public class PostServiceImpl implements PostsServices {
 
     @Override
     @Transactional
-    public ApiResponse<List<PostResponse>> getAllPosts() {
-        List<PostResponse> responses = postRepository
-                .findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
-                .stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
-                .map(p -> toResponse(p, null, null))
-                .toList();
+    public ApiResponse<List<PostResponse>> getAllPosts(int userId) {
+       List<PostResponse> responses = postRepository
+            .findActivePostsByUserId(userId)
+            .stream()
+            .map(p -> toResponse(p, null, null))
+            .toList();
 
         return ApiResponse.success("Posts fetched successfully", responses);
     }

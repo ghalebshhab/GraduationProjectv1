@@ -1,17 +1,28 @@
 package com.jomap.backend.Controllers.Post;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
 import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
 import com.jomap.backend.Services.Community.Posts.PostsServices;
+
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -21,9 +32,9 @@ public class PostController {
 
     private final PostsServices postService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts() {
-        return ResponseEntity.ok(postService.getAllPosts());
+    @GetMapping("getpostsuser/{userId}")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts(@PathVariable int userId) {
+        return ResponseEntity.ok(postService.getAllPosts(userId));
     }
 
     @GetMapping("/{postId}")
