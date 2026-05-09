@@ -271,8 +271,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setImageUrl(place.getImageUrlP());
         response.setLatitude(place.getLatitude());
         response.setLongitude(place.getLongitude());
-        response.setGovernorate(place.getGovernorate());
-        response.setCategory(place.getCategory());
+        response.setGovernorate(place.getGovernorate() != null ? place.getGovernorate().getName() : null);        response.setCategory(place.getCategory());
         response.setRating(place.getRating());
         response.setReviewCount(place.getReviewCount());
         response.setActive(place.getActive());

@@ -5,10 +5,13 @@ import com.jomap.backend.DTOs.Events.CreateEventRequest;
 import com.jomap.backend.DTOs.Events.EventResponse;
 import com.jomap.backend.Entities.Events.Event;
 import com.jomap.backend.Entities.Events.EventStatus;
+import com.jomap.backend.Entities.Gove.Governorate;
+import com.jomap.backend.Entities.Gove.GovernorateRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Events.EventRepository;
 import com.jomap.backend.Entities.Users.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +25,12 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
 
+    @Autowired
     private final EventRepository eventRepository;
+    @Autowired
     private final UserRepository userRepository;
+    @Autowired
+    private GovernorateRepository governorateRepository;
 
     @Override
     @Transactional
@@ -43,7 +50,14 @@ public class EventServiceImpl implements EventService {
         event.setDate(LocalDate.parse(request.getDate()));
         event.setTime(parseTime(request.getTime()));
         event.setLocationName(request.getLocationName());
-        event.setGovernorate(request.getGovernorate());
+
+        Optional<Governorate> optionalGov = governorateRepository.findByName(request.getGovernorate());
+
+        if (optionalGov.isEmpty()) {
+            return new ApiResponse<>(false, "العملية مرفوضة: المحافظة المحددة غير موجودة في النظام", null);
+        }
+        event.setGovernorate(optionalGov.get());
+
         event.setImageUrl(request.getImageUrl());
         event.setLatitude(request.getLatitude());
         event.setLongitude(request.getLongitude());
@@ -172,7 +186,7 @@ public class EventServiceImpl implements EventService {
                 .date(event.getDate().toString())
                 .time(event.getTime().format(timeFormatter))
                 .locationName(event.getLocationName())
-                .governorate(event.getGovernorate())
+                .governorate(event.getGovernorate() != null ? event.getGovernorate().getName() : null)
                 .imageUrl(event.getImageUrl())
                 .latitude(event.getLatitude())
                 .longitude(event.getLongitude())

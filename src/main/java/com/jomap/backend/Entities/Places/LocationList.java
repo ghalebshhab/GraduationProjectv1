@@ -1,5 +1,6 @@
 package com.jomap.backend.Entities.Places;
 
+import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Users.User;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -34,7 +35,9 @@ public class LocationList {
 
     private Double longitude;
 
-    private String governorate;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "governorate_id", nullable = false)
+    private Governorate governorate;
 
     @Enumerated(EnumType.STRING)
     private PlaceCategory category;

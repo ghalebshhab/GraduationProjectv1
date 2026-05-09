@@ -3,6 +3,8 @@ import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Places.CreatePlaceRequest;
 import com.jomap.backend.DTOs.Places.PlaceResponse;
 import com.jomap.backend.DTOs.Places.UpdatePlaceRequest;
+import com.jomap.backend.Entities.Gove.Governorate;
+import com.jomap.backend.Entities.Gove.GovernorateRepository;
 import com.jomap.backend.Entities.Places.LocationList;
 import com.jomap.backend.Entities.Places.PlaceCategory;
 import com.jomap.backend.Entities.Places.LocationListRepo;
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class PlaceServiceImpl implements PlaceService {
     private final LocationListRepo placeRepository;
     private final UserRepository userRepository;
+    private final GovernorateRepository governorateRepository;
 
 
     @Override
@@ -50,7 +53,13 @@ public class PlaceServiceImpl implements PlaceService {
         place.setImageUrlP(request.getImageUrl());
         place.setLatitude(request.getLatitude());
         place.setLongitude(request.getLongitude());
-        place.setGovernorate(request.getGovernorate());
+        Optional<Governorate> optionalGov = governorateRepository.findByName(request.getGovernorate());
+
+        if (optionalGov.isEmpty()) {
+            return new ApiResponse<>(false, "العملية مرفوضة: المحافظة المحددة غير موجودة", null);
+        }
+
+        place.setGovernorate(optionalGov.get());
         place.setCategory(request.getCategory() == null ? PlaceCategory.OTHER : request.getCategory());
         place.setOwnerUpdate(request.getOwnerUpdate());
         place.setOwner(owner);
@@ -120,7 +129,11 @@ public class PlaceServiceImpl implements PlaceService {
         }
 
         if (request.getGovernorate() != null && !request.getGovernorate().isBlank()) {
-            place.setGovernorate(request.getGovernorate());
+            Optional<Governorate> govToUpdate = governorateRepository.findByName(request.getGovernorate());
+            if (govToUpdate.isEmpty()) {
+                return new ApiResponse<>(false, "العملية مرفوضة: المحافظة الجديدة غير موجودة", null);
+            }
+            place.setGovernorate(govToUpdate.get());
         }
 
         if (request.getCategory() != null) {
@@ -320,8 +333,7 @@ public class PlaceServiceImpl implements PlaceService {
         response.setImageUrl(place.getImageUrlP());
         response.setLatitude(place.getLatitude());
         response.setLongitude(place.getLongitude());
-        response.setGovernorate(place.getGovernorate());
-        response.setCategory(place.getCategory());
+        response.setGovernorate(place.getGovernorate() != null ? place.getGovernorate().getName() : null);        response.setCategory(place.getCategory());
         response.setRating(place.getRating());
         response.setReviewCount(place.getReviewCount());
         response.setActive(place.getActive());

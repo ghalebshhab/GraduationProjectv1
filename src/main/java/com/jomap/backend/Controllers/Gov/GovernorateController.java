@@ -2,6 +2,7 @@ package com.jomap.backend.Controllers.Gov;
 
 
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Gove.GovernorateDetailsResponse;
 import com.jomap.backend.DTOs.Gove.ImageRequestDto;
 import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Gove.GovernorateImage;
@@ -9,6 +10,7 @@ import com.jomap.backend.Entities.Gove.Place;
 import com.jomap.backend.DTOs.Gove.PlaceRequestDto;
 import com.jomap.backend.Services.Gove.GovernorateService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,10 +29,15 @@ public class GovernorateController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Governorate> getById(@PathVariable Long id) {
-        return governorateService.getGovernorateById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ApiResponse<GovernorateDetailsResponse>> getGovernorateDetails(@PathVariable Long id) {
+
+        ApiResponse<GovernorateDetailsResponse> response = governorateService.getGovernorateDetails(id);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
     }
 
     @PostMapping("/{id}/images")

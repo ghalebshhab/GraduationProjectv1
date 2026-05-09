@@ -2,6 +2,7 @@ package com.jomap.backend.Entities.Gove;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.jomap.backend.Entities.Places.PlaceCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,4 +36,8 @@ public class Place {
     @JsonBackReference("governorate-places")
     @JsonIgnore
     private Governorate governorate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private PlaceCategory category;
 }

@@ -1,5 +1,6 @@
 package com.jomap.backend.Entities.Events;
 
+import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Users.User;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -30,7 +31,9 @@ public class Event {
 
     private String locationName;
 
-    private String governorate;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "governorate_id" , nullable = false)
+    private Governorate governorate;
 
     private String imageUrl;
 
