@@ -23,7 +23,7 @@ public class ActivityController {
     @Autowired
     private final ActivityService ActivityService;
 
-    @PostMapping
+    @PostMapping("/create")
     public ApiResponse<ActivityResponse> createActivity(
             @Valid @RequestBody CreateActivityRequest request,
             BindingResult bindingResult,
