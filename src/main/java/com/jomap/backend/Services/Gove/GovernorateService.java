@@ -7,10 +7,12 @@ import com.jomap.backend.DTOs.Places.PlaceResponse;
 import com.jomap.backend.Entities.Events.EventRepository;
 import com.jomap.backend.Entities.Events.EventStatus;
 import com.jomap.backend.Entities.Gove.*;
+import com.jomap.backend.Entities.Places.PlaceCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,23 +84,29 @@ public class GovernorateService {
                 .map(GovernorateImage::getImageUrl)
                 .collect(Collectors.toList());
 
-        List<Place> places = placeRepository.findByGovernorateId(id);
+        List<Place> allPlaces = placeRepository.findByGovernorateId(id);
 
-        Map<String, List<PlaceResponse>> groupedPlaces = places.stream()
-                .map(place -> {
-                    PlaceResponse response = new PlaceResponse();
-                    response.setId(place.getId());
-                    response.setName(place.getName());
-                    response.setDescription(place.getDescription());
-                    response.setImageUrl(place.getImageUrl());
-                    response.setCategory(place.getCategory());
 
-                    return response;
-                })
-                .collect(Collectors.groupingBy(response -> response.getCategory().name()));
+        List<PlaceResponse> suggestions = allPlaces.stream()
+                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
+                    Collections.shuffle(list);
+                    return list.stream();
+                }))
+                .limit(5)
+                .map(this::mapToPlaceResponse)
+                .collect(Collectors.toList());
+
+
+        List<PlaceResponse> historicalPlaces = allPlaces.stream()
+                .filter(p -> p.getCategory() == PlaceCategory.TOURISM)
+                .limit(5)
+                .map(this::mapToPlaceResponse)
+                .collect(Collectors.toList());
+
 
         List<EventResponse> approvedEvents = eventRepository
                 .findByStatusAndGovernorateId(EventStatus.APPROVED, id).stream()
+                .limit(5)
                 .map(event -> {
                     EventResponse response = new EventResponse();
                     response.setId(event.getId());
@@ -110,15 +118,29 @@ public class GovernorateService {
                 })
                 .collect(Collectors.toList());
 
-        // 4. بناء الاستجابة
+
         GovernorateDetailsResponse details = GovernorateDetailsResponse.builder()
                 .id(gov.getId())
                 .name(gov.getName())
                 .images(imageUrls)
-                .placesByCategory(groupedPlaces)
+                .suggestions(suggestions)
+                .historicalPlaces(historicalPlaces)
                 .events(approvedEvents)
                 .build();
 
         return new ApiResponse<>(true, "تم استرجاع تفاصيل المحافظة بنجاح", details);
+    }
+
+
+    private PlaceResponse mapToPlaceResponse(Place place) {
+        if (place == null) return null;
+        PlaceResponse response = new PlaceResponse();
+        response.setId(place.getId());
+        response.setName(place.getName());
+        response.setDescription(place.getDescription());
+        response.setImageUrl(place.getImageUrl());
+
+        response.setCategory(place.getCategory() != null ? place.getCategory() : PlaceCategory.OTHER);
+        return response;
     }
 }
