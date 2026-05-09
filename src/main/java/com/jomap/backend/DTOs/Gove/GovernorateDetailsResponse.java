@@ -14,9 +14,8 @@ public class GovernorateDetailsResponse {
     private Long id;
     private String name;
     private List<String> images;
-
-
-    private Map<String, List<PlaceResponse>> placesByCategory;
+    private List<PlaceResponse> suggestions;
+    private List<PlaceResponse> historicalPlaces;
 
     private List<EventResponse> events;
 }
