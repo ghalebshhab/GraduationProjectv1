@@ -1,16 +1,16 @@
-package com.jomap.backend.DTOs.Events;
+package com.jomap.backend.DTOs.Activities;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
-public class CreateEventRequest {
+public class CreateActivityRequest {
 
-    @NotBlank(message = "عنوان الفعالية مطلوب")
+    @NotBlank(message = "عنوان النشاط مطلوب")
     @Size(min = 5, max = 100, message = "العنوان يجب أن يكون بين 5 و 100 حرف")
     private String title;
 
-    @NotBlank(message = "الوصف مطلوب")
+    @NotBlank(message = "وصف النشاط مطلوب")
     @Size(min = 10, max = 2000, message = "الوصف يجب أن يكون 10 احرف على الأقل")
     private String description;
 
@@ -22,11 +22,17 @@ public class CreateEventRequest {
     @Pattern(regexp = "^(0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$", message = "الوقت يجب أن يكون بصيغة 10:00 AM")
     private String time;
 
-    @NotBlank(message = "اسم الموقع مطلوب")
-    private String locationName;
+    @NotBlank(message = "مكان النشاط مطلوب")
+    private String activityLocation;
 
-    @NotBlank(message = "المحافظة مطلوبة")
-    private String governorate;
+    @NotNull(message = "معرف المحافظة مطلوب")
+    private Long governorateId;
+
+    @Min(value = 0, message = "السعر لا يمكن أن يكون أقل من صفر")
+    private Double price = 0.0;
+
+    @Min(value = 0, message = "عدد الحضور لا يمكن أن يكون أقل من صفر")
+    private Integer attendeesCount = 0;
 
     private String imageUrl;
 

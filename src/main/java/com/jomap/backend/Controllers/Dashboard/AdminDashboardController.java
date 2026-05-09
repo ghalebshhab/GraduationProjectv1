@@ -5,10 +5,10 @@ import com.jomap.backend.DTOs.Dashboard.AdminPostResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminReportResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminStatsResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminUserResponse;
-import com.jomap.backend.DTOs.Events.EventResponse;
+import com.jomap.backend.DTOs.Activities.ActivityResponse;
 import com.jomap.backend.DTOs.Places.PlaceResponse;
 import com.jomap.backend.Services.Dashboard.AdminDashboardService;
-import com.jomap.backend.Services.Events.EventService;
+import com.jomap.backend.Services.Activities.ActivityService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,14 +17,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000" })
 @AllArgsConstructor
 public class AdminDashboardController {
 
     private final AdminDashboardService adminDashboardService;
-    private final EventService eventService;
-
-
+    private final ActivityService ActivityService;
 
     @GetMapping("/dashboard/stats")
     public ResponseEntity<ApiResponse<AdminStatsResponse>> getStats() {
@@ -38,15 +36,13 @@ public class AdminDashboardController {
 
     @PutMapping("/users/{userId}/block")
     public ResponseEntity<ApiResponse<AdminUserResponse>> blockUser(
-            @PathVariable Long userId
-    ) {
+            @PathVariable Long userId) {
         return ResponseEntity.ok(adminDashboardService.blockUser(userId));
     }
 
     @PutMapping("/users/{userId}/unblock")
     public ResponseEntity<ApiResponse<AdminUserResponse>> unblockUser(
-            @PathVariable Long userId
-    ) {
+            @PathVariable Long userId) {
         return ResponseEntity.ok(adminDashboardService.unblockUser(userId));
     }
 
@@ -62,22 +58,19 @@ public class AdminDashboardController {
 
     @PutMapping("/places/{placeId}/approve")
     public ResponseEntity<ApiResponse<PlaceResponse>> approvePlace(
-            @PathVariable Long placeId
-    ) {
+            @PathVariable Long placeId) {
         return ResponseEntity.ok(adminDashboardService.approvePlace(placeId));
     }
 
     @PutMapping("/places/{placeId}/reject")
     public ResponseEntity<ApiResponse<PlaceResponse>> rejectPlace(
-            @PathVariable Long placeId
-    ) {
+            @PathVariable Long placeId) {
         return ResponseEntity.ok(adminDashboardService.rejectPlace(placeId));
     }
 
     @PutMapping("/places/{placeId}/deactivate")
     public ResponseEntity<ApiResponse<PlaceResponse>> deactivatePlace(
-            @PathVariable Long placeId
-    ) {
+            @PathVariable Long placeId) {
         return ResponseEntity.ok(adminDashboardService.deactivatePlace(placeId));
     }
 
@@ -88,8 +81,7 @@ public class AdminDashboardController {
 
     @PutMapping("/posts/{postId}/delete")
     public ResponseEntity<ApiResponse<AdminPostResponse>> deletePost(
-            @PathVariable Long postId
-    ) {
+            @PathVariable Long postId) {
         return ResponseEntity.ok(adminDashboardService.deletePost(postId));
     }
 
@@ -100,26 +92,24 @@ public class AdminDashboardController {
 
     @PutMapping("/reports/{reportId}/resolve")
     public ResponseEntity<ApiResponse<AdminReportResponse>> resolveReport(
-            @PathVariable Long reportId
-    ) {
+            @PathVariable Long reportId) {
         return ResponseEntity.ok(adminDashboardService.resolveReport(reportId));
     }
-    @GetMapping("/events")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEventsForAdmin() {
-        return ResponseEntity.ok(eventService.getAllEventsForAdmin());
+
+    @GetMapping("/Activitys")
+    public ResponseEntity<ApiResponse<List<ActivityResponse>>> getAllActivitysForAdmin() {
+        return ResponseEntity.ok(ActivityService.getAllActivitiesForAdmin());
     }
 
-    @PutMapping("/events/{eventId}/approve")
-    public ResponseEntity<ApiResponse<EventResponse>> approveEvent(
-            @PathVariable Long eventId
-    ) {
-        return ResponseEntity.ok(eventService.approveEvent(eventId));
+    @PutMapping("/Activitys/{ActivityId}/approve")
+    public ResponseEntity<ApiResponse<ActivityResponse>> approveActivity(
+            @PathVariable Long ActivityId) {
+        return ResponseEntity.ok(ActivityService.approveActivity(ActivityId));
     }
 
-    @PutMapping("/events/{eventId}/reject")
-    public ResponseEntity<ApiResponse<EventResponse>> rejectEvent(
-            @PathVariable Long eventId
-    ) {
-        return ResponseEntity.ok(eventService.rejectEvent(eventId));
+    @PutMapping("/Activitys/{ActivityId}/reject")
+    public ResponseEntity<ApiResponse<ActivityResponse>> rejectActivity(
+            @PathVariable Long ActivityId) {
+        return ResponseEntity.ok(ActivityService.rejectActivity(ActivityId));
     }
 }

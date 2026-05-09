@@ -30,31 +30,31 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class PostServiceImpl implements PostsServices {
 
-    private final PostRepository     postRepository;
-    private final UserRepository     userRepository;
-    private final PostLikeService    likesService;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final PostLikeService likesService;
     private final PostCommentService commentsService;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // ALGORITHM WEIGHTS  (each mode must sum to 1.0)
+    // ALGORITHM WEIGHTS (each mode must sum to 1.0)
     // ─────────────────────────────────────────────────────────────────────────
 
     // Warm-start: user has interaction history → personal interests lead
-    private static final double W_INTEREST_WARM   = 0.45;
-    private static final double W_LOCATION_WARM   = 0.30;
+    private static final double W_INTEREST_WARM = 0.45;
+    private static final double W_LOCATION_WARM = 0.30;
     private static final double W_ENGAGEMENT_WARM = 0.15;
-    private static final double W_RECENCY_WARM    = 0.10;
+    private static final double W_RECENCY_WARM = 0.10;
 
     // Cold-start: brand-new user with no history → nearby + popular
-    private static final double W_LOCATION_COLD   = 0.50;
+    private static final double W_LOCATION_COLD = 0.50;
     private static final double W_ENGAGEMENT_COLD = 0.30;
-    private static final double W_RECENCY_COLD    = 0.20;
+    private static final double W_RECENCY_COLD = 0.20;
 
     // Location: characteristic radius for exponential decay (km)
-    private static final double NEAR_RADIUS_KM         = 50.0;
+    private static final double NEAR_RADIUS_KM = 50.0;
 
     // Engagement: what we consider "fully viral" for log-normalization
-    private static final double ENGAGEMENT_CAP          = 500.0;
+    private static final double ENGAGEMENT_CAP = 500.0;
 
     // Recency: half-life in hours (score halves every N hours)
     private static final double RECENCY_HALF_LIFE_HOURS = 24.0;
@@ -124,7 +124,7 @@ public class PostServiceImpl implements PostsServices {
             try {
                 post.setType(Post.PostType.valueOf(request.getType().trim().toUpperCase()));
             } catch (IllegalArgumentException ex) {
-                return ApiResponse.error("Invalid post type: must be COMMUNITY, EVENT, or OFFER");
+                return ApiResponse.error("Invalid post type: must be COMMUNITY, Activity, or OFFER");
             }
         } else {
             post.setType(Post.PostType.COMMUNITY);
@@ -144,8 +144,8 @@ public class PostServiceImpl implements PostsServices {
     @Override
     @Transactional
     public ApiResponse<PostResponse> updatePost(String emailFromToken,
-                                                Long postId,
-                                                UpdatePostRequest request) {
+            Long postId,
+            UpdatePostRequest request) {
         User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
         if (currentUser == null) {
             return ApiResponse.error("User not found");
@@ -171,7 +171,7 @@ public class PostServiceImpl implements PostsServices {
             try {
                 post.setType(Post.PostType.valueOf(request.getType().trim().toUpperCase()));
             } catch (IllegalArgumentException ex) {
-                return ApiResponse.error("Invalid post type: must be COMMUNITY, EVENT, or OFFER");
+                return ApiResponse.error("Invalid post type: must be COMMUNITY, Activity, or OFFER");
             }
         }
 
@@ -179,8 +179,10 @@ public class PostServiceImpl implements PostsServices {
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
             post.setCategory(request.getCategory().trim().toUpperCase());
         }
-        if (request.getLatitude() != null)  post.setLatitude(request.getLatitude());
-        if (request.getLongitude() != null) post.setLongitude(request.getLongitude());
+        if (request.getLatitude() != null)
+            post.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null)
+            post.setLongitude(request.getLongitude());
 
         Post saved = postRepository.save(post);
         return ApiResponse.success("Post updated successfully", toResponse(saved, null, null));
@@ -210,7 +212,7 @@ public class PostServiceImpl implements PostsServices {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PERSONALIZED FEED  — main algorithm
+    // PERSONALIZED FEED — main algorithm
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
@@ -220,8 +222,7 @@ public class PostServiceImpl implements PostsServices {
             double userLat,
             double userLng,
             int page,
-            int size
-    ) {
+            int size) {
         // 1. Resolve current user
         User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
         if (currentUser == null) {
@@ -229,7 +230,7 @@ public class PostServiceImpl implements PostsServices {
         }
 
         // 2. Load all active posts — no date window
-        //    (recency decay handles age; a hard cutoff would hide relevant old posts)
+        // (recency decay handles age; a hard cutoff would hide relevant old posts)
         List<Post> candidates = postRepository
                 .findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
@@ -241,13 +242,13 @@ public class PostServiceImpl implements PostsServices {
         }
 
         // 3. Build normalized interest profile from THIS user's own interactions
-        //    Map: category → weight in [0.0, 1.0]
+        // Map: category → weight in [0.0, 1.0]
         Map<String, Double> interestProfile = buildUserInterestProfile(currentUser.getId());
         boolean isColdStart = interestProfile.isEmpty();
 
         // 4. Pre-fetch engagement counts in bulk — avoids N+1 queries
         List<Long> postIds = candidates.stream().map(Post::getId).toList();
-        Map<Long, Long> likeCounts    = likesService.countByPostIds(postIds);
+        Map<Long, Long> likeCounts = likesService.countByPostIds(postIds);
         Map<Long, Long> commentCounts = commentsService.countByPostIds(postIds);
 
         // 5. Score and sort
@@ -276,7 +277,7 @@ public class PostServiceImpl implements PostsServices {
     // INTEREST PROFILE BUILDER
     //
     // Reads only this user's liked and commented posts.
-    // Signals:  like = 1 pt  |  comment = 1.5 pt (commenting shows stronger intent)
+    // Signals: like = 1 pt | comment = 1.5 pt (commenting shows stronger intent)
     // Result is normalized to [0, 1] so it competes fairly with the other
     // sub-scores in the final weighted formula.
     // ─────────────────────────────────────────────────────────────────────────
@@ -302,11 +303,13 @@ public class PostServiceImpl implements PostsServices {
             });
         }
 
-        if (raw.isEmpty()) return Collections.emptyMap();
+        if (raw.isEmpty())
+            return Collections.emptyMap();
 
         // Normalize: divide by max so every weight lands in [0, 1]
         double maxWeight = Collections.max(raw.values());
-        if (maxWeight == 0) return Collections.emptyMap();
+        if (maxWeight == 0)
+            return Collections.emptyMap();
 
         raw.replaceAll((cat, w) -> w / maxWeight);
         return raw;
@@ -322,24 +325,23 @@ public class PostServiceImpl implements PostsServices {
             boolean isColdStart,
             double userLat, double userLng,
             Map<Long, Long> likeCounts,
-            Map<Long, Long> commentCounts
-    ) {
-        double interestScore   = computeInterestScore(post, interestProfile);
-        double locationScore   = computeLocationScore(post, userLat, userLng);
+            Map<Long, Long> commentCounts) {
+        double interestScore = computeInterestScore(post, interestProfile);
+        double locationScore = computeLocationScore(post, userLat, userLng);
         double engagementScore = computeEngagementScore(post, likeCounts, commentCounts);
-        double recencyScore    = computeRecencyScore(post);
+        double recencyScore = computeRecencyScore(post);
 
         double finalScore = isColdStart
-                ? (locationScore   * W_LOCATION_COLD)
-                + (engagementScore * W_ENGAGEMENT_COLD)
-                + (recencyScore    * W_RECENCY_COLD)
+                ? (locationScore * W_LOCATION_COLD)
+                        + (engagementScore * W_ENGAGEMENT_COLD)
+                        + (recencyScore * W_RECENCY_COLD)
 
-                : (interestScore   * W_INTEREST_WARM)
-                + (locationScore   * W_LOCATION_WARM)
-                + (engagementScore * W_ENGAGEMENT_WARM)
-                + (recencyScore    * W_RECENCY_WARM);
+                : (interestScore * W_INTEREST_WARM)
+                        + (locationScore * W_LOCATION_WARM)
+                        + (engagementScore * W_ENGAGEMENT_WARM)
+                        + (recencyScore * W_RECENCY_WARM);
 
-        Double distanceKm  = computeDistanceKm(post, userLat, userLng);
+        Double distanceKm = computeDistanceKm(post, userLat, userLng);
         String scoreReason = buildScoreReason(interestScore, locationScore, distanceKm, isColdStart);
 
         return new ScoredPost(post, finalScore, distanceKm, scoreReason);
@@ -349,47 +351,52 @@ public class PostServiceImpl implements PostsServices {
     // Returns the normalized category weight [0, 1] — 0 if no category / no data
 
     private double computeInterestScore(Post post, Map<String, Double> profile) {
-        if (post.getCategory() == null || profile.isEmpty()) return 0.0;
+        if (post.getCategory() == null || profile.isEmpty())
+            return 0.0;
         return profile.getOrDefault(post.getCategory().toUpperCase(), 0.0);
     }
 
     // ── Location ──────────────────────────────────────────────────────────────
-    // Exponential decay:  score = e^(-distance / NEAR_RADIUS_KM)
-    //   0 km  → 1.00  |  50 km → 0.37  |  100 km → 0.14  |  200 km → 0.02
-    // Posts with no coordinates score 0 but can still surface via interest/engagement.
+    // Exponential decay: score = e^(-distance / NEAR_RADIUS_KM)
+    // 0 km → 1.00 | 50 km → 0.37 | 100 km → 0.14 | 200 km → 0.02
+    // Posts with no coordinates score 0 but can still surface via
+    // interest/engagement.
 
     private double computeLocationScore(Post post, double userLat, double userLng) {
-        if (post.getLatitude() == null || post.getLongitude() == null) return 0.0;
+        if (post.getLatitude() == null || post.getLongitude() == null)
+            return 0.0;
         double distKm = haversineKm(userLat, userLng, post.getLatitude(), post.getLongitude());
         return Math.exp(-distKm / NEAR_RADIUS_KM);
     }
 
     private Double computeDistanceKm(Post post, double userLat, double userLng) {
-        if (post.getLatitude() == null || post.getLongitude() == null) return null;
+        if (post.getLatitude() == null || post.getLongitude() == null)
+            return null;
         return haversineKm(userLat, userLng, post.getLatitude(), post.getLongitude());
     }
 
     // ── Engagement ────────────────────────────────────────────────────────────
     // Log-normalized so viral posts don't infinitely dominate moderate ones.
     // raw = likes*0.4 + comments*0.6
-    // score = log(1 + raw) / log(1 + ENGAGEMENT_CAP)  →  [0, 1]
+    // score = log(1 + raw) / log(1 + ENGAGEMENT_CAP) → [0, 1]
 
     private double computeEngagementScore(Post post,
-                                          Map<Long, Long> likeCounts,
-                                          Map<Long, Long> commentCounts) {
-        double likes    = likeCounts.getOrDefault(post.getId(), 0L);
+            Map<Long, Long> likeCounts,
+            Map<Long, Long> commentCounts) {
+        double likes = likeCounts.getOrDefault(post.getId(), 0L);
         double comments = commentCounts.getOrDefault(post.getId(), 0L);
-        double raw      = (likes * 0.4) + (comments * 0.6);
+        double raw = (likes * 0.4) + (comments * 0.6);
         return Math.min(Math.log1p(raw) / Math.log1p(ENGAGEMENT_CAP), 1.0);
     }
 
     // ── Recency ───────────────────────────────────────────────────────────────
     // Exponential decay with 24-hour half-life.
     // score = 0.5^(hoursOld / RECENCY_HALF_LIFE_HOURS)
-    //   0 h → 1.00  |  24 h → 0.50  |  72 h → 0.125  |  7 days → ~0.02
+    // 0 h → 1.00 | 24 h → 0.50 | 72 h → 0.125 | 7 days → ~0.02
 
     private double computeRecencyScore(Post post) {
-        if (post.getCreatedAt() == null) return 0.0;
+        if (post.getCreatedAt() == null)
+            return 0.0;
         long hoursOld = Math.max(Duration.between(post.getCreatedAt(), Instant.now()).toHours(), 0);
         return Math.pow(0.5, (double) hoursOld / RECENCY_HALF_LIFE_HOURS);
     }
@@ -404,29 +411,33 @@ public class PostServiceImpl implements PostsServices {
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                        * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SCORE REASON  (human-readable label returned to the frontend)
+    // SCORE REASON (human-readable label returned to the frontend)
     // ─────────────────────────────────────────────────────────────────────────
 
     private String buildScoreReason(double interestScore,
-                                    double locationScore,
-                                    Double distanceKm,
-                                    boolean isColdStart) {
-        boolean hasInterest = interestScore > 0.05;   // >5 % match threshold
-        boolean isNear      = locationScore  > 0.30;  // within ~60 km
+            double locationScore,
+            Double distanceKm,
+            boolean isColdStart) {
+        boolean hasInterest = interestScore > 0.05; // >5 % match threshold
+        boolean isNear = locationScore > 0.30; // within ~60 km
 
         String distLabel = distanceKm != null
                 ? String.format("%.1f km away", distanceKm)
                 : "near you";
 
-        if (isColdStart && isNear)  return "Popular near you · " + distLabel;
-        if (hasInterest && isNear)  return "Matches your interests · " + distLabel;
-        if (hasInterest)            return "Matches your interests";
-        if (isNear)                 return "Near you · " + distLabel;
+        if (isColdStart && isNear)
+            return "Popular near you · " + distLabel;
+        if (hasInterest && isNear)
+            return "Matches your interests · " + distLabel;
+        if (hasInterest)
+            return "Matches your interests";
+        if (isNear)
+            return "Near you · " + distLabel;
         return "Popular post";
     }
 
@@ -468,6 +479,6 @@ public class PostServiceImpl implements PostsServices {
             Post post,
             double score,
             Double distanceKm,
-            String scoreReason
-    ) {}
+            String scoreReason) {
+    }
 }

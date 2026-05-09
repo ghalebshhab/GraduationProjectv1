@@ -1,6 +1,6 @@
 package com.jomap.backend.DTOs.Gove;
 
-import com.jomap.backend.DTOs.Events.EventResponse;
+import com.jomap.backend.DTOs.Activities.ActivityResponse;
 import com.jomap.backend.DTOs.Places.PlaceResponse;
 import lombok.Builder;
 import lombok.Data;
@@ -17,5 +17,7 @@ public class GovernorateDetailsResponse {
     private List<PlaceResponse> suggestions;
     private List<PlaceResponse> historicalPlaces;
 
-    private List<EventResponse> events;
+    private Map<String, List<PlaceResponse>> placesByCategory;
+
+    private List<ActivityResponse> activities;
 }

@@ -1,4 +1,4 @@
-package com.jomap.backend.Entities.Events;
+package com.jomap.backend.Entities.Activities;
 
 import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Users.User;
@@ -9,9 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "events")
+@Table(name = "activities") 
 @Data
-public class Event {
+public class Activity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,10 +29,15 @@ public class Event {
     @Column(nullable = false)
     private LocalTime time;
 
-    private String locationName;
+    @Column(name = "activity_location")
+    private String activityLocation; 
+
+    private Double price = 0.0; 
+    
+    private Integer attendeesCount = 0; 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "governorate_id" , nullable = false)
+    @JoinColumn(name = "governorate_id", nullable = false)
     private Governorate governorate;
 
     private String imageUrl;
@@ -43,7 +48,7 @@ public class Event {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EventStatus status = EventStatus.PENDING;
+    private ActivityStatus status = ActivityStatus.PENDING;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)

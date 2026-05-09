@@ -1,11 +1,11 @@
 package com.jomap.backend.Services.Gove;
 
 import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.DTOs.Events.EventResponse;
+import com.jomap.backend.DTOs.Activities.ActivityResponse;
 import com.jomap.backend.DTOs.Gove.GovernorateDetailsResponse;
 import com.jomap.backend.DTOs.Places.PlaceResponse;
-import com.jomap.backend.Entities.Events.EventRepository;
-import com.jomap.backend.Entities.Events.EventStatus;
+import com.jomap.backend.Entities.Activities.ActivityRepository;
+import com.jomap.backend.Entities.Activities.ActivityStatus;
 import com.jomap.backend.Entities.Gove.*;
 import com.jomap.backend.Entities.Places.PlaceCategory;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class GovernorateService {
     @Autowired
     private final PlaceRepository placeRepository;
     @Autowired
-    private EventRepository eventRepository;
+    private ActivityRepository ActivityRepository;
 
     public List<Governorate> getAllGovernorates() {
         return governorateRepository.findAll();
@@ -55,7 +55,8 @@ public class GovernorateService {
         return ApiResponse.success("تمت إضافة الصورة بنجاح", savedImage);
     }
 
-    public ApiResponse<Place> addPlaceToGovernorate(Long governorateId, String name, String description, String imageUrl) {
+    public ApiResponse<Place> addPlaceToGovernorate(Long governorateId, String name, String description,
+            String imageUrl) {
         Optional<Governorate> governorateOpt = governorateRepository.findById(governorateId);
 
         if (governorateOpt.isEmpty()) {
@@ -104,16 +105,15 @@ public class GovernorateService {
                 .collect(Collectors.toList());
 
 
-        List<EventResponse> approvedEvents = eventRepository
-                .findByStatusAndGovernorateId(EventStatus.APPROVED, id).stream()
-                .limit(5)
-                .map(event -> {
-                    EventResponse response = new EventResponse();
-                    response.setId(event.getId());
-                    response.setTitle(event.getTitle());
-                    response.setDescription(event.getDescription());
-                    response.setImageUrl(event.getImageUrl());
-                    response.setDate(event.getDate().toString());
+        List<ActivityResponse> approvedActivitys = ActivityRepository
+                .findByStatusAndGovernorateId(ActivityStatus.APPROVED, id).stream() .limit(5)
+                .map(Activity -> {
+                    ActivityResponse response = new ActivityResponse();
+                    response.setId(Activity.getId());
+                    response.setTitle(Activity.getTitle());
+                    response.setDescription(Activity.getDescription());
+                    response.setImageUrl(Activity.getImageUrl());
+                    response.setDate(Activity.getDate().toString());
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -123,9 +123,9 @@ public class GovernorateService {
                 .id(gov.getId())
                 .name(gov.getName())
                 .images(imageUrls)
-                .suggestions(suggestions)
-                .historicalPlaces(historicalPlaces)
-                .events(approvedEvents)
+                .suggestions(suggestions)         
+                .historicalPlaces(historicalPlaces) 
+                .activities(approvedActivitys)     
                 .build();
 
         return new ApiResponse<>(true, "تم استرجاع تفاصيل المحافظة بنجاح", details);

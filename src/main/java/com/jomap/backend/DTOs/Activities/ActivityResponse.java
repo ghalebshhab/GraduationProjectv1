@@ -1,4 +1,5 @@
-package com.jomap.backend.DTOs.Events;
+package com.jomap.backend.DTOs.Activities;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EventResponse {
+public class ActivityResponse {
 
     private Long id;
 
@@ -20,9 +21,9 @@ public class EventResponse {
 
     private String time;
 
-    private String locationName;
+    private String activityLocation;
 
-    private String governorate;
+    private Long governorateId;
 
     private String imageUrl;
 
@@ -30,7 +31,11 @@ public class EventResponse {
 
     private Double longitude;
 
-    private String status;
+    private Double price;
+
+    private Integer attendeesCount; 
+
+    private Long statusId;;
 
     private Long createdById;
 

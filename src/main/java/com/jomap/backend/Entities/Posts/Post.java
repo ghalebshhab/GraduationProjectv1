@@ -20,22 +20,21 @@ import java.util.List;
 @Data
 public class Post {
 
-    public enum PostType { COMMUNITY, EVENT, OFFER }
+    public enum PostType {
+        COMMUNITY, Activity, OFFER
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = false)
     @JsonIgnore
     private List<PostComment> comments = new ArrayList<>();
-
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = false)
     @JsonIgnore
@@ -44,22 +43,18 @@ public class Post {
     @Column(nullable = false, length = 2000)
     private String content;
 
-
     @Column(name = "media_url", length = 500)
     private String mediaUrl;
-
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PostType type = PostType.COMMUNITY;
-
 
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
     @Column(nullable = false, name = "created_at", updatable = false)
     private Instant createdAt;
-
 
     @Column(name = "updated_at")
     private Instant updatedAt;
@@ -82,8 +77,6 @@ public class Post {
         this.updatedAt = Instant.now();
     }
 
-
-
     public Post(User author, String content, String mediaUrl, PostType type) {
         this.author = author;
         this.content = content;
@@ -91,4 +84,4 @@ public class Post {
         this.type = type;
     }
 
-    }
+}

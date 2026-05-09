@@ -1,12 +1,11 @@
-package com.jomap.backend.Controllers.Events;
+package com.jomap.backend.Controllers.Activities;
 
-import com.jomap.backend.DTOs.Events.CreateEventRequest;
-import com.jomap.backend.DTOs.Events.EventResponse;
+import com.jomap.backend.DTOs.Activities.CreateActivityRequest;
+import com.jomap.backend.DTOs.Activities.ActivityResponse;
 import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.Services.Events.EventService;
+import com.jomap.backend.Services.Activities.ActivityService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -16,21 +15,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/events")
+@RequestMapping("/api/activities")
 @AllArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
-public class EventController {
+public class ActivityController {
 
     @Autowired
-    private final EventService eventService;
-
+    private final ActivityService ActivityService;
 
     @PostMapping
-    public ApiResponse<EventResponse> createEvent(
-            @Valid @RequestBody CreateEventRequest request,
+    public ApiResponse<ActivityResponse> createActivity(
+            @Valid @RequestBody CreateActivityRequest request,
             BindingResult bindingResult,
-            Principal principal
-    ) {
+            Principal principal) {
+
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors()
                     .stream()
@@ -46,40 +44,34 @@ public class EventController {
 
         String email = principal.getName();
 
-        return eventService.createEvent(request, email);
+        return ActivityService.createActivity(request, email);
     }
 
     @GetMapping
-    public ApiResponse<List<EventResponse>> getApprovedEvents() {
-        return eventService.getApprovedEvents();
+    public ApiResponse<List<ActivityResponse>> getApprovedActivities() {
+        return ActivityService.getApprovedActivities();
     }
 
     @GetMapping("/upcoming")
-    public ApiResponse<List<EventResponse>> getUpcomingEvents() {
-        return eventService.getUpcomingApprovedEvents();
+    public ApiResponse<List<ActivityResponse>> getUpcomingActivities() {
+        return ActivityService.getUpcomingApprovedActivities();
     }
 
-    @GetMapping("/governorate/{governorate}")
-    public ApiResponse<List<EventResponse>> getEventsByGovernorate(
-            @PathVariable String governorate
-    ) {
-        return eventService.getEventsByGovernorate(governorate);
+    @GetMapping("/governorate/{governorateId}")
+    public ApiResponse<List<ActivityResponse>> getActivitiesByGovernorate(
+            @PathVariable Long governorateId) {
+        return ActivityService.getActivitiesByGovernorate(governorateId);
     }
 
     @GetMapping("/my")
-    public ApiResponse<List<EventResponse>> getMyEvents(
-            Principal principal
-    ) {
+    public ApiResponse<List<ActivityResponse>> getMyActivities(
+            Principal principal) {
         if (principal == null) {
             return ApiResponse.error("User is not authenticated");
         }
 
         String email = principal.getName();
 
-        return eventService.getMyEvents(email);
+        return ActivityService.getMyActivities(email);
     }
-
-
-
-
 }

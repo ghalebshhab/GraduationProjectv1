@@ -18,64 +18,62 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
-    private final CustomUserDetailsService userDetailsService;
+        private final JwtAuthFilter jwtAuthFilter;
+        private final CustomUserDetailsService userDetailsService;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          CustomUserDetailsService userDetailsService) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.userDetailsService = userDetailsService;
-    }
+        public SecurityConfig(JwtAuthFilter jwtAuthFilter,
+                        CustomUserDetailsService userDetailsService) {
+                this.jwtAuthFilter = jwtAuthFilter;
+                this.userDetailsService = userDetailsService;
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/auth/**").permitAll()
-                        .requestMatchers("/api/test/**").authenticated()
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-                        .requestMatchers("/api/dev/**").permitAll()
-                        .requestMatchers("/api/governorates/**").permitAll()
-                        .requestMatchers("/api/events/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/events/my").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/events").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/events/upcoming").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/events/governorate/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .userDetailsService(userDetailsService)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                http
+                                .csrf(csrf -> csrf.disable())
+                                .cors(Customizer.withDefaults())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                .requestMatchers("/api/auth/**").permitAll()
+                                                .requestMatchers("/api/admin/auth/**").permitAll()
+                                                .requestMatchers("/api/test/**").authenticated()
+                                                .requestMatchers(
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
+                                                .requestMatchers("/api/dev/**").permitAll()
+                                                .requestMatchers("/api/governorates/**").permitAll()
+                                                .requestMatchers("/api/Activitys/admin/**").hasAuthority("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/api/Activitys").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/Activitys/my").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/Activitys").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/Activitys/upcoming").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/Activitys/governorate/**")
+                                                .permitAll()
+                                                .anyRequest().authenticated())
+                                .userDetailsService(userDetailsService)
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+                configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(List.of("*"));
+                configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
 
-        return source;
-    }
-
+                return source;
+        }
 
 }
