@@ -96,18 +96,18 @@ public class AdminDashboardController {
         return ResponseEntity.ok(adminDashboardService.resolveReport(reportId));
     }
 
-    @GetMapping("/Activitys")
-    public ResponseEntity<ApiResponse<List<ActivityResponse>>> getAllActivitysForAdmin() {
+    @GetMapping("/Activities")
+    public ResponseEntity<ApiResponse<List<ActivityResponse>>> getAllActivitiesForAdmin() {
         return ResponseEntity.ok(ActivityService.getAllActivitiesForAdmin());
     }
 
-    @PutMapping("/Activitys/{ActivityId}/approve")
+    @PutMapping("/Activities/{ActivityId}/approve")
     public ResponseEntity<ApiResponse<ActivityResponse>> approveActivity(
             @PathVariable Long ActivityId) {
         return ResponseEntity.ok(ActivityService.approveActivity(ActivityId));
     }
 
-    @PutMapping("/Activitys/{ActivityId}/reject")
+    @PutMapping("/Activities/{ActivityId}/reject")
     public ResponseEntity<ApiResponse<ActivityResponse>> rejectActivity(
             @PathVariable Long ActivityId) {
         return ResponseEntity.ok(ActivityService.rejectActivity(ActivityId));

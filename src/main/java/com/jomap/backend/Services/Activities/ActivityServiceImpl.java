@@ -80,7 +80,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
-        return ApiResponse.success("Approved Activitys fetched successfully", activities);
+        return ApiResponse.success("Approved Activities fetched successfully", activities);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
-        return ApiResponse.success("Upcoming Activitys fetched successfully", activities);
+        return ApiResponse.success("Upcoming Activities fetched successfully", activities);
     }
 
     @Override

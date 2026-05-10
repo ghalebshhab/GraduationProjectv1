@@ -87,7 +87,6 @@ public class GovernorateService {
 
         List<Place> allPlaces = placeRepository.findByGovernorateId(id);
 
-
         List<PlaceResponse> suggestions = allPlaces.stream()
                 .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
                     Collections.shuffle(list);
@@ -97,16 +96,14 @@ public class GovernorateService {
                 .map(this::mapToPlaceResponse)
                 .collect(Collectors.toList());
 
-
         List<PlaceResponse> historicalPlaces = allPlaces.stream()
                 .filter(p -> p.getCategory() == PlaceCategory.TOURISM)
                 .limit(5)
                 .map(this::mapToPlaceResponse)
                 .collect(Collectors.toList());
 
-
-        List<ActivityResponse> approvedActivitys = ActivityRepository
-                .findByStatusAndGovernorateId(ActivityStatus.APPROVED, id).stream() .limit(5)
+        List<ActivityResponse> approvedActivities = ActivityRepository
+                .findByStatusAndGovernorateId(ActivityStatus.APPROVED, id).stream().limit(5)
                 .map(Activity -> {
                     ActivityResponse response = new ActivityResponse();
                     response.setId(Activity.getId());
@@ -118,22 +115,21 @@ public class GovernorateService {
                 })
                 .collect(Collectors.toList());
 
-
         GovernorateDetailsResponse details = GovernorateDetailsResponse.builder()
                 .id(gov.getId())
                 .name(gov.getName())
                 .images(imageUrls)
-                .suggestions(suggestions)         
-                .historicalPlaces(historicalPlaces) 
-                .activities(approvedActivitys)     
+                .suggestions(suggestions)
+                .historicalPlaces(historicalPlaces)
+                .activities(approvedActivities)
                 .build();
 
         return new ApiResponse<>(true, "تم استرجاع تفاصيل المحافظة بنجاح", details);
     }
 
-
     private PlaceResponse mapToPlaceResponse(Place place) {
-        if (place == null) return null;
+        if (place == null)
+            return null;
         PlaceResponse response = new PlaceResponse();
         response.setId(place.getId());
         response.setName(place.getName());
