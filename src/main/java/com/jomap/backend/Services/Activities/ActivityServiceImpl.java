@@ -1,24 +1,26 @@
 package com.jomap.backend.Services.Activities;
 
-import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.DTOs.Activities.CreateActivityRequest;
-import com.jomap.backend.DTOs.Activities.ActivityResponse;
-import com.jomap.backend.Entities.Activities.Activity;
-import com.jomap.backend.Entities.Activities.ActivityStatus;
-import com.jomap.backend.Entities.Gove.Governorate;
-import com.jomap.backend.Entities.Gove.GovernorateRepository;
-import com.jomap.backend.Entities.Users.User;
-import com.jomap.backend.Entities.Activities.ActivityRepository;
-import com.jomap.backend.Entities.Users.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.jomap.backend.DTOs.Activities.ActivityResponse;
+import com.jomap.backend.DTOs.Activities.CreateActivityRequest;
+import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.Entities.Activities.Activity;
+import com.jomap.backend.Entities.Activities.ActivityRepository;
+import com.jomap.backend.Entities.Activities.ActivityStatus;
+import com.jomap.backend.Entities.Gove.Governorate;
+import com.jomap.backend.Entities.Gove.GovernorateRepository;
+import com.jomap.backend.Entities.Users.User;
+import com.jomap.backend.Entities.Users.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +47,8 @@ public class ActivityServiceImpl implements ActivityService {
         Activity activity = new Activity();
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
-        activity.setDate(LocalDate.parse(request.getDate()));
-        activity.setTime(parseTime(request.getTime()));
+        activity.setDate(request.getDate());
+        activity.setTime(request.getTime());
         activity.setActivityLocation(request.getActivityLocation());
         activity.setGovernorate(optionalGov.get());
         activity.setImageUrl(request.getImageUrl());
@@ -54,6 +56,8 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setLongitude(request.getLongitude());
         activity.setStatus(ActivityStatus.PENDING);
         activity.setCreatedBy(user);
+        activity.setPrice(request.getPrice());
+        activity.setAttendeesCount(request.getAttendeesCount());
 
         Activity savedActivity = activityRepository.save(activity);
         return ApiResponse.success("تم إنشاء النشاط بنجاح وهو بانتظار موافقة المسؤول", mapToResponse(savedActivity));
@@ -178,11 +182,13 @@ public class ActivityServiceImpl implements ActivityService {
                 .title(activity.getTitle())
                 .description(activity.getDescription())
                 .date(activity.getDate().toString())
-                .time(activity.getTime().format(DateTimeFormatter.ofPattern("hh:mm a")))
+                .time(activity.getTime())
                 .activityLocation(activity.getActivityLocation())
                 .governorateId(activity.getGovernorate().getId())
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
+                .price(activity.getPrice())
+                .attendeesCount(activity.getAttendeesCount())
                 .longitude(activity.getLongitude())
                 .statusId((long) activity.getStatus().getId())
                 .createdById(activity.getCreatedBy().getId())

@@ -1,6 +1,9 @@
 package com.jomap.backend.DTOs.Activities;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -14,12 +17,8 @@ public class CreateActivityRequest {
     @Size(min = 10, max = 2000, message = "الوصف يجب أن يكون 10 احرف على الأقل")
     private String description;
 
-    @NotBlank(message = "التاريخ مطلوب")
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "التاريخ يجب أن يكون بصيغة YYYY-MM-DD")
     private String date;
 
-    @NotBlank(message = "الوقت مطلوب")
-    @Pattern(regexp = "^(0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$", message = "الوقت يجب أن يكون بصيغة 10:00 AM")
     private String time;
 
     @NotBlank(message = "مكان النشاط مطلوب")

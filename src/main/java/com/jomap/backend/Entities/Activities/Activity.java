@@ -2,11 +2,19 @@ package com.jomap.backend.Entities.Activities;
 
 import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Users.User;
-import jakarta.persistence.*;
-import lombok.Data;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Table(name = "activities") 
@@ -24,17 +32,19 @@ public class Activity {
     private String description;
 
     @Column(nullable = false)
-    private LocalDate date;
+    private String date;
 
     @Column(nullable = false)
-    private LocalTime time;
+    private String time;
 
     @Column(name = "activity_location")
     private String activityLocation; 
-
-    private Double price = 0.0; 
     
-    private Integer attendeesCount = 0; 
+    @Column(nullable = true)
+    private Double price ;
+
+    @Column(nullable = true)
+    private Integer attendeesCount ; 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "governorate_id", nullable = false)
