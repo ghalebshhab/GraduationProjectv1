@@ -27,44 +27,43 @@ public class LocationServiceImpl implements LocationService {
     private final GovernorateRepository governorateRepository;
 
     @Override
-    public ApiResponse<LocationResponse> createLocation(CreateLocationRequest request, String currentUserEmail) {
-        // 1. التحقق من المستخدم والبيانات
-        ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
-        if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+public ApiResponse<LocationResponse> createLocation(CreateLocationRequest request, String currentUserEmail) {
+    ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
+    if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
 
-        User owner = userResponse.getData();
-        ApiResponse<Void> validationResponse = validateCreateRequest(request);
-        if (!validationResponse.isSuccess()) return ApiResponse.error(validationResponse.getMessage());
-
-        // 2. التحقق من قاعدة "موقع واحد لكل مالك"
-        if (locationRepository.existsByOwnerId(owner.getId())) {
-            return ApiResponse.error("لديك موقع مسجل بالفعل، يمكنك تعديل موقعك الحالي.");
-        }
-
-        // 3. بناء الكيان (Entity) وضبط الحالة الابتدائية
-        LocationList location = new LocationList();
-        mapRequestToEntity(location, request);
-        
-        Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
-        if (optionalGov.isEmpty()) return ApiResponse.error("المحافظة المحددة غير موجودة");
-        location.setGovernorate(optionalGov.get());
-
-        location.setOwner(owner);
-        location.setRating(0.0);
-        location.setReviewCount(0);
-
-        // ضبط الحالات بناءً على دورة الحياة المعتمدة
-        location.setStatus(LocationStatus.PENDING_APPROVAL); // الحالة الأساسية: قيد الانتظار
-        location.setActive(true);  // السجل موجود في النظام
-        location.setApproved(false); // لم ينشر للعامة بعد
-
-        LocationList savedLocation = locationRepository.save(location);
-
-        return ApiResponse.success(
-                "تم إنشاء الموقع بنجاح، بانتظار موافقة المسؤول.",
-                mapToResponse(savedLocation)
-        );
+    User owner = userResponse.getData();
+    
+    if (request.getGovernorateId() == null) {
+        return ApiResponse.error("يجب اختيار المحافظة");
     }
+
+    ApiResponse<Void> validationResponse = validateCreateRequest(request);
+    if (!validationResponse.isSuccess()) return ApiResponse.error(validationResponse.getMessage());
+
+    if (locationRepository.existsByOwnerId(owner.getId())) {
+        return ApiResponse.error("لديك موقع مسجل بالفعل، يمكنك تعديل موقعك الحالي.");
+    }
+
+    LocationList location = new LocationList();
+    mapRequestToEntity(location, request);
+    
+    return governorateRepository.findById(request.getGovernorateId())
+            .map(gov -> {
+                location.setGovernorate(gov);
+                location.setOwner(owner);
+                
+                location.setStatus(LocationStatus.PENDING);
+                location.setApproved(false);
+                location.setActive(true);
+
+                LocationList savedLocation = locationRepository.save(location);
+                return ApiResponse.success(
+                        "تم إنشاء الموقع بنجاح، بانتظار موافقة المسؤول.",
+                        mapToResponse(savedLocation)
+                );
+            }).orElse(ApiResponse.error("المحافظة المحددة غير موجودة في النظام"));
+}
+
 
     @Override
     public ApiResponse<LocationResponse> updateLocation(Long locationId, UpdateLocationRequest request, String currentUserEmail) {
@@ -85,7 +84,7 @@ public class LocationServiceImpl implements LocationService {
         updateEntityFields(location, request);
 
         // حسب المخطط: التعديل يعيد الموقع لحالة الانتظار للمراجعة
-        location.setStatus(LocationStatus.PENDING_APPROVAL);
+        location.setStatus(LocationStatus.PENDING);
         location.setApproved(false); 
 
         return ApiResponse.success("تم تحديث البيانات، بانتظار المراجعة.", mapToResponse(locationRepository.save(location)));
@@ -198,9 +197,12 @@ public class LocationServiceImpl implements LocationService {
         response.setLogoUrl(location.getLogoUrl());
         response.setLatitude(location.getLatitude());
         response.setLongitude(location.getLongitude());
-        response.setGovernorate(location.getGovernorate() != null ? location.getGovernorate().getName() : null);
+       if (location.getGovernorate() != null) {
+        response.setGovernorateName(location.getGovernorate().getName()); 
+        response.setGovernorateId(location.getGovernorate().getId()); 
+        }  
         response.setCategory(location.getCategory());
-        response.setStatus(location.getStatus()); // إرجاع الحالة للفرونت
+        response.setStatus(location.getStatus()); 
         response.setRating(location.getRating());
         response.setReviewCount(location.getReviewCount());
         response.setCreatedAt(location.getCreatedAt());

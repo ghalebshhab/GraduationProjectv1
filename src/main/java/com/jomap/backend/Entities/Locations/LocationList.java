@@ -71,7 +71,7 @@ public class LocationList {
         updatedAt = LocalDateTime.now();
         
         // عند الإنشاء: الحالة دائماً بانتظار الموافقة
-        this.status = LocationStatus.PENDING_APPROVAL; 
+        this.status = LocationStatus.PENDING; 
         this.approved = false; 
         this.active = true; // موجود في النظام كـ "سجل" ولكن غير منشور
 

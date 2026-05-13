@@ -15,7 +15,8 @@ public class LocationResponse {
     private String phoneNumber;
     private Double latitude;
     private Double longitude;
-    private String governorate; 
+    private Long governorateId;   
+    private String governorateName;
     private LocationCategory category;
     private LocationStatus status;
     
