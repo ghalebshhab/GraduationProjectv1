@@ -9,19 +9,21 @@ import lombok.Data;
 @Data
 public class CreateActivityRequest {
 
-    @NotBlank(message = "عنوان النشاط مطلوب")
+    @NotBlank(message = "عنوان النشاط او الفعالية مطلوب")
     @Size(min = 5, max = 100, message = "العنوان يجب أن يكون بين 5 و 100 حرف")
     private String title;
 
-    @NotBlank(message = "وصف النشاط مطلوب")
+    @NotBlank(message = "وصف النشاط او الفعالية مطلوب")
     @Size(min = 10, max = 2000, message = "الوصف يجب أن يكون 10 احرف على الأقل")
     private String description;
 
+    @NotBlank(message = "التاريخ مطلوب")
     private String date;
 
+    @NotBlank(message = "الوقت مطلوب")
     private String time;
 
-    @NotBlank(message = "مكان النشاط مطلوب")
+    @NotBlank(message = "مكان النشاط او الفعالية مطلوب")
     private String activityLocation;
 
     @NotNull(message = "معرف المحافظة مطلوب")
