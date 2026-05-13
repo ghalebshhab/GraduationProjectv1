@@ -1,14 +1,22 @@
 package com.jomap.backend.Controllers;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.UserProfile.UpdateUserProfileRequest;
 import com.jomap.backend.DTOs.UserProfile.UserProfileResponse;
 import com.jomap.backend.Services.Users.Profile.UserProfileService;
+
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/profile")
@@ -28,7 +36,7 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.getProfileByUserId(userId));
     }
 
-    @PutMapping("/me")
+    @PutMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateUserProfileRequest request
