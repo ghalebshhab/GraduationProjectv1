@@ -1,6 +1,7 @@
 package com.jomap.backend.DTOs.Gove;
 
-import com.jomap.backend.Entities.Places.PlaceCategory;
+import com.jomap.backend.Entities.Locations.LocationCategory;
+
 import lombok.Data;
 
 @Data
@@ -8,5 +9,5 @@ public class PlaceRequestDto {
     private String name;
     private String description;
     private String imageUrl;
-    private PlaceCategory category;
+    private LocationCategory category;
 }

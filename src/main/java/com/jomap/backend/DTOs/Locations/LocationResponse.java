@@ -1,0 +1,34 @@
+package com.jomap.backend.DTOs.Locations;
+
+import lombok.Data;
+import java.time.LocalDateTime;
+import com.jomap.backend.Entities.Locations.LocationCategory;
+import com.jomap.backend.Entities.Locations.LocationStatus;
+
+@Data
+public class LocationResponse {
+    private String logoUrl; 
+    private Long locationId;
+    private String name;
+    private String description;
+    private String email;
+    private String phoneNumber;
+    private Double latitude;
+    private Double longitude;
+    private String governorate; 
+    private LocationCategory category;
+    private LocationStatus status;
+    
+    private String facebookUrl;
+    private String instagramUrl;
+    private String linkedInUrl;
+    private String workingHours;
+
+    private Double rating;
+    private Integer reviewCount;
+    private String ownerUpdate;
+    private Long ownerId;
+    private String ownerName;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}

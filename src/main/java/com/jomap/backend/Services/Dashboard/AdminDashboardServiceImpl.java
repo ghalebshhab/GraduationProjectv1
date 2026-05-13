@@ -5,9 +5,9 @@ import com.jomap.backend.DTOs.Dashboard.AdminPostResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminReportResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminStatsResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminUserResponse;
-import com.jomap.backend.DTOs.Places.PlaceResponse;
-import com.jomap.backend.Entities.Places.LocationList;
-import com.jomap.backend.Entities.Places.LocationListRepo;
+import com.jomap.backend.DTOs.Locations.LocationResponse;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
@@ -25,11 +25,9 @@ import java.util.Optional;
 public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     private final UserRepository userRepository;
-    private final LocationListRepo placeRepository;
+    private final LocationRepo locationRepository;
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
-
-
 
     @Override
     public ApiResponse<AdminStatsResponse> getStats() {
@@ -40,10 +38,10 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setActiveUsers(userRepository.countByIsActiveTrue());
         response.setBlockedUsers(userRepository.countByIsActiveFalse());
 
-        response.setTotalPlaces(placeRepository.count());
-        response.setApprovedPlaces(placeRepository.countByApprovedTrueAndActiveTrue());
-        response.setPendingPlaces(placeRepository.countByApprovedFalseAndActiveTrue());
-        response.setInactivePlaces(placeRepository.countByActiveFalse());
+        response.setTotalLocations(locationRepository.count());
+        response.setApprovedLocations(locationRepository.countByApprovedTrueAndActiveTrue());
+        response.setPendingLocations(locationRepository.countByApprovedFalseAndActiveTrue());
+        response.setInactiveLocations(locationRepository.countByActiveFalse());
 
         response.setTotalPosts(postRepository.count());
         response.setActivePosts(postRepository.countByIsDeletedFalse());
@@ -102,78 +100,78 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     @Override
-    public ApiResponse<List<PlaceResponse>> getPendingPlaces() {
+    public ApiResponse<List<LocationResponse>> getPendingLocations() {
 
-        List<PlaceResponse> response = placeRepository.findByApprovedFalseAndActiveTrue()
+        List<LocationResponse> response = locationRepository.findByApprovedFalseAndActiveTrue()
                 .stream()
-                .map(this::mapPlaceToResponse)
+                .map(this::mapLocationToResponse)
                 .toList();
 
         return ApiResponse.success("Pending places fetched successfully", response);
     }
 
     @Override
-    public ApiResponse<List<PlaceResponse>> getAllPlaces() {
+    public ApiResponse<List<LocationResponse>> getAllLocations() {
 
-        List<PlaceResponse> response = placeRepository.findAll()
+        List<LocationResponse> response = locationRepository.findAll()
                 .stream()
-                .map(this::mapPlaceToResponse)
+                .map(this::mapLocationToResponse)
                 .toList();
 
-        return ApiResponse.success("All places fetched successfully", response);
+        return ApiResponse.success("All locations fetched successfully", response);
     }
 
     @Override
-    public ApiResponse<PlaceResponse> approvePlace(Long placeId) {
+    public ApiResponse<LocationResponse> approveLocation(Long locationId) {
 
-        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> locationOptional = locationRepository.findById(locationId);
 
-        if (placeOptional.isEmpty()) {
-            return ApiResponse.error("Place not found");
+        if (locationOptional.isEmpty()) {
+            return ApiResponse.error("Location not found");
         }
 
-        LocationList place = placeOptional.get();
-        place.setApproved(true);
-        place.setActive(true);
+        LocationList location = locationOptional.get();
+        location.setApproved(true);
+        location.setActive(true);
 
-        LocationList savedPlace = placeRepository.save(place);
+        LocationList savedLocation = locationRepository.save(location);
 
-        return ApiResponse.success("Place approved successfully", mapPlaceToResponse(savedPlace));
+        return ApiResponse.success("Location approved successfully", mapLocationToResponse(savedLocation));
     }
 
     @Override
-    public ApiResponse<PlaceResponse> rejectPlace(Long placeId) {
+    public ApiResponse<LocationResponse> rejectLocation(Long locationId) {
 
-        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> locationOptional = locationRepository.findById(locationId);
 
-        if (placeOptional.isEmpty()) {
-            return ApiResponse.error("Place not found");
+        if (locationOptional.isEmpty()) {
+            return ApiResponse.error("Location not found");
         }
 
-        LocationList place = placeOptional.get();
-        place.setApproved(false);
-        place.setActive(false);
+        LocationList location = locationOptional.get();
+        location.setApproved(false);
+        location.setActive(false);
 
-        LocationList savedPlace = placeRepository.save(place);
+        LocationList savedLocation = locationRepository.save(location);
 
-        return ApiResponse.success("Place rejected successfully", mapPlaceToResponse(savedPlace));
+        return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
     }
 
     @Override
-    public ApiResponse<PlaceResponse> deactivatePlace(Long placeId) {
+    public ApiResponse<LocationResponse> deactivateLocation(Long locationId) {
 
-        Optional<LocationList> placeOptional = placeRepository.findById(placeId);
+        Optional<LocationList> locationOptional = locationRepository.findById(locationId);
 
-        if (placeOptional.isEmpty()) {
-            return ApiResponse.error("Place not found");
+        if (locationOptional.isEmpty()) {
+            return ApiResponse.error("Location not found");
         }
 
-        LocationList place = placeOptional.get();
-        place.setActive(false);
+        LocationList location = locationOptional.get();
+        location.setActive(false);
 
-        LocationList savedPlace = placeRepository.save(place);
+        LocationList savedLocation = locationRepository.save(location);
 
-        return ApiResponse.success("Place deactivated successfully", mapPlaceToResponse(savedPlace));
+        return ApiResponse.success("Location deactivated successfully", mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -201,6 +199,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         return ApiResponse.success("Posts fetched successfully", response);
     }
+
     @Override
     public ApiResponse<AdminPostResponse> deletePost(Long postId) {
 
@@ -259,30 +258,31 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return response;
     }
 
-    private PlaceResponse mapPlaceToResponse(LocationList place) {
+    private LocationResponse mapLocationToResponse(LocationList location) {
 
-        PlaceResponse response = new PlaceResponse();
+        LocationResponse response = new LocationResponse();
 
-        response.setId(place.getId());
-        response.setName(place.getName());
-        response.setDescription(place.getDescription());
-        response.setEmail(place.getEmail());
-        response.setPhoneNumber(place.getPhoneNumber());
-        response.setImageUrl(place.getImageUrlP());
-        response.setLatitude(place.getLatitude());
-        response.setLongitude(place.getLongitude());
-        response.setGovernorate(place.getGovernorate() != null ? place.getGovernorate().getName() : null);        response.setCategory(place.getCategory());
-        response.setRating(place.getRating());
-        response.setReviewCount(place.getReviewCount());
-        response.setActive(place.getActive());
-        response.setApproved(place.getApproved());
-        response.setOwnerUpdate(place.getOwnerUpdate());
-        response.setCreatedAt(place.getCreatedAt());
-        response.setUpdatedAt(place.getUpdatedAt());
+        response.setLocationId(location.getId());
+        response.setName(location.getName());
+        response.setDescription(location.getDescription());
+        response.setEmail(location.getEmail());
+        response.setPhoneNumber(location.getPhoneNumber());
+        response.setLogoUrl(location.getLogoUrl());
+        response.setLatitude(location.getLatitude());
+        response.setLongitude(location.getLongitude());
+        response.setGovernorate(location.getGovernorate() != null ? location.getGovernorate().getName() : null);
+        response.setCategory(location.getCategory());
+        response.setRating(location.getRating());
+        response.setReviewCount(location.getReviewCount());
+        response.setActive(location.getActive());
+        response.setApproved(location.getApproved());
+        response.setOwnerUpdate(location.getOwnerUpdate());
+        response.setCreatedAt(location.getCreatedAt());
+        response.setUpdatedAt(location.getUpdatedAt());
 
-        if (place.getOwner() != null) {
-            response.setOwnerId(place.getOwner().getId());
-            response.setOwnerName(place.getOwner().getUsername());
+        if (location.getOwner() != null) {
+            response.setOwnerId(location.getOwner().getId());
+            response.setOwnerName(location.getOwner().getUsername());
         }
 
         return response;
@@ -304,6 +304,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         return response;
     }
+
     private AdminReportResponse mapReportToAdminResponse(Report report) {
 
         AdminReportResponse response = new AdminReportResponse();

@@ -1,7 +1,8 @@
 package com.jomap.backend.DTOs.Gove;
 
 import com.jomap.backend.DTOs.Activities.ActivityResponse;
-import com.jomap.backend.DTOs.Places.PlaceResponse;
+import com.jomap.backend.DTOs.Locations.LocationResponse;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,10 +15,10 @@ public class GovernorateDetailsResponse {
     private Long id;
     private String name;
     private List<String> images;
-    private List<PlaceResponse> suggestions;
-    private List<PlaceResponse> historicalPlaces;
+    private List<LocationResponse> suggestions;
+    private List<LocationResponse> historicalPlaces;
 
-    private Map<String, List<PlaceResponse>> placesByCategory;
+    private Map<String, List<LocationResponse>> placesByCategory;
 
     private List<ActivityResponse> activities;
 }

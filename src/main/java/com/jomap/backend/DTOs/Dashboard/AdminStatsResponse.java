@@ -9,10 +9,10 @@ public class AdminStatsResponse {
     private long activeUsers;
     private long blockedUsers;
 
-    private long totalPlaces;
-    private long approvedPlaces;
-    private long pendingPlaces;
-    private long inactivePlaces;
+    private long totalLocations;
+    private long approvedLocations;
+    private long pendingLocations;
+    private long inactiveLocations;
 
     private long totalPosts;
     private long activePosts;

@@ -5,7 +5,7 @@ import com.jomap.backend.DTOs.Dashboard.AdminPostResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminReportResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminStatsResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminUserResponse;
-import com.jomap.backend.DTOs.Places.PlaceResponse;
+import com.jomap.backend.DTOs.Locations.LocationResponse;
 
 import java.util.List;
 
@@ -18,15 +18,15 @@ public interface AdminDashboardService {
 
     ApiResponse<AdminUserResponse> unblockUser(Long userId);
 
-    ApiResponse<List<PlaceResponse>> getPendingPlaces();
+    ApiResponse<List<LocationResponse>> getPendingLocations();
 
-    ApiResponse<List<PlaceResponse>> getAllPlaces();
+    ApiResponse<List<LocationResponse>> getAllLocations();
 
-    ApiResponse<PlaceResponse> approvePlace(Long placeId);
+    ApiResponse<LocationResponse> approveLocation(Long locationId);
 
-    ApiResponse<PlaceResponse> rejectPlace(Long placeId);
+    ApiResponse<LocationResponse> rejectLocation(Long locationId);
 
-    ApiResponse<PlaceResponse> deactivatePlace(Long placeId);
+    ApiResponse<LocationResponse> deactivateLocation(Long locationId);
 
     ApiResponse<List<AdminPostResponse>> getPosts();
 

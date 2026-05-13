@@ -1,7 +1,8 @@
 package com.jomap.backend.Entities.Gove;
 
 import com.jomap.backend.Entities.Gove.Place;
-import com.jomap.backend.Entities.Places.LocationList;
+import com.jomap.backend.Entities.Locations.LocationList;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

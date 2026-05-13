@@ -5,8 +5,8 @@ import com.jomap.backend.DTOs.Dashboard.AdminPostResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminReportResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminStatsResponse;
 import com.jomap.backend.DTOs.Dashboard.AdminUserResponse;
+import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.DTOs.Activities.ActivityResponse;
-import com.jomap.backend.DTOs.Places.PlaceResponse;
 import com.jomap.backend.Services.Dashboard.AdminDashboardService;
 import com.jomap.backend.Services.Activities.ActivityService;
 import lombok.AllArgsConstructor;
@@ -46,32 +46,32 @@ public class AdminDashboardController {
         return ResponseEntity.ok(adminDashboardService.unblockUser(userId));
     }
 
-    @GetMapping("/places/pending")
-    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getPendingPlaces() {
-        return ResponseEntity.ok(adminDashboardService.getPendingPlaces());
+    @GetMapping("/locations/pending")
+    public ResponseEntity<ApiResponse<List<LocationResponse>>> getPendingLocations() {
+        return ResponseEntity.ok(adminDashboardService.getPendingLocations());
     }
 
-    @GetMapping("/places/all")
-    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getAllPlaces() {
-        return ResponseEntity.ok(adminDashboardService.getAllPlaces());
+    @GetMapping("/locations/all")
+    public ResponseEntity<ApiResponse<List<LocationResponse>>> getAllLocations() {
+        return ResponseEntity.ok(adminDashboardService.getAllLocations());
     }
 
-    @PutMapping("/places/{placeId}/approve")
-    public ResponseEntity<ApiResponse<PlaceResponse>> approvePlace(
-            @PathVariable Long placeId) {
-        return ResponseEntity.ok(adminDashboardService.approvePlace(placeId));
+    @PutMapping("/locations/{locationId}/approve")
+    public ResponseEntity<ApiResponse<LocationResponse>> approveLocation(
+            @PathVariable Long locationId) {
+        return ResponseEntity.ok(adminDashboardService.approveLocation(locationId));
     }
 
-    @PutMapping("/places/{placeId}/reject")
-    public ResponseEntity<ApiResponse<PlaceResponse>> rejectPlace(
-            @PathVariable Long placeId) {
-        return ResponseEntity.ok(adminDashboardService.rejectPlace(placeId));
+    @PutMapping("/locations/{locationId}/reject")
+    public ResponseEntity<ApiResponse<LocationResponse>> rejectLocation(
+            @PathVariable Long locationId) {
+        return ResponseEntity.ok(adminDashboardService.rejectLocation(locationId));
     }
 
-    @PutMapping("/places/{placeId}/deactivate")
-    public ResponseEntity<ApiResponse<PlaceResponse>> deactivatePlace(
-            @PathVariable Long placeId) {
-        return ResponseEntity.ok(adminDashboardService.deactivatePlace(placeId));
+    @PutMapping("/locations/{locationId}/deactivate")
+    public ResponseEntity<ApiResponse<LocationResponse>> deactivateLocation(
+            @PathVariable Long locationId) {
+        return ResponseEntity.ok(adminDashboardService.deactivateLocation(locationId));
     }
 
     @GetMapping("/posts")

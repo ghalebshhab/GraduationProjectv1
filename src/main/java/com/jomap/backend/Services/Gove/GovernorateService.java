@@ -3,11 +3,12 @@ package com.jomap.backend.Services.Gove;
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Activities.ActivityResponse;
 import com.jomap.backend.DTOs.Gove.GovernorateDetailsResponse;
-import com.jomap.backend.DTOs.Places.PlaceResponse;
+import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivityStatus;
 import com.jomap.backend.Entities.Gove.*;
-import com.jomap.backend.Entities.Places.PlaceCategory;
+import com.jomap.backend.Entities.Locations.LocationCategory;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -87,7 +88,7 @@ public class GovernorateService {
 
         List<Place> allPlaces = placeRepository.findByGovernorateId(id);
 
-        List<PlaceResponse> suggestions = allPlaces.stream()
+        List<LocationResponse> suggestions = allPlaces.stream()
                 .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
                     Collections.shuffle(list);
                     return list.stream();
@@ -96,8 +97,8 @@ public class GovernorateService {
                 .map(this::mapToPlaceResponse)
                 .collect(Collectors.toList());
 
-        List<PlaceResponse> historicalPlaces = allPlaces.stream()
-                .filter(p -> p.getCategory() == PlaceCategory.TOURISM)
+        List<LocationResponse> historicalPlaces = allPlaces.stream()
+                .filter(p -> p.getCategory() == LocationCategory.TOURISM)
                 .limit(5)
                 .map(this::mapToPlaceResponse)
                 .collect(Collectors.toList());
@@ -127,16 +128,16 @@ public class GovernorateService {
         return new ApiResponse<>(true, "تم استرجاع تفاصيل المحافظة بنجاح", details);
     }
 
-    private PlaceResponse mapToPlaceResponse(Place place) {
+    private LocationResponse mapToPlaceResponse(Place place) {
         if (place == null)
             return null;
-        PlaceResponse response = new PlaceResponse();
-        response.setId(place.getId());
+        LocationResponse response = new LocationResponse();
+        response.setLocationId(place.getId());
         response.setName(place.getName());
         response.setDescription(place.getDescription());
-        response.setImageUrl(place.getImageUrl());
+        response.setLogoUrl(place.getImageUrl());
 
-        response.setCategory(place.getCategory() != null ? place.getCategory() : PlaceCategory.OTHER);
+        response.setCategory(place.getCategory() != null ? place.getCategory() : LocationCategory.OTHER);
         return response;
     }
 }
