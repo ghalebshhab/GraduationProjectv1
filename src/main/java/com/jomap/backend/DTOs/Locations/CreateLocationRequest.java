@@ -14,11 +14,11 @@ public class CreateLocationRequest {
     @NotBlank(message = "الشعار مطلوب") 
     private String logoUrl; 
 
-    @NotBlank(message = "اسم الموقع او الفريق مطلوب")
+    @NotBlank(message = "اسم الموقع مطلوب")
     @Size(min = 3, max = 50, message = "الاسم يجب أن يكون بين 3 و 50 حرف")
     private String name;
 
-    @NotBlank(message = "وصف الموقع او الفريق مطلوب")
+    @NotBlank(message = "وصف الموقع مطلوب")
     @Size(min = 10, max = 2000, message = "الوصف يجب أن يكون 10 احرف على الأقل")
     private String description;
 
@@ -29,10 +29,10 @@ public class CreateLocationRequest {
      @NotBlank(message = "رقم الهاتف مطلوب")
     private String phoneNumber; 
 
-    @NotNull(message = "إحداثيات الموقع او الفريق مطلوبة")
+    @NotNull(message = "إحداثيات الموقع مطلوبة")
     private Double latitude;
 
-    @NotNull(message = "إحداثيات الموقع او الفريق مطلوبة")
+    @NotNull(message = "إحداثيات الموقع مطلوبة")
     private Double longitude;
     
     @NotNull(message = "معرف المحافظة مطلوب")
