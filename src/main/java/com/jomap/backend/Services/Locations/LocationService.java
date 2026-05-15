@@ -1,12 +1,12 @@
 package com.jomap.backend.Services.Locations;
 
+import java.util.List;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Locations.CreateLocationRequest;
 import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.DTOs.Locations.UpdateLocationRequest;
 import com.jomap.backend.Entities.Locations.LocationCategory;
-
-import java.util.List;
 
 public interface LocationService {
     ApiResponse<LocationResponse> createLocation(CreateLocationRequest request, String currentUserEmail);
@@ -23,9 +23,9 @@ public interface LocationService {
 
     ApiResponse<LocationResponse> deactivateLocation(Long locationId, String currentUserEmail);
 
-    ApiResponse<LocationResponse> updateCover(Long locationId, String coverUrl, String currentUserEmail);
+    ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request, String currentUserEmail);
 
-    ApiResponse<LocationResponse> updateLogo(Long locationId, String logoUrl, String currentUserEmail);
+    ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request, String currentUserEmail);
 
 
 }

@@ -166,14 +166,14 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
 
 // --- تحديث صورة الغلاف (Cover) ---
     @Override
-    public ApiResponse<LocationResponse> updateCover(Long locationId, String coverUrl, String currentUserEmail) {
-        return updateImage(locationId, coverUrl, currentUserEmail, true);
+    public ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request, String currentUserEmail) {
+        return updateImage(locationId, request, currentUserEmail, true);
     }
 
     // --- تحديث اللوجو (Logo) ---
     @Override
-    public ApiResponse<LocationResponse> updateLogo(Long locationId, String logoUrl, String currentUserEmail) {
-        return updateImage(locationId, logoUrl, currentUserEmail, false);
+    public ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request, String currentUserEmail) {
+        return updateImage(locationId, request, currentUserEmail, false);
     }
 
 
@@ -245,8 +245,8 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
         return response;
     }
 
-    // دالة مساعدة لتجنب تكرار الكود
-    private ApiResponse<LocationResponse> updateImage(Long locationId, String imageUrl, String email, boolean isCover) {
+   
+    private ApiResponse<LocationResponse> updateImage(Long locationId,  UpdateLocationRequest request, String email, boolean isCover) {
         ApiResponse<User> userResponse = getUserByEmail(email);
         if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
 
@@ -255,16 +255,14 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
 
         LocationList location = locationOptional.get();
 
-        // التأكد أن الشخص هو المالك الحقيقي
         if (!location.getOwner().getId().equals(userResponse.getData().getId())) {
             return ApiResponse.error("ليس لديك صلاحية لتحديث صور هذا الموقع");
         }
 
-        // تحديث الحقل المطلوب
         if (isCover) {
-            location.setCoverUrl(imageUrl); // تأكد أن حقل coverUrl موجود في LocationList
+            location.setCoverUrl(request.getCoverUrl());
         } else {
-            location.setLogoUrl(imageUrl);
+            location.setLogoUrl(request.getLogoUrl());
         }
 
         locationRepository.save(location);

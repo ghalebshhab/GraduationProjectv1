@@ -1,5 +1,21 @@
 package com.jomap.backend.Controllers.Locations;
 
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Locations.CreateLocationRequest;
 import com.jomap.backend.DTOs.Locations.LocationResponse;
@@ -8,12 +24,6 @@ import com.jomap.backend.Entities.Locations.LocationCategory;
 import com.jomap.backend.Services.Locations.LocationService;
 
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/locations")
@@ -114,21 +124,21 @@ public class LocationController {
 
 // تحديث صورة الغلاف
 @PatchMapping("/{id}/update-cover")
-public ResponseEntity<?> updateCover(@PathVariable Long id, @RequestBody String coverUrl, Principal principal) {
+public ResponseEntity<?> updateCover(@PathVariable Long id, @RequestBody UpdateLocationRequest request, Principal principal) {
         if (principal == null) {
             return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
         }
-    locationService.updateCover(id, coverUrl, principal.getName());
+    locationService.updateCover(id, request, principal.getName());
     return ResponseEntity.ok("تم تحديث غلاف الموقع بنجاح");
 }
 
 // تحديث اللوجو
 @PatchMapping("/{id}/update-logo")
-public ResponseEntity<?> updateLogo(@PathVariable Long id, @RequestBody String logoUrl, Principal principal) {
+public ResponseEntity<?> updateLogo(@PathVariable Long id, @RequestBody UpdateLocationRequest request, Principal principal) {
         if (principal == null) {
             return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
         }
-    locationService.updateLogo(id, logoUrl, principal.getName() );
+    locationService.updateLogo(id, request, principal.getName() );
     return ResponseEntity.ok("تم تحديث لوجو الموقع بنجاح");
 }
 

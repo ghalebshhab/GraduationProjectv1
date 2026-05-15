@@ -1,11 +1,13 @@
 package com.jomap.backend.DTOs.Locations;
 
 import com.jomap.backend.Entities.Locations.LocationCategory;
+
 import lombok.Data;
 
 @Data
 public class UpdateLocationRequest {
     private String logoUrl; 
+     private String coverUrl;
     private String name;
     private String description;
     private String email;
