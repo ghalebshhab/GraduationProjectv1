@@ -42,7 +42,6 @@ public class LocationList {
     @Enumerated(EnumType.STRING)
     private LocationCategory category;
 
-    // الحقل الجديد لضبط دورة حياة الموقع
     @Enumerated(EnumType.STRING)
     private LocationStatus status; 
 
@@ -53,8 +52,7 @@ public class LocationList {
 
     private Double rating = 0.0;
     private Integer reviewCount = 0;
-    
-    // بضلوا موجودين للتحكم البرمجي السريع، بس الـ status هو الحكم
+
     private Boolean active = true;
     private Boolean approved = false;
 
@@ -72,11 +70,10 @@ public class LocationList {
     public void beforeCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        
-        // عند الإنشاء: الحالة دائماً بانتظار الموافقة
+
         this.status = LocationStatus.PENDING; 
         this.approved = false; 
-        this.active = true; // موجود في النظام كـ "سجل" ولكن غير منشور
+        this.active = true;
 
         if (rating == null) rating = 0.0;
         if (reviewCount == null) reviewCount = 0;
