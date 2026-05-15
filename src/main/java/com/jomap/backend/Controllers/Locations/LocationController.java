@@ -10,6 +10,7 @@ import com.jomap.backend.Services.Locations.LocationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.List;
@@ -110,4 +111,25 @@ public class LocationController {
 
         return ResponseEntity.ok(response);
     }
+
+// تحديث صورة الغلاف
+@PatchMapping("/{id}/update-cover")
+public ResponseEntity<?> updateCover(@PathVariable Long id, @RequestBody String coverUrl, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+        }
+    locationService.updateCover(id, coverUrl, principal.getName());
+    return ResponseEntity.ok("تم تحديث غلاف الموقع بنجاح");
+}
+
+// تحديث اللوجو
+@PatchMapping("/{id}/update-logo")
+public ResponseEntity<?> updateLogo(@PathVariable Long id, @RequestBody String logoUrl, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+        }
+    locationService.updateLogo(id, logoUrl, principal.getName() );
+    return ResponseEntity.ok("تم تحديث لوجو الموقع بنجاح");
+}
+
 }

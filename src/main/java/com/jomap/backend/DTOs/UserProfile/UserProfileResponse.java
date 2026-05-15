@@ -14,4 +14,6 @@ public class UserProfileResponse {
     private int followersCount;
     private int followingCount;
     private int postsCount;
+    private String role; 
+    private Long locationId;
 }

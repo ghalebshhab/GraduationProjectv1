@@ -10,8 +10,11 @@ import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationCategory;
 import com.jomap.backend.Entities.Locations.LocationStatus;
+import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Services.Auth.JwtService;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +28,7 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepo locationRepository; 
     private final UserRepository userRepository;
     private final GovernorateRepository governorateRepository;
+    private final JwtService jwtService;
 
     @Override
 public ApiResponse<LocationResponse> createLocation(CreateLocationRequest request, String currentUserEmail) {
@@ -47,7 +51,7 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
     LocationList location = new LocationList();
     mapRequestToEntity(location, request);
     
-    return governorateRepository.findById(request.getGovernorateId())
+       return governorateRepository.findById(request.getGovernorateId())
             .map(gov -> {
                 location.setGovernorate(gov);
                 location.setOwner(owner);
@@ -56,7 +60,21 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
                 location.setApproved(false);
                 location.setActive(true);
 
+                 // 1. حفظ الموقع في الداتابيز
                 LocationList savedLocation = locationRepository.save(location);
+
+                // 2. ترقية المستخدم ليكون OWNER وحفظه
+                owner.setRole(Role.OWNER); 
+                userRepository.save(owner);
+
+                // 3. توليد توكن جديد يحتوي على الرتبة الجديدة (OWNER)
+                // تأكد أن دالة generateToken في JwtService تأخذ الإيميل وتجلب الرتبة من قاعدة البيانات
+                String newToken = jwtService.generateToken(owner.getEmail());
+
+                // 4. تجهيز الرد وإضافة التوكن فيه
+                LocationResponse response = mapToResponse(savedLocation);
+                response.setNewToken(newToken); // تأكد من إضافة هذا الحقل في كلاس LocationResponse
+
                 return ApiResponse.success(
                         "تم إنشاء الموقع بنجاح، بانتظار موافقة المسؤول.",
                         mapToResponse(savedLocation)
@@ -146,6 +164,19 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
                 .orElse(ApiResponse.error("No location found"));
     }
 
+// --- تحديث صورة الغلاف (Cover) ---
+    @Override
+    public ApiResponse<LocationResponse> updateCover(Long locationId, String coverUrl, String currentUserEmail) {
+        return updateImage(locationId, coverUrl, currentUserEmail, true);
+    }
+
+    // --- تحديث اللوجو (Logo) ---
+    @Override
+    public ApiResponse<LocationResponse> updateLogo(Long locationId, String logoUrl, String currentUserEmail) {
+        return updateImage(locationId, logoUrl, currentUserEmail, false);
+    }
+
+
     // --- Helper Methods ---
 
     private void mapRequestToEntity(LocationList location, CreateLocationRequest request) {
@@ -195,6 +226,7 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
         response.setEmail(location.getEmail());
         response.setPhoneNumber(location.getPhoneNumber());
         response.setLogoUrl(location.getLogoUrl());
+        response.setCoverUrl(location.getCoverUrl());
         response.setLatitude(location.getLatitude());
         response.setLongitude(location.getLongitude());
        if (location.getGovernorate() != null) {
@@ -211,5 +243,31 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
             response.setOwnerName(location.getOwner().getUsername());
         }
         return response;
+    }
+
+    // دالة مساعدة لتجنب تكرار الكود
+    private ApiResponse<LocationResponse> updateImage(Long locationId, String imageUrl, String email, boolean isCover) {
+        ApiResponse<User> userResponse = getUserByEmail(email);
+        if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+
+        Optional<LocationList> locationOptional = locationRepository.findById(locationId);
+        if (locationOptional.isEmpty()) return ApiResponse.error("الموقع غير موجود");
+
+        LocationList location = locationOptional.get();
+
+        // التأكد أن الشخص هو المالك الحقيقي
+        if (!location.getOwner().getId().equals(userResponse.getData().getId())) {
+            return ApiResponse.error("ليس لديك صلاحية لتحديث صور هذا الموقع");
+        }
+
+        // تحديث الحقل المطلوب
+        if (isCover) {
+            location.setCoverUrl(imageUrl); // تأكد أن حقل coverUrl موجود في LocationList
+        } else {
+            location.setLogoUrl(imageUrl);
+        }
+
+        locationRepository.save(location);
+        return ApiResponse.success("تم تحديث الصورة بنجاح", mapToResponse(location));
     }
 }

@@ -8,6 +8,7 @@ import com.jomap.backend.Entities.Locations.LocationStatus;
 @Data
 public class LocationResponse {
     private String logoUrl; 
+    private String coverUrl;
     private Long locationId;
     private String name;
     private String description;
@@ -32,4 +33,6 @@ public class LocationResponse {
     private String ownerName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private String newToken;
 }

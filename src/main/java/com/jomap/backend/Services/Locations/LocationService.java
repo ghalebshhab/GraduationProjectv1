@@ -22,4 +22,10 @@ public interface LocationService {
     ApiResponse<LocationResponse> approveLocation(Long locationId);
 
     ApiResponse<LocationResponse> deactivateLocation(Long locationId, String currentUserEmail);
+
+    ApiResponse<LocationResponse> updateCover(Long locationId, String coverUrl, String currentUserEmail);
+
+    ApiResponse<LocationResponse> updateLogo(Long locationId, String logoUrl, String currentUserEmail);
+
+
 }

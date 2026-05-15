@@ -29,6 +29,9 @@ public class LocationList {
     @Column(length = 1000)
     private String logoUrl; 
 
+    @Column(name = "cover_url")
+    private String coverUrl;
+
     private Double latitude;
     private Double longitude;
 

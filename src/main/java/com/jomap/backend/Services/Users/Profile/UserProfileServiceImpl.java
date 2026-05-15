@@ -3,6 +3,7 @@ package com.jomap.backend.Services.Users.Profile;
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.UserProfile.UpdateUserProfileRequest;
 import com.jomap.backend.DTOs.UserProfile.UserProfileResponse;
+import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.Profile.UserProfile;
 import com.jomap.backend.Entities.Users.Profile.UserProfileRepository;
@@ -126,6 +127,8 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
     }
 
+    private final LocationRepo locationRepository;
+
     private UserProfileResponse mapToResponse(User user, UserProfile profile) {
         UserProfileResponse response = new UserProfileResponse();
         response.setUserId(user.getId());
@@ -137,6 +140,18 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setFollowersCount(0);
         response.setFollowingCount(0);
         response.setPostsCount(user.getPosts() != null ? user.getPosts().size() : 0);
+       
+       // 1. الرتبة (نجلبها من كلاس User مباشرة)
+    response.setRole(user.getRole() != null ? user.getRole().name() : "USER");
+
+    // 2. معرف الموقع (الحل السحري للأحمر)
+    // نبحث في جدول المواقع عن الموقع الذي يملكه هذا الـ userId
+    locationRepository.findByOwnerId(user.getId()).ifPresent(loc -> {
+        response.setLocationId(loc.getId());
+    });
+
+
         return response;
+
     }
 }
