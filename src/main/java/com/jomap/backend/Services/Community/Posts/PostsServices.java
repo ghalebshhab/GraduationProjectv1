@@ -10,7 +10,7 @@ import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
 public interface PostsServices {
 
 
-        ApiResponse<List<PostResponse>> getAllPosts(int userid);
+        ApiResponse<List<PostResponse>> getAllPosts(int userid, String Category);
 
         ApiResponse<PostResponse> getPostById(Long postId);
 

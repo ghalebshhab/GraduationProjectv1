@@ -6,10 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+
 public interface PostRepository extends JpaRepository<Post,Long> {
 
-    @Query("SELECT p FROM Post p WHERE p.author.Id = :author_id AND p.isDeleted = false ORDER BY p.createdAt DESC")
-    List<Post> findActivePostsByUserId(@Param("author_id") int userId);
+    @Query("SELECT p FROM Post p WHERE p.author.Id = :author_id AND p.isDeleted = false and p.category = :category ORDER BY p.createdAt DESC")
+    List<Post> findActivePostsByUserId(@Param("author_id") int userId, @Param("category") String Category);
 
     long countByIsDeletedFalse();
 

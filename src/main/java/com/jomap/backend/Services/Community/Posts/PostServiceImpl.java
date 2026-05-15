@@ -65,9 +65,9 @@ public class PostServiceImpl implements PostsServices {
 
     @Override
     @Transactional
-    public ApiResponse<List<PostResponse>> getAllPosts(int userId) {
+    public ApiResponse<List<PostResponse>> getAllPosts(int userId, String Category) {
        List<PostResponse> responses = postRepository
-            .findActivePostsByUserId(userId)
+            .findActivePostsByUserId(userId, Category)
             .stream()
             .map(p -> toResponse(p, null, null))
             .toList();
