@@ -31,3 +31,5 @@ public class CreatePostRequest {
     @DecimalMax(value = "180.0",  message = "Longitude must be <= 180")
     private Double longitude;
 }
+
+

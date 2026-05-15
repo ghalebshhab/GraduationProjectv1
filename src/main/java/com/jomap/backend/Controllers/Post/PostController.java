@@ -1,6 +1,7 @@
 package com.jomap.backend.Controllers.Post;
 
 import java.util.List;
+import java.util.Locale.Category;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Posts.PostCategory;
 import com.jomap.backend.DTOs.Posts.CreatePostRequest;
 import com.jomap.backend.DTOs.Posts.PostResponse;
 import com.jomap.backend.DTOs.Posts.UpdatePostRequest;
@@ -33,8 +34,8 @@ public class PostController {
     private final PostsServices postService;
 
     @GetMapping("getpostsuser/{userId}")
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts(@PathVariable int userId, @RequestBody String Category) {
-        return ResponseEntity.ok(postService.getAllPosts(userId, Category));
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts(@PathVariable int userId, @Valid @RequestBody PostCategory request) {
+        return ResponseEntity.ok(postService.getAllPosts(userId, request.category));
     }
 
     @GetMapping("/{postId}")
