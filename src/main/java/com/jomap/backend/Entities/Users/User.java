@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jomap.backend.Entities.Auth.AuthProvider;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.postComments.PostComment;
 import com.jomap.backend.Entities.Posts.postLikes.PostLikes;
@@ -97,6 +98,13 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<StoryLike> storyReactions = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider provider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
 
     @PrePersist
     public void onCreate() {
