@@ -2,7 +2,6 @@ package com.jomap.backend.Controllers.Friendship;
 
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.FriendShips.FriendshipResponse;
-import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Services.Friendship.FriendshipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,20 +23,23 @@ public class FriendshipController {
             @RequestParam Long receiverId,
             Authentication authentication
     ) {
-        String email = authentication.getName();
+        String senderEmail = authentication.getName();
 
         ApiResponse<FriendshipResponse> response =
-                friendshipService.sendFriendRequest(email, receiverId);
+                friendshipService.sendFriendRequest(senderEmail, receiverId);
 
         return ResponseEntity.ok(response);
     }
+
     @PutMapping("/{friendshipId}/accept")
     public ResponseEntity<ApiResponse<FriendshipResponse>> acceptFriendRequest(
             @PathVariable Long friendshipId,
-            @RequestParam Long receiverId
+            Authentication authentication
     ) {
+        String receiverEmail = authentication.getName();
+
         ApiResponse<FriendshipResponse> response =
-                friendshipService.acceptFriendRequest(friendshipId, receiverId);
+                friendshipService.acceptFriendRequest(friendshipId, receiverEmail);
 
         return ResponseEntity.ok(response);
     }
@@ -45,10 +47,12 @@ public class FriendshipController {
     @PutMapping("/{friendshipId}/reject")
     public ResponseEntity<ApiResponse<String>> rejectFriendRequest(
             @PathVariable Long friendshipId,
-            @RequestParam Long receiverId
+            Authentication authentication
     ) {
+        String receiverEmail = authentication.getName();
+
         ApiResponse<String> response =
-                friendshipService.rejectFriendRequest(friendshipId, receiverId);
+                friendshipService.rejectFriendRequest(friendshipId, receiverEmail);
 
         return ResponseEntity.ok(response);
     }
@@ -56,40 +60,48 @@ public class FriendshipController {
     @DeleteMapping("/{friendshipId}/cancel")
     public ResponseEntity<ApiResponse<String>> cancelFriendRequest(
             @PathVariable Long friendshipId,
-            @RequestParam Long senderId
+            Authentication authentication
     ) {
+        String senderEmail = authentication.getName();
+
         ApiResponse<String> response =
-                friendshipService.cancelFriendRequest(friendshipId, senderId);
+                friendshipService.cancelFriendRequest(friendshipId, senderEmail);
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/pending/{userId}")
+    @GetMapping("/pending")
     public ResponseEntity<ApiResponse<List<FriendshipResponse>>> getPendingRequests(
-            @PathVariable Long userId
+            Authentication authentication
     ) {
+        String receiverEmail = authentication.getName();
+
         ApiResponse<List<FriendshipResponse>> response =
-                friendshipService.getPendingRequests(userId);
+                friendshipService.getPendingRequests(receiverEmail);
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/sent/{userId}")
+    @GetMapping("/sent")
     public ResponseEntity<ApiResponse<List<FriendshipResponse>>> getSentRequests(
-            @PathVariable Long userId
+            Authentication authentication
     ) {
+        String senderEmail = authentication.getName();
+
         ApiResponse<List<FriendshipResponse>> response =
-                friendshipService.getSentRequests(userId);
+                friendshipService.getSentRequests(senderEmail);
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/friends/{userId}")
+    @GetMapping("/friends")
     public ResponseEntity<ApiResponse<List<FriendshipResponse>>> getFriends(
-            @PathVariable Long userId
+            Authentication authentication
     ) {
+        String userEmail = authentication.getName();
+
         ApiResponse<List<FriendshipResponse>> response =
-                friendshipService.getFriends(userId);
+                friendshipService.getFriends(userEmail);
 
         return ResponseEntity.ok(response);
     }
@@ -97,10 +109,12 @@ public class FriendshipController {
     @DeleteMapping("/{friendshipId}/remove")
     public ResponseEntity<ApiResponse<String>> removeFriend(
             @PathVariable Long friendshipId,
-            @RequestParam Long userId
+            Authentication authentication
     ) {
+        String userEmail = authentication.getName();
+
         ApiResponse<String> response =
-                friendshipService.removeFriend(friendshipId, userId);
+                friendshipService.removeFriend(friendshipId, userEmail);
 
         return ResponseEntity.ok(response);
     }

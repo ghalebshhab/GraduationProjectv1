@@ -8,17 +8,18 @@ import java.util.List;
 public interface FriendshipService {
 
     ApiResponse<FriendshipResponse> sendFriendRequest(String senderEmail, Long receiverId);
-    ApiResponse<FriendshipResponse> acceptFriendRequest(Long friendshipId, Long receiverId);
 
-    ApiResponse<String> rejectFriendRequest(Long friendshipId, Long receiverId);
+    ApiResponse<FriendshipResponse> acceptFriendRequest(Long friendshipId, String receiverEmail);
 
-    ApiResponse<String> cancelFriendRequest(Long friendshipId, Long senderId);
+    ApiResponse<String> rejectFriendRequest(Long friendshipId, String receiverEmail);
 
-    ApiResponse<List<FriendshipResponse>> getPendingRequests(Long userId);
+    ApiResponse<String> cancelFriendRequest(Long friendshipId, String senderEmail);
 
-    ApiResponse<List<FriendshipResponse>> getSentRequests(Long userId);
+    ApiResponse<List<FriendshipResponse>> getPendingRequests(String receiverEmail);
 
-    ApiResponse<List<FriendshipResponse>> getFriends(Long userId);
+    ApiResponse<List<FriendshipResponse>> getSentRequests(String senderEmail);
 
-    ApiResponse<String> removeFriend(Long friendshipId, Long userId);
+    ApiResponse<List<FriendshipResponse>> getFriends(String userEmail);
+
+    ApiResponse<String> removeFriend(Long friendshipId, String userEmail);
 }

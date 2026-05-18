@@ -79,14 +79,19 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
     @Override
     @Transactional
-    public ApiResponse<FriendshipResponse> acceptFriendRequest(Long friendshipId, Long receiverId) {
+    public ApiResponse<FriendshipResponse> acceptFriendRequest(Long friendshipId, String receiverEmail) {
+
+        User receiver = userRepository.findByEmail(receiverEmail).orElse(null);
+        if (receiver == null) {
+            return new ApiResponse<>(false, "Receiver user not found", null);
+        }
 
         Friendship friendship = friendshipRepository.findById(friendshipId).orElse(null);
         if (friendship == null) {
             return new ApiResponse<>(false, "Friend request not found", null);
         }
 
-        if (!friendship.getReceiver().getId().equals(receiverId)) {
+        if (!friendship.getReceiver().getId().equals(receiver.getId())) {
             return new ApiResponse<>(false, "You are not allowed to accept this request", null);
         }
 
@@ -99,17 +104,21 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Friend request accepted", mapToResponse(saved));
     }
-
     @Override
     @Transactional
-    public ApiResponse<String> rejectFriendRequest(Long friendshipId, Long receiverId) {
+    public ApiResponse<String> rejectFriendRequest(Long friendshipId, String receiverEmail) {
+
+        User receiver = userRepository.findByEmail(receiverEmail).orElse(null);
+        if (receiver == null) {
+            return new ApiResponse<>(false, "Receiver user not found", null);
+        }
 
         Friendship friendship = friendshipRepository.findById(friendshipId).orElse(null);
         if (friendship == null) {
             return new ApiResponse<>(false, "Friend request not found", null);
         }
 
-        if (!friendship.getReceiver().getId().equals(receiverId)) {
+        if (!friendship.getReceiver().getId().equals(receiver.getId())) {
             return new ApiResponse<>(false, "You are not allowed to reject this request", null);
         }
 
@@ -122,17 +131,21 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Friend request rejected", null);
     }
-
     @Override
     @Transactional
-    public ApiResponse<String> cancelFriendRequest(Long friendshipId, Long senderId) {
+    public ApiResponse<String> cancelFriendRequest(Long friendshipId, String senderEmail) {
+
+        User sender = userRepository.findByEmail(senderEmail).orElse(null);
+        if (sender == null) {
+            return new ApiResponse<>(false, "Sender user not found", null);
+        }
 
         Friendship friendship = friendshipRepository.findById(friendshipId).orElse(null);
         if (friendship == null) {
             return new ApiResponse<>(false, "Friend request not found", null);
         }
 
-        if (!friendship.getRequester().getId().equals(senderId)) {
+        if (!friendship.getRequester().getId().equals(sender.getId())) {
             return new ApiResponse<>(false, "You are not allowed to cancel this request", null);
         }
 
@@ -144,11 +157,10 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Friend request cancelled", null);
     }
-
     @Override
-    public ApiResponse<List<FriendshipResponse>> getPendingRequests(Long userId) {
+    public ApiResponse<List<FriendshipResponse>> getPendingRequests(String receiverEmail) {
 
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findByEmail(receiverEmail).orElse(null);
         if (user == null) {
             return new ApiResponse<>(false, "User not found", null);
         }
@@ -161,11 +173,10 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Pending friend requests fetched successfully", responses);
     }
-
     @Override
-    public ApiResponse<List<FriendshipResponse>> getSentRequests(Long userId) {
+    public ApiResponse<List<FriendshipResponse>> getSentRequests(String senderEmail) {
 
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findByEmail(senderEmail).orElse(null);
         if (user == null) {
             return new ApiResponse<>(false, "User not found", null);
         }
@@ -178,11 +189,10 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Sent friend requests fetched successfully", responses);
     }
-
     @Override
-    public ApiResponse<List<FriendshipResponse>> getFriends(Long userId) {
+    public ApiResponse<List<FriendshipResponse>> getFriends(String userEmail) {
 
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findByEmail(userEmail).orElse(null);
         if (user == null) {
             return new ApiResponse<>(false, "User not found", null);
         }
@@ -198,18 +208,22 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Friends fetched successfully", responses);
     }
-
     @Override
     @Transactional
-    public ApiResponse<String> removeFriend(Long friendshipId, Long userId) {
+    public ApiResponse<String> removeFriend(Long friendshipId, String userEmail) {
+
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user == null) {
+            return new ApiResponse<>(false, "User not found", null);
+        }
 
         Friendship friendship = friendshipRepository.findById(friendshipId).orElse(null);
         if (friendship == null) {
             return new ApiResponse<>(false, "Friendship not found", null);
         }
 
-        boolean isSender = friendship.getRequester().getId().equals(userId);
-        boolean isReceiver = friendship.getReceiver().getId().equals(userId);
+        boolean isSender = friendship.getRequester().getId().equals(user.getId());
+        boolean isReceiver = friendship.getReceiver().getId().equals(user.getId());
 
         if (!isSender && !isReceiver) {
             return new ApiResponse<>(false, "You are not allowed to remove this friendship", null);
@@ -223,7 +237,6 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Friend removed successfully", null);
     }
-
     private FriendshipResponse mapToResponse(Friendship friendship) {
 
         FriendshipResponse response = new FriendshipResponse();
