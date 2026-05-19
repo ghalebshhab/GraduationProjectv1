@@ -5,16 +5,19 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jomap.backend.DTOs.Activities.ActivityResponse;
 import com.jomap.backend.DTOs.Activities.CreateActivityRequest;
+import com.jomap.backend.DTOs.Activities.ActivitySchedule;
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.Entities.Activities.Activity;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivityStatus;
+
 import com.jomap.backend.Entities.Gove.Governorate;
 import com.jomap.backend.Entities.Gove.GovernorateRepository;
 import com.jomap.backend.Entities.Users.User;
@@ -47,8 +50,6 @@ public class ActivityServiceImpl implements ActivityService {
         Activity activity = new Activity();
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
-        activity.setDate(request.getDate());
-        activity.setTime(request.getTime());
         activity.setActivityLocation(request.getActivityLocation());
         activity.setGovernorate(optionalGov.get());
         activity.setImageUrl(request.getImageUrl());
@@ -58,6 +59,23 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setCreatedBy(user);
         activity.setPrice(request.getPrice());
         activity.setAttendeesCount(request.getAttendeesCount());
+
+        activity.setScheduleType(request.getScheduleType());
+        activity.setTotalActualDays(request.getTotalActualDays());
+
+        List<com.jomap.backend.Entities.Activities.ActivitySchedule> schedules = new ArrayList<>();
+        if (request.getSchedules() != null) {
+            for (ActivitySchedule dto : request.getSchedules()) {
+                com.jomap.backend.Entities.Activities.ActivitySchedule schedule = new com.jomap.backend.Entities.Activities.ActivitySchedule();
+                schedule.setDate(dto.getDate());
+                schedule.setDayName(dto.getDayName());
+                schedule.setStartTime(dto.getStartTime());
+                schedule.setEndTime(dto.getEndTime());
+                schedule.setActivity(activity);
+                schedules.add(schedule);
+            }
+        }
+        activity.setSchedules(schedules);
 
         Activity savedActivity = activityRepository.save(activity);
         return ApiResponse.success("تم إنشاء النشاط بنجاح وهو بانتظار موافقة المسؤول", mapToResponse(savedActivity));
@@ -89,8 +107,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public ApiResponse<List<ActivityResponse>> getUpcomingApprovedActivities() {
-        List<ActivityResponse> activities = activityRepository
-                .findByStatusAndDateGreaterThanEqual(ActivityStatus.APPROVED, LocalDate.now())
+        List<ActivityResponse> activities = activityRepository.findByStatus(ActivityStatus.APPROVED)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -177,12 +194,22 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     private ActivityResponse mapToResponse(Activity activity) {
+        List<ActivitySchedule> scheduleDtos = new ArrayList<>();
+        if (activity.getSchedules() != null) {
+            for (com.jomap.backend.Entities.Activities.ActivitySchedule schedule : activity.getSchedules()) {
+                scheduleDtos.add(ActivitySchedule.builder()
+                        .date(schedule.getDate())
+                        .dayName(schedule.getDayName())
+                        .startTime(schedule.getStartTime())
+                        .endTime(schedule.getEndTime())
+                        .build());
+            }
+        }
+
         return ActivityResponse.builder()
                 .id(activity.getId())
                 .title(activity.getTitle())
                 .description(activity.getDescription())
-                .date(activity.getDate().toString())
-                .time(activity.getTime())
                 .activityLocation(activity.getActivityLocation())
                 .governorateId(activity.getGovernorate().getId())
                 .imageUrl(activity.getImageUrl())
@@ -193,6 +220,9 @@ public class ActivityServiceImpl implements ActivityService {
                 .statusId((long) activity.getStatus().getId())
                 .createdById(activity.getCreatedBy().getId())
                 .createdByUsername(activity.getCreatedBy().getUsername())
+                .scheduleType(activity.getScheduleType())
+                .totalActualDays(activity.getTotalActualDays())
+                .schedules(scheduleDtos)
                 .build();
     }
 }

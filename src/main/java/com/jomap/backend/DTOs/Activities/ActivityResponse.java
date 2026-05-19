@@ -17,9 +17,15 @@ public class ActivityResponse {
 
     private String description;
 
-    private String date;
+    //private String date;
 
-    private String time;
+    //private String time;
+
+    private String scheduleType;
+    
+    private Integer totalActualDays;
+
+    private java.util.List<ActivitySchedule> schedules;
 
     private String activityLocation;
 

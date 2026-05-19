@@ -31,11 +31,20 @@ public class Activity {
     @Column(nullable = false, length = 2000)
     private String description;
 
-    @Column(nullable = false)
-    private String date;
+    //@Column(nullable = false)
+    //private String date;
 
-    @Column(nullable = false)
-    private String time;
+    //@Column(nullable = false)
+    //private String time;
+
+    @Column(name = "schedule_type", nullable = false)
+    private String scheduleType;
+
+    @Column(name = "total_actual_days", nullable = false)
+    private Integer totalActualDays = 1;
+
+    @jakarta.persistence.OneToMany(mappedBy = "activity", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<ActivitySchedule> schedules = new java.util.ArrayList<>();
 
     @Column(name = "activity_location")
     private String activityLocation; 

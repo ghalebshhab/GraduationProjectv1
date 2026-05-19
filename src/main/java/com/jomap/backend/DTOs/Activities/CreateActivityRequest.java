@@ -17,11 +17,20 @@ public class CreateActivityRequest {
     @Size(min = 10, max = 2000, message = "الوصف يجب أن يكون 10 احرف على الأقل")
     private String description;
 
-    @NotBlank(message = "التاريخ مطلوب")
-    private String date;
+    //@NotBlank(message = "التاريخ مطلوب")
+    //private String date;
 
-    @NotBlank(message = "الوقت مطلوب")
-    private String time;
+    //@NotBlank(message = "الوقت مطلوب")
+    //private String time;
+
+    @NotBlank(message = "نوع الجدولة مطلوب: يوم واحد؟ عدة ايام؟")
+    private String scheduleType;
+
+    @NotNull(message = "إجمالي عدد الأيام الفعلية مطلوب")
+    private Integer totalActualDays = 1;
+
+    @NotNull(message = "قائمة المواعيد والأوقات مطلوبة")
+    private java.util.List<ActivitySchedule> schedules;
 
     @NotBlank(message = "مكان النشاط او الفعالية مطلوب")
     private String activityLocation;
