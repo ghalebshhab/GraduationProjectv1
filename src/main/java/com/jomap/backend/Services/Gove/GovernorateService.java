@@ -6,6 +6,7 @@ import com.jomap.backend.DTOs.Gove.GovernorateDetailsResponse;
 import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivityStatus;
+import com.jomap.backend.Entities.Activities.ActivitySchedule;
 import com.jomap.backend.Entities.Gove.*;
 import com.jomap.backend.Entities.Locations.LocationCategory;
 
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +32,7 @@ public class GovernorateService {
     @Autowired
     private final PlaceRepository placeRepository;
     @Autowired
-    private ActivityRepository ActivityRepository;
+    private ActivityRepository activityRepository;
 
     public List<Governorate> getAllGovernorates() {
         return governorateRepository.findAll();
@@ -103,18 +105,42 @@ public class GovernorateService {
                 .map(this::mapToPlaceResponse)
                 .collect(Collectors.toList());
 
-        List<ActivityResponse> approvedActivities = ActivityRepository
-                .findByStatusAndGovernorateId(ActivityStatus.APPROVED, id).stream().limit(5)
-                .map(Activity -> {
-                    ActivityResponse response = new ActivityResponse();
-                    response.setId(Activity.getId());
-                    response.setTitle(Activity.getTitle());
-                    response.setDescription(Activity.getDescription());
-                    response.setImageUrl(Activity.getImageUrl());
-                    response.setDate(Activity.getDate().toString());
-                    return response;
-                })
-                .collect(Collectors.toList());
+       List<ActivityResponse> approvedActivities = activityRepository
+        .findByStatusAndGovernorateId(ActivityStatus.APPROVED, id).stream().limit(5)
+        .<ActivityResponse>map(activity -> { 
+            
+            List<com.jomap.backend.DTOs.Activities.ActivitySchedule> scheduleDtos = new ArrayList<>();
+            if (activity.getSchedules() != null) {
+                for (ActivitySchedule schedule : activity.getSchedules()) {
+                    scheduleDtos.add(com.jomap.backend.DTOs.Activities.ActivitySchedule.builder()
+                            .date(schedule.getDate())
+                            .dayName(schedule.getDayName())
+                            .startTime(schedule.getStartTime())
+                            .endTime(schedule.getEndTime())
+                            .build());
+                }
+            }
+
+            return ActivityResponse.builder()
+                    .id(activity.getId())
+                    .title(activity.getTitle())
+                    .description(activity.getDescription())
+                    .imageUrl(activity.getImageUrl())
+                    .activityLocation(activity.getActivityLocation())
+                    .governorateId(activity.getGovernorate().getId())
+                    .latitude(activity.getLatitude())
+                    .longitude(activity.getLongitude())
+                    .price(activity.getPrice())
+                    .attendeesCount(activity.getAttendeesCount())
+                    .statusId((long) activity.getStatus().getId())
+                    .createdById(activity.getCreatedBy().getId())
+                    .createdByUsername(activity.getCreatedBy().getUsername())
+                    .scheduleType(activity.getScheduleType())
+                    .totalActualDays(activity.getTotalActualDays())
+                    .schedules(scheduleDtos)
+                    .build();
+        })
+        .collect(Collectors.toList());
 
         GovernorateDetailsResponse details = GovernorateDetailsResponse.builder()
                 .id(gov.getId())
