@@ -1,8 +1,7 @@
-package com.jomap.backend.Entities.Gove;
+package com.jomap.backend.Entities.Governorate;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jomap.backend.Entities.Gove.Governorate;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,7 +25,7 @@ public class GovernorateImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "governorate_id", nullable = false)
-    @JsonBackReference
+    @JsonBackReference("governorate-images")
     @JsonIgnore
     private Governorate governorate;
 }

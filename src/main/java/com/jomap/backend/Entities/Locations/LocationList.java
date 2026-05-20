@@ -2,7 +2,7 @@ package com.jomap.backend.Entities.Locations;
 
 import java.time.LocalDateTime;
 
-import com.jomap.backend.Entities.Gove.Governorate;
+import com.jomap.backend.Entities.Governorate.Governorate;
 import com.jomap.backend.Entities.Users.User;
 
 import jakarta.persistence.Column;

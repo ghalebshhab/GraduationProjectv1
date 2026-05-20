@@ -17,9 +17,8 @@ import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.Entities.Activities.Activity;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivityStatus;
-
-import com.jomap.backend.Entities.Gove.Governorate;
-import com.jomap.backend.Entities.Gove.GovernorateRepository;
+import com.jomap.backend.Entities.Governorate.Governorate;
+import com.jomap.backend.Entities.Governorate.GovernorateRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 

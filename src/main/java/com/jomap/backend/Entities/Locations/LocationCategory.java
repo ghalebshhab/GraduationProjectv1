@@ -9,18 +9,19 @@ public enum LocationCategory {
     HOTEL(3, "فندق"),
     CAFE(4, "مقهى"),
     TOURISM(5, "سياحة"),
-    MARKET(6, "سوق"),
-    MALL(7, "مول"),
-    PHARMACY(8, "صيدلية"),
-    HOSPITAL(9, "مستشفى"),
-    STADIUM(10, "ملعب"),
-    PARK(11, "منتزه"),
-    GAS_STATION(12, "محطة وقود"),
-    EDUCATION(13, "تعليم"),
-    ENTERTAINMENT(14, "ترفيه"),
-    VOLUNTEER_TEAM(15, "فريق تطوعي"), 
-    ORGANIZATION(16, "منظمة/جمعية"), 
-    OTHER(17, "أخرى");
+    HISTORICAL(6, "أماكن أثرية"),
+    MARKET(7, "سوق"),
+    MALL(8, "مول"),
+    PHARMACY(9, "صيدلية"),
+    HOSPITAL(10, "مستشفى"),
+    STADIUM(11, "ملعب"),
+    PARK(12, "منتزه"),
+    GAS_STATION(13, "محطة وقود"),
+    EDUCATION(14, "تعليم"),
+    ENTERTAINMENT(15, "ترفيه"),
+    VOLUNTEER_TEAM(16, "فريق تطوعي"), 
+    ORGANIZATION(17, "منظمة/جمعية"), 
+    OTHER(18, "أخرى");
 
     private final int id;
     private final String label;

@@ -17,10 +17,6 @@ public class ActivityResponse {
 
     private String description;
 
-    //private String date;
-
-    //private String time;
-
     private String scheduleType;
     
     private Integer totalActualDays;
@@ -41,7 +37,7 @@ public class ActivityResponse {
 
     private Integer attendeesCount; 
 
-    private Long statusId;;
+    private Long statusId;
 
     private Long createdById;
 

@@ -1,14 +1,13 @@
-package com.jomap.backend.Controllers.Gov;
-
+package com.jomap.backend.Controllers.Governorate;
 
 import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.DTOs.Gove.GovernorateDetailsResponse;
-import com.jomap.backend.DTOs.Gove.ImageRequestDto;
-import com.jomap.backend.Entities.Gove.Governorate;
-import com.jomap.backend.Entities.Gove.GovernorateImage;
-import com.jomap.backend.Entities.Gove.Place;
-import com.jomap.backend.DTOs.Gove.PlaceRequestDto;
-import com.jomap.backend.Services.Gove.GovernorateService;
+import com.jomap.backend.DTOs.Governorate.GovernorateDetailsResponse;
+import com.jomap.backend.DTOs.Governorate.ImageRequest;
+import com.jomap.backend.DTOs.Governorate.PlaceRequest;
+import com.jomap.backend.Entities.Governorate.Governorate;
+import com.jomap.backend.Entities.Governorate.Place;
+import com.jomap.backend.Services.Governorate.GovernorateService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,9 +29,7 @@ public class GovernorateController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<GovernorateDetailsResponse>> getGovernorateDetails(@PathVariable Long id) {
-
         ApiResponse<GovernorateDetailsResponse> response = governorateService.getGovernorateDetails(id);
-
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
         } else {
@@ -43,7 +40,7 @@ public class GovernorateController {
     @PostMapping("/{id}/images")
     public ResponseEntity<ApiResponse<?>> addImageUrl(
             @PathVariable Long id,
-            @RequestBody ImageRequestDto request) {
+            @RequestBody ImageRequest request) {
 
         ApiResponse<?> response = governorateService.addImageToGovernorate(id, request.getImageUrl());
         if (response.isSuccess()) {
@@ -56,9 +53,10 @@ public class GovernorateController {
     @PostMapping("/{id}/places")
     public ResponseEntity<ApiResponse<?>> addPlace(
             @PathVariable Long id,
-            @RequestBody PlaceRequestDto request) {
+            @RequestBody PlaceRequest request) {
 
-        ApiResponse<?> response = governorateService.addPlaceToGovernorate(
+        // سيمرر الإضافة بنجاح وتلقائياً لجدول الـ places الثابت
+        ApiResponse<Place> response = governorateService.addPlaceToGovernorate(
                 id,
                 request.getName(),
                 request.getDescription(),

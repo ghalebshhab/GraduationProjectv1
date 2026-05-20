@@ -17,12 +17,6 @@ public class CreateActivityRequest {
     @Size(min = 10, max = 2000, message = "الوصف يجب أن يكون 10 احرف على الأقل")
     private String description;
 
-    //@NotBlank(message = "التاريخ مطلوب")
-    //private String date;
-
-    //@NotBlank(message = "الوقت مطلوب")
-    //private String time;
-
     @NotBlank(message = "نوع الجدولة مطلوب: يوم واحد؟ عدة ايام؟")
     private String scheduleType;
 

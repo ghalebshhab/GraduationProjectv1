@@ -1,6 +1,6 @@
 package com.jomap.backend.Entities.Activities;
 
-import com.jomap.backend.Entities.Gove.Governorate;
+import com.jomap.backend.Entities.Governorate.Governorate;
 import com.jomap.backend.Entities.Users.User;
 
 import jakarta.persistence.Column;
@@ -30,12 +30,6 @@ public class Activity {
 
     @Column(nullable = false, length = 2000)
     private String description;
-
-    //@Column(nullable = false)
-    //private String date;
-
-    //@Column(nullable = false)
-    //private String time;
 
     @Column(name = "schedule_type", nullable = false)
     private String scheduleType;

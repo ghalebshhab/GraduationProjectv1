@@ -1,10 +1,8 @@
-package com.jomap.backend.Entities.Gove;
+package com.jomap.backend.Entities.Governorate;
 
-import com.jomap.backend.Entities.Gove.Governorate;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
 
 @Repository

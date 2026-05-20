@@ -1,4 +1,4 @@
-package com.jomap.backend.Entities.Gove;
+package com.jomap.backend.Entities.Governorate;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "images") // لمنع مشاكل التكرار في الذاكرة
+@ToString(exclude = { "images", "places" })
 public class Governorate {
 
     @Id
@@ -29,7 +29,7 @@ public class Governorate {
     private String description;
 
     @OneToMany(mappedBy = "governorate", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonManagedReference("governorate-images")
     private List<GovernorateImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "governorate", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -1,9 +1,8 @@
-package com.jomap.backend.Entities.Gove;
+package com.jomap.backend.Entities.Governorate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jomap.backend.Entities.Locations.LocationCategory;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,7 +30,6 @@ public class Place {
     @Column(name = "image_url")
     private String imageUrl;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "governorate_id", nullable = false)
     @JsonBackReference("governorate-places")
@@ -40,5 +38,5 @@ public class Place {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category")
-    private LocationCategory category;
+    private PlaceCategory category;
 }
