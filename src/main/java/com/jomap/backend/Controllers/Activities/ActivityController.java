@@ -101,4 +101,16 @@ public class ActivityController {
 
         return ActivityService.updateActivity(id, request, email);
     }
+
+    @PutMapping("/cancel/{id}")
+    public ApiResponse<ActivityResponse> cancelActivity(
+            @PathVariable Long id,
+            Principal principal) {
+        
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+
+        return ActivityService.cancelActivity(id);
+    }
 }

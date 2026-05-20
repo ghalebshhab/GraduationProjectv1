@@ -201,9 +201,37 @@ public class ActivityServiceImpl implements ActivityService {
             return ApiResponse.error("العملية مرفوضة: ليس لديك صلاحية لتعديل هذه الفعالية");
         }
 
+        if (activity.getStatus() == ActivityStatus.REJECTED || 
+            activity.getStatus() == ActivityStatus.CANCELLED || 
+            activity.getStatus() == ActivityStatus.COMPLETED) {
+            return ApiResponse.error("العملية حظرت: لا يمكن تعديل فعالية مرفوضة، ملغاة، أو منتهية ومكتملة");
+        }
+
         Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
         if (optionalGov.isEmpty()) {
             return ApiResponse.error("فشل التحديث: المحافظة المحددة غير مدعومة");
+        }
+
+        boolean isScheduleChanged = false;
+        if (request.getSchedules() != null && !request.getSchedules().isEmpty()) {
+            if (activity.getSchedules().size() != request.getSchedules().size()) {
+                isScheduleChanged = true;
+            } else {
+                for (int i = 0; i < request.getSchedules().size(); i++) {
+                    ActivitySchedule newSched = request.getSchedules().get(i);
+                    com.jomap.backend.Entities.Activities.ActivitySchedule oldSched = activity.getSchedules().get(i);
+                    if (!newSched.getDate().equals(oldSched.getDate()) ||
+                        !newSched.getStartTime().equals(oldSched.getStartTime()) ||
+                        !newSched.getEndTime().equals(oldSched.getEndTime())) {
+                        isScheduleChanged = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isScheduleChanged && activity.getStatus() == ActivityStatus.APPROVED) {
+            activity.setStatus(ActivityStatus.POSTPONED);
         }
 
         activity.setTitle(request.getTitle());
@@ -218,8 +246,8 @@ public class ActivityServiceImpl implements ActivityService {
         if (request.getLatitude() != null) activity.setLatitude(request.getLatitude());
         if (request.getLongitude() != null) activity.setLongitude(request.getLongitude());
 
+        // إعادة بناء لستة المواعيد الجديدة
         activity.getSchedules().clear();
-
         if (request.getSchedules() != null) {
             for (ActivitySchedule dto : request.getSchedules()) {
                 com.jomap.backend.Entities.Activities.ActivitySchedule schedule = new com.jomap.backend.Entities.Activities.ActivitySchedule();
@@ -233,7 +261,12 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         Activity updatedActivity = activityRepository.save(activity);
-        return ApiResponse.success("تم تحديث معلومات الفعالية بنجاح، وسيتم إشعار المسجلين", mapToResponse(updatedActivity));
+        
+        String successMessage = (activity.getStatus() == ActivityStatus.POSTPONED) ? 
+            "تم تأجيل الفعالية تلقائياً لتغيير المواعيد، وبانتظار بت المسؤول مجدداً" : 
+            "تم تحديث معلومات الفعالية بنجاح، وسيتم إشعار المسجلين";
+
+        return ApiResponse.success(successMessage, mapToResponse(updatedActivity));
     }
 
 
