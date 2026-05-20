@@ -74,4 +74,31 @@ public class ActivityController {
 
         return ActivityService.getMyActivities(email);
     }
+
+    @PutMapping("/update/{id}")
+    public ApiResponse<ActivityResponse> updateActivity(
+            @PathVariable Long id,
+            @Valid @RequestBody com.jomap.backend.DTOs.Activities.UpdateActivityRequest request,
+            BindingResult bindingResult,
+            Principal principal) {
+
+
+
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getFieldErrors()
+                    .stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
+
+            return ApiResponse.error(errorMessage);
+        }
+
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+
+        String email = principal.getName();
+
+        return ActivityService.updateActivity(id, request, email);
+    }
 }

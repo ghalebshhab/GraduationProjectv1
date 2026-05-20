@@ -29,4 +29,6 @@ public interface ActivityService {
     ApiResponse<ActivityResponse> cancelActivity(Long activityId);
 
     ApiResponse<List<ActivityResponse>> getCompletedActivities();
+
+    ApiResponse<ActivityResponse> updateActivity(Long activityId, com.jomap.backend.DTOs.Activities.UpdateActivityRequest request, String ownerEmail);
 }

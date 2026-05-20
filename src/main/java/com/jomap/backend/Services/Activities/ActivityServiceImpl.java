@@ -187,6 +187,56 @@ public class ActivityServiceImpl implements ActivityService {
         return ApiResponse.success("تم تأجيل النشاط", mapToResponse(activityRepository.save(activity)));
     }
 
+
+    @Override
+    @Transactional
+    public ApiResponse<ActivityResponse> updateActivity(Long activityId, com.jomap.backend.DTOs.Activities.UpdateActivityRequest request, String ownerEmail) {
+        Optional<Activity> activityOptional = activityRepository.findById(activityId);
+        if (activityOptional.isEmpty()) {
+            return ApiResponse.error("فشل التحديث: الفعالية غير موجودة");
+        }
+        Activity activity = activityOptional.get();
+
+        if (!activity.getCreatedBy().getEmail().equals(ownerEmail)) {
+            return ApiResponse.error("العملية مرفوضة: ليس لديك صلاحية لتعديل هذه الفعالية");
+        }
+
+        Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
+        if (optionalGov.isEmpty()) {
+            return ApiResponse.error("فشل التحديث: المحافظة المحددة غير مدعومة");
+        }
+
+        activity.setTitle(request.getTitle());
+        activity.setDescription(request.getDescription());
+        activity.setActivityLocation(request.getActivityLocation());
+        activity.setGovernorate(optionalGov.get());
+        activity.setPrice(request.getPrice());
+        activity.setScheduleType(request.getScheduleType());
+        activity.setTotalActualDays(request.getTotalActualDays());
+        
+        if (request.getImageUrl() != null) activity.setImageUrl(request.getImageUrl());
+        if (request.getLatitude() != null) activity.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null) activity.setLongitude(request.getLongitude());
+
+        activity.getSchedules().clear();
+
+        if (request.getSchedules() != null) {
+            for (ActivitySchedule dto : request.getSchedules()) {
+                com.jomap.backend.Entities.Activities.ActivitySchedule schedule = new com.jomap.backend.Entities.Activities.ActivitySchedule();
+                schedule.setDate(dto.getDate());
+                schedule.setDayName(dto.getDayName());
+                schedule.setStartTime(dto.getStartTime());
+                schedule.setEndTime(dto.getEndTime());
+                schedule.setActivity(activity); 
+                activity.getSchedules().add(schedule);
+            }
+        }
+
+        Activity updatedActivity = activityRepository.save(activity);
+        return ApiResponse.success("تم تحديث معلومات الفعالية بنجاح، وسيتم إشعار المسجلين", mapToResponse(updatedActivity));
+    }
+
+
     private LocalTime parseTime(String time) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
         return LocalTime.parse(time, formatter);
