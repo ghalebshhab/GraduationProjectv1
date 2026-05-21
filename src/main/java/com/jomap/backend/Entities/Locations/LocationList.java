@@ -81,6 +81,9 @@ public class LocationList {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @PrePersist
     public void beforeCreate() {
         createdAt = LocalDateTime.now();

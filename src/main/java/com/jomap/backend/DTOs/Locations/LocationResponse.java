@@ -33,6 +33,7 @@ public class LocationResponse {
     private String ownerName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 
     private String newToken;
 }

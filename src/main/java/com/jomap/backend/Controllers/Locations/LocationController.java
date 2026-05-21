@@ -4,17 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Locations.CreateLocationRequest;
@@ -23,6 +13,7 @@ import com.jomap.backend.DTOs.Locations.UpdateLocationRequest;
 import com.jomap.backend.Entities.Locations.LocationCategory;
 import com.jomap.backend.Services.Locations.LocationService;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
@@ -33,72 +24,79 @@ public class LocationController {
 
     private final LocationService locationService; 
 
+    // 1. إنشاء موقع جديد
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<LocationResponse>> createLocation(
-            @RequestBody CreateLocationRequest request,
+            @Valid @RequestBody CreateLocationRequest request,
             Principal principal
     ) {
         if (principal == null) {
-            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+            return ResponseEntity.ok(ApiResponse.error("المستخدم غير موثق"));
         }
-
-        ApiResponse<LocationResponse> response =
-                locationService.createLocation(request, principal.getName());
-
+        ApiResponse<LocationResponse> response = locationService.createLocation(request, principal.getName());
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{locationId}")
+    // 2. تحديث البيانات الشاملة والأساسية للموقع (مطابق للفرونت مية بالمية)
+    @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<LocationResponse>> updateLocation(
-            @PathVariable Long locationId,
-            @RequestBody UpdateLocationRequest request,
+            @PathVariable("id") Long id,
+            @Valid @RequestBody UpdateLocationRequest request,
             Principal principal
     ) {
         if (principal == null) {
-            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+            return ResponseEntity.ok(ApiResponse.error("المستخدم غير موثق"));
         }
-
-        ApiResponse<LocationResponse> response =
-                locationService.updateLocation(locationId, request, principal.getName());
-
+        ApiResponse<LocationResponse> response = locationService.updateLocation(id, request, principal.getName());
         return ResponseEntity.ok(response);
     }
 
+    // 3. الدالة الموحدة الذكية للتحكم بحالة الموقع الشاملة (تنشيط PUBLISHED / تعطيل DEACTIVATED / حذف DELETED)
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<LocationResponse>> changeLocationStatus(
+            @PathVariable("id") Long id,
+            @RequestParam("status") String status,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.ok(ApiResponse.error("المستخدم غير موثق"));
+        }
+        ApiResponse<LocationResponse> response = locationService.changeLocationStatus(id, status, principal.getName());
+        return ResponseEntity.ok(response);
+    }
+
+    // 4. جلب كل المواقع النشطة والمعتمدة على الخريطة للزوار
     @GetMapping
     public ResponseEntity<ApiResponse<List<LocationResponse>>> getLocations(
-            @RequestParam(required = false) Long governorateId, // تعديل لـ Long governorateId
+            @RequestParam(required = false) Long governorateId, 
             @RequestParam(required = false) LocationCategory category
     ) {
-        ApiResponse<List<LocationResponse>> response =
-                locationService.getLocations(governorateId, category);
-
+        ApiResponse<List<LocationResponse>> response = locationService.getLocations(governorateId, category);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{locationId}")
+    // 5. جلب تفاصيل موقع محدد بالـ ID لفرش الحقول بالفرونت
+    @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LocationResponse>> getLocationById(
-            @PathVariable Long locationId
+            @PathVariable("id") Long id
     ) {
-        ApiResponse<LocationResponse> response =
-                locationService.getLocationById(locationId);
-
+        ApiResponse<LocationResponse> response = locationService.getLocationById(id);
         return ResponseEntity.ok(response);
     }
 
+    // 6. جلب الموقع الخاص بالمسؤول الحالي دغري للـ Dashboard
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<LocationResponse>> getMyLocation(
             Principal principal
     ) {
         if (principal == null) {
-            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+            return ResponseEntity.ok(ApiResponse.error("المستخدم غير موثق"));
         }
-
-        ApiResponse<LocationResponse> response =
-                locationService.getMyLocation(principal.getName());
-
+        ApiResponse<LocationResponse> response = locationService.getMyLocation(principal.getName());
         return ResponseEntity.ok(response);
     }
 
+    // 7. اعتماد وقبول الموقع من الـ Admin لنشره
     @PatchMapping("/{locationId}/approve")
     public ResponseEntity<ApiResponse<LocationResponse>> approveLocation(
             @PathVariable Long locationId
@@ -107,39 +105,31 @@ public class LocationController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{locationId}")
-    public ResponseEntity<ApiResponse<LocationResponse>> deactivateLocation(
-            @PathVariable Long locationId,
+    // 8. تحديث صورة الغلاف بشكل منفصل
+    @PatchMapping("/{id}/update-cover")
+    public ResponseEntity<ApiResponse<LocationResponse>> updateCover(
+            @PathVariable Long id, 
+            @RequestBody UpdateLocationRequest request, 
             Principal principal
     ) {
         if (principal == null) {
-            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+            return ResponseEntity.ok(ApiResponse.error("المستخدم غير موثق"));
         }
-
-        ApiResponse<LocationResponse> response =
-                locationService.deactivateLocation(locationId, principal.getName());
-
+        ApiResponse<LocationResponse> response = locationService.updateCover(id, request, principal.getName());
         return ResponseEntity.ok(response);
     }
 
-// تحديث صورة الغلاف
-@PatchMapping("/{id}/update-cover")
-public ResponseEntity<?> updateCover(@PathVariable Long id, @RequestBody UpdateLocationRequest request, Principal principal) {
+    // 9. تحديث اللوجو بشكل منفصل
+    @PatchMapping("/{id}/update-logo")
+    public ResponseEntity<ApiResponse<LocationResponse>> updateLogo(
+            @PathVariable Long id, 
+            @RequestBody UpdateLocationRequest request, 
+            Principal principal
+    ) {
         if (principal == null) {
-            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
+            return ResponseEntity.ok(ApiResponse.error("المستخدم غير موثق"));
         }
-    locationService.updateCover(id, request, principal.getName());
-    return ResponseEntity.ok("تم تحديث غلاف الموقع بنجاح");
-}
-
-// تحديث اللوجو
-@PatchMapping("/{id}/update-logo")
-public ResponseEntity<?> updateLogo(@PathVariable Long id, @RequestBody UpdateLocationRequest request, Principal principal) {
-        if (principal == null) {
-            return ResponseEntity.ok(ApiResponse.error("User is not authenticated"));
-        }
-    locationService.updateLogo(id, request, principal.getName() );
-    return ResponseEntity.ok("تم تحديث لوجو الموقع بنجاح");
-}
-
+        ApiResponse<LocationResponse> response = locationService.updateLogo(id, request, principal.getName());
+        return ResponseEntity.ok(response);
+    }
 }

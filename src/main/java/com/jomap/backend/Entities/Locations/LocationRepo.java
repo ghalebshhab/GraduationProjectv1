@@ -2,6 +2,8 @@ package com.jomap.backend.Entities.Locations;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,4 +31,8 @@ public interface LocationRepo extends JpaRepository<LocationList, Long> {
     long countByActiveFalse();
     long countByApprovedTrueAndActiveTrue();
     long countByApprovedFalseAndActiveTrue();
+
+    List<LocationList> findByStatusAndDeletedAtBefore(LocationStatus status, LocalDateTime thresholdTime);
+
+    Optional<LocationList> findByOwnerIdAndStatusNot(Long ownerId, LocationStatus status);
 }

@@ -17,105 +17,113 @@ import com.jomap.backend.Services.Auth.JwtService;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @AllArgsConstructor
 public class LocationServiceImpl implements LocationService {
-    
-    private final LocationRepo locationRepository; 
+
+    private final LocationRepo locationRepository;
     private final UserRepository userRepository;
     private final GovernorateRepository governorateRepository;
     private final JwtService jwtService;
 
     @Override
-public ApiResponse<LocationResponse> createLocation(CreateLocationRequest request, String currentUserEmail) {
-    ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
-    if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+    @Transactional
+    public ApiResponse<LocationResponse> createLocation(CreateLocationRequest request, String currentUserEmail) {
+        ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
+        if (!userResponse.isSuccess())
+            return ApiResponse.error(userResponse.getMessage());
 
-    User owner = userResponse.getData();
-    
-    if (request.getGovernorateId() == null) {
-        return ApiResponse.error("يجب اختيار المحافظة");
+        User owner = userResponse.getData();
+
+        if (request.getGovernorateId() == null) {
+            return ApiResponse.error("يجب اختيار المحافظة");
+        }
+
+        ApiResponse<Void> validationResponse = validateCreateRequest(request);
+        if (!validationResponse.isSuccess())
+            return ApiResponse.error(validationResponse.getMessage());
+
+        if (locationRepository.existsByOwnerId(owner.getId())) {
+            return ApiResponse.error("لديك موقع مسجل بالفعل، يمكنك تعديل موقعك الحالي.");
+        }
+
+        LocationList location = new LocationList();
+        mapRequestToEntity(location, request);
+
+        return governorateRepository.findById(request.getGovernorateId())
+                .map(gov -> {
+                    location.setGovernorate(gov);
+                    location.setOwner(owner);
+
+                    location.setStatus(LocationStatus.PENDING);
+                    location.setApproved(false);
+                    location.setActive(true);
+
+                    LocationList savedLocation = locationRepository.save(location);
+
+                    owner.setRole(Role.OWNER);
+                    userRepository.save(owner);
+
+                    String newToken = jwtService.generateToken(owner.getEmail());
+
+                    LocationResponse response = mapToResponse(savedLocation);
+                    response.setNewToken(newToken);
+
+                    return ApiResponse.success(
+                            "تم إنشاء الموقع بنجاح، بانتظار موافقة المسؤول.",
+                            response);
+                }).orElse(ApiResponse.error("المحافظة المحددة غير موجودة في النظام"));
     }
-
-    ApiResponse<Void> validationResponse = validateCreateRequest(request);
-    if (!validationResponse.isSuccess()) return ApiResponse.error(validationResponse.getMessage());
-
-    if (locationRepository.existsByOwnerId(owner.getId())) {
-        return ApiResponse.error("لديك موقع مسجل بالفعل، يمكنك تعديل موقعك الحالي.");
-    }
-
-    LocationList location = new LocationList();
-    mapRequestToEntity(location, request);
-    
-       return governorateRepository.findById(request.getGovernorateId())
-            .map(gov -> {
-                location.setGovernorate(gov);
-                location.setOwner(owner);
-                
-                location.setStatus(LocationStatus.PENDING);
-                location.setApproved(false);
-                location.setActive(true);
-
-                 // 1. حفظ الموقع في الداتابيز
-                LocationList savedLocation = locationRepository.save(location);
-
-                // 2. ترقية المستخدم ليكون OWNER وحفظه
-                owner.setRole(Role.OWNER); 
-                userRepository.save(owner);
-
-                // 3. توليد توكن جديد يحتوي على الرتبة الجديدة (OWNER)
-                // تأكد أن دالة generateToken في JwtService تأخذ الإيميل وتجلب الرتبة من قاعدة البيانات
-                String newToken = jwtService.generateToken(owner.getEmail());
-
-                // 4. تجهيز الرد وإضافة التوكن فيه
-                LocationResponse response = mapToResponse(savedLocation);
-                response.setNewToken(newToken); // تأكد من إضافة هذا الحقل في كلاس LocationResponse
-
-                return ApiResponse.success(
-                        "تم إنشاء الموقع بنجاح، بانتظار موافقة المسؤول.",
-                        mapToResponse(savedLocation)
-                );
-            }).orElse(ApiResponse.error("المحافظة المحددة غير موجودة في النظام"));
-}
-
 
     @Override
-    public ApiResponse<LocationResponse> updateLocation(Long locationId, UpdateLocationRequest request, String currentUserEmail) {
+    @Transactional
+    public ApiResponse<LocationResponse> updateLocation(Long locationId, UpdateLocationRequest request,
+            String currentUserEmail) {
         ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
-        if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+        if (!userResponse.isSuccess())
+            return ApiResponse.error(userResponse.getMessage());
 
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
-        if (locationOptional.isEmpty()) return ApiResponse.error("الموقع غير موجود");
+        if (locationOptional.isEmpty())
+            return ApiResponse.error("الموقع غير موجود");
 
         LocationList location = locationOptional.get();
 
-        // التأكد أن المعدل هو المالك
         if (!location.getOwner().getId().equals(userResponse.getData().getId())) {
             return ApiResponse.error("ليس لديك صلاحية لتعديل هذا الموقع");
         }
 
-        // تحديث الحقول
+        if (request.getGovernorateId() != null) {
+            Optional<Governorate> govOpt = governorateRepository.findById(request.getGovernorateId());
+            if (govOpt.isEmpty())
+                return ApiResponse.error("المحافظة المحددة غير مدعومة");
+            location.setGovernorate(govOpt.get());
+        }
+
         updateEntityFields(location, request);
 
-        // حسب المخطط: التعديل يعيد الموقع لحالة الانتظار للمراجعة
         location.setStatus(LocationStatus.PENDING);
-        location.setApproved(false); 
+        location.setApproved(false);
 
-        return ApiResponse.success("تم تحديث البيانات، بانتظار المراجعة.", mapToResponse(locationRepository.save(location)));
+        return ApiResponse.success("تم تحديث البيانات، بانتظار مراجعة المسؤول واعتمادها مجدداً.",
+                mapToResponse(locationRepository.save(location)));
     }
 
     @Override
+    @Transactional
     public ApiResponse<LocationResponse> approveLocation(Long locationId) {
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
-        if (locationOptional.isEmpty()) return ApiResponse.error("الموقع غير موجود");
+        if (locationOptional.isEmpty())
+            return ApiResponse.error("الموقع غير موجود");
 
         LocationList location = locationOptional.get();
-        
-        // الانتقال للحالات النهائية للنشر
+
         location.setStatus(LocationStatus.PUBLISHED);
         location.setApproved(true);
         location.setActive(true);
@@ -123,21 +131,53 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
         return ApiResponse.success("تمت الموافقة ونشر الموقع بنجاح.", mapToResponse(locationRepository.save(location)));
     }
 
+    // 🟢 الدالة الموحدة الفخمة والشاملة بعد دمج لوجيك عداد الـ 24 ساعة لجدولة الحذف
     @Override
-    public ApiResponse<LocationResponse> deactivateLocation(Long locationId, String currentUserEmail) {
-        ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
-        if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+    @Transactional
+    public ApiResponse<LocationResponse> changeLocationStatus(Long id, String status, String currentUserEmail) {
+        try {
+            ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
+            if (!userResponse.isSuccess())
+                return ApiResponse.error(userResponse.getMessage());
 
-        Optional<LocationList> locationOptional = locationRepository.findById(locationId);
-        if (locationOptional.isEmpty()) return ApiResponse.error("الموقع غير موجود");
+            LocationList location = locationRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("الموقع غير موجود"));
 
-        LocationList location = locationOptional.get();
-        
-        // تعطيل الموقع مؤقتاً
-        location.setStatus(LocationStatus.DEACTIVATED);
-        location.setApproved(false); // يسحب من العرض العام
+            if (!location.getOwner().getId().equals(userResponse.getData().getId())) {
+                return ApiResponse.error("ليس لديك صلاحية لتعديل حالة هذا الموقع");
+            }
 
-        return ApiResponse.success("تم إيقاف نشاط الموقع مؤقتاً.", mapToResponse(locationRepository.save(location)));
+            LocationStatus newStatus = LocationStatus.valueOf(status.toUpperCase());
+            location.setStatus(newStatus);
+
+            // ⏱️ لوجيك جدولة الحذف وإلغائه بناءً على الحالة الجديدة
+            if (newStatus == LocationStatus.DELETED) {
+                location.setDeletedAt(LocalDateTime.now()); // بدء مهلة الـ 24 ساعة الحقيقية بالسيرفر
+                location.setApproved(false);
+                location.setActive(false); // سحبه من العرض العام والخريطة فوراً
+            } else if (newStatus == LocationStatus.PUBLISHED) {
+                location.setDeletedAt(null); // 🔄 تراجع وإعادة تفعيل: تصفير حقل الحذف لإنقاذ المنشأة
+                location.setApproved(true);
+                location.setActive(true);
+            } else {
+                location.setDeletedAt(null); // أي حالة أخرى (مثل التعطيل المؤقت) تصفر الحقل أيضاً لحماية الداتا
+                location.setApproved(false);
+                location.setActive(false);
+            }
+
+            String successMsg = "تم تحديث حالة الموقع بنجاح.";
+            if (newStatus == LocationStatus.DEACTIVATED)
+                successMsg = "تم إيقاف نشاط الموقع مؤقتاً بنجاح.";
+            if (newStatus == LocationStatus.DELETED)
+                successMsg = "تم جدولة حذف المنشأة نهائياً من الأنظمة، لديك 24 ساعة للتراجع عن القرار.";
+
+            return ApiResponse.success(successMsg, mapToResponse(locationRepository.save(location)));
+
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error("حالة الموقع المرسلة غير صالحة بالنظام");
+        } catch (Exception e) {
+            return ApiResponse.error("حدث خطأ أثناء معالجة الطلب: " + e.getMessage());
+        }
     }
 
     @Override
@@ -149,7 +189,6 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
 
     @Override
     public ApiResponse<List<LocationResponse>> getLocations(Long governorateId, LocationCategory category) {
-        // البحث فقط عن المواقع التي حالتها PUBLISHED لضمان ظهور المعتمد فقط
         List<LocationList> locations = locationRepository.findByActiveTrueAndApprovedTrue();
         return ApiResponse.success("Success", locations.stream().map(this::mapToResponse).toList());
     }
@@ -157,25 +196,27 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
     @Override
     public ApiResponse<LocationResponse> getMyLocation(String currentUserEmail) {
         ApiResponse<User> userResponse = getUserByEmail(currentUserEmail);
-        if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+        if (!userResponse.isSuccess())
+            return ApiResponse.error(userResponse.getMessage());
 
         return locationRepository.findByOwnerId(userResponse.getData().getId())
                 .map(loc -> ApiResponse.success("My location", mapToResponse(loc)))
                 .orElse(ApiResponse.error("No location found"));
     }
 
-// --- تحديث صورة الغلاف (Cover) ---
     @Override
-    public ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request, String currentUserEmail) {
+    @Transactional
+    public ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request,
+            String currentUserEmail) {
         return updateImage(locationId, request, currentUserEmail, true);
     }
 
-    // --- تحديث اللوجو (Logo) ---
     @Override
-    public ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request, String currentUserEmail) {
+    @Transactional
+    public ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request,
+            String currentUserEmail) {
         return updateImage(locationId, request, currentUserEmail, false);
     }
-
 
     // --- Helper Methods ---
 
@@ -184,7 +225,7 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
         location.setDescription(request.getDescription());
         location.setEmail(request.getEmail());
         location.setPhoneNumber(request.getPhoneNumber());
-        location.setLogoUrl(request.getLogoUrl()); 
+        location.setLogoUrl(request.getLogoUrl());
         location.setLatitude(request.getLatitude());
         location.setLongitude(request.getLongitude());
         location.setCategory(request.getCategory() == null ? LocationCategory.OTHER : request.getCategory());
@@ -196,16 +237,40 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
     }
 
     private void updateEntityFields(LocationList location, UpdateLocationRequest request) {
-        if (request.getName() != null) location.setName(request.getName());
-        if (request.getDescription() != null) location.setDescription(request.getDescription());
-        if (request.getLogoUrl() != null) location.setLogoUrl(request.getLogoUrl());
-        if (request.getCategory() != null) location.setCategory(request.getCategory());
-        if (request.getWorkingHours() != null) location.setWorkingHours(request.getWorkingHours());
-        // ... إضافة باقي الحقول حسب الحاجة
+        if (request.getName() != null)
+            location.setName(request.getName());
+        if (request.getDescription() != null)
+            location.setDescription(request.getDescription());
+        if (request.getLogoUrl() != null)
+            location.setLogoUrl(request.getLogoUrl());
+        if (request.getCoverUrl() != null)
+            location.setCoverUrl(request.getCoverUrl());
+        if (request.getEmail() != null)
+            location.setEmail(request.getEmail());
+        if (request.getPhoneNumber() != null)
+            location.setPhoneNumber(request.getPhoneNumber());
+        if (request.getLatitude() != null)
+            location.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null)
+            location.setLongitude(request.getLongitude());
+
+        if (request.getCategory() != null) {
+            location.setCategory(LocationCategory.valueOf(request.getCategory().toUpperCase()));
+        }
+
+        if (request.getFacebookUrl() != null)
+            location.setFacebookUrl(request.getFacebookUrl());
+        if (request.getInstagramUrl() != null)
+            location.setInstagramUrl(request.getInstagramUrl());
+        if (request.getLinkedInUrl() != null)
+            location.setLinkedInUrl(request.getLinkedInUrl());
+        if (request.getWorkingHours() != null)
+            location.setWorkingHours(request.getWorkingHours());
     }
 
     private ApiResponse<User> getUserByEmail(String email) {
-        if (email == null) return ApiResponse.error("Unauthorized");
+        if (email == null)
+            return ApiResponse.error("Unauthorized");
         return userRepository.findByEmail(email)
                 .map(u -> ApiResponse.success("User found", u))
                 .orElse(ApiResponse.error("User not found"));
@@ -229,29 +294,36 @@ public ApiResponse<LocationResponse> createLocation(CreateLocationRequest reques
         response.setCoverUrl(location.getCoverUrl());
         response.setLatitude(location.getLatitude());
         response.setLongitude(location.getLongitude());
-       if (location.getGovernorate() != null) {
-        response.setGovernorateName(location.getGovernorate().getName()); 
-        response.setGovernorateId(location.getGovernorate().getId()); 
-        }  
+        if (location.getGovernorate() != null) {
+            response.setGovernorateName(location.getGovernorate().getName());
+            response.setGovernorateId(location.getGovernorate().getId());
+        }
         response.setCategory(location.getCategory());
-        response.setStatus(location.getStatus()); 
+        response.setStatus(location.getStatus());
         response.setRating(location.getRating());
+        response.setDeletedAt(location.getDeletedAt());
         response.setReviewCount(location.getReviewCount());
         response.setCreatedAt(location.getCreatedAt());
         if (location.getOwner() != null) {
             response.setOwnerId(location.getOwner().getId());
             response.setOwnerName(location.getOwner().getUsername());
         }
+        response.setFacebookUrl(location.getFacebookUrl());
+        response.setInstagramUrl(location.getInstagramUrl());
+        response.setLinkedInUrl(location.getLinkedInUrl());
+        response.setWorkingHours(location.getWorkingHours());
         return response;
     }
 
-   
-    private ApiResponse<LocationResponse> updateImage(Long locationId,  UpdateLocationRequest request, String email, boolean isCover) {
+    private ApiResponse<LocationResponse> updateImage(Long locationId, UpdateLocationRequest request, String email,
+            boolean isCover) {
         ApiResponse<User> userResponse = getUserByEmail(email);
-        if (!userResponse.isSuccess()) return ApiResponse.error(userResponse.getMessage());
+        if (!userResponse.isSuccess())
+            return ApiResponse.error(userResponse.getMessage());
 
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
-        if (locationOptional.isEmpty()) return ApiResponse.error("الموقع غير موجود");
+        if (locationOptional.isEmpty())
+            return ApiResponse.error("الموقع غير موجود");
 
         LocationList location = locationOptional.get();
 

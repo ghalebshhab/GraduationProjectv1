@@ -1,7 +1,6 @@
 package com.jomap.backend.Services.Locations;
 
 import java.util.List;
-
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Locations.CreateLocationRequest;
 import com.jomap.backend.DTOs.Locations.LocationResponse;
@@ -21,11 +20,10 @@ public interface LocationService {
 
     ApiResponse<LocationResponse> approveLocation(Long locationId);
 
-    ApiResponse<LocationResponse> deactivateLocation(Long locationId, String currentUserEmail);
+    // 🟢 الدالة الموحدة المعتمدة رسمياً لكل الحالات (تنشيط / تعطيل / حذف)
+    ApiResponse<LocationResponse> changeLocationStatus(Long id, String status, String currentUserEmail);
 
     ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request, String currentUserEmail);
 
     ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request, String currentUserEmail);
-
-
 }
