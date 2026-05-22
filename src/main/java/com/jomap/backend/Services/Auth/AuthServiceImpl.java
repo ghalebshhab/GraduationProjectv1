@@ -53,15 +53,15 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            return ApiResponse.error("Email already exists");
+            return ApiResponse.error("البريد الإلكتروني مستخدم بالفعل");
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            return ApiResponse.error("UserName is already used");
+            return ApiResponse.error("اسم المستخدم مستخدم بالفعل");
         }
 
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            return ApiResponse.error("Phone number is already used");
+            return ApiResponse.error("رقم الهاتف مستخدم بالفعل");
         }
 
         User user = new User();
@@ -82,11 +82,14 @@ public class AuthServiceImpl implements AuthService {
                 request.getDateOfBirth());
         userProfileRepository.save(profile);
 
-        try {
-            emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        //////////////////////////////////////////////////////////////////////////////////
+        //try {
+        //    emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
+        //} catch (Exception e) {
+        //    e.printStackTrace();
+        //}
+        //////////////////////////////////////////////////////////////////////////////////
+
 
         RegisterResponse response = new RegisterResponse(
                 savedUser.getId(),
