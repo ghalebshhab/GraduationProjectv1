@@ -64,7 +64,7 @@ public class User {
     private String profileImageUrl;
 
     @Column(nullable = false, name = "is_active")
-    private Boolean isActive = true;
+    private Boolean isActive = false;
 
 
     @Column(nullable = false, name = "created_at", updatable = false)

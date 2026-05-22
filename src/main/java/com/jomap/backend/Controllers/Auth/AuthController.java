@@ -36,6 +36,7 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
 
     }
+
     @PutMapping("/make-admin")
     public ApiResponse<String> makeAdmin(@RequestParam String email) {
 
@@ -52,13 +53,22 @@ public class AuthController {
 
         return ApiResponse.success("User is now ADMIN", email);
     }
-//    @PostMapping("/google")
-//    public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(@RequestBody SocialLoginRequest request) {
-//        return ResponseEntity.ok(authService.loginWithGoogle(request.token()));
-//    }
-//
-//    @PostMapping("/facebook")
-//    public ResponseEntity<ApiResponse<LoginResponse>> facebookLogin(@RequestBody SocialLoginRequest request) {
-//        return ResponseEntity.ok(authService.loginWithFacebook(request.token()));
-//    }
+
+    @PostMapping("/verify-registration")
+    public ResponseEntity<ApiResponse<String>> verifyRegistration(
+            @jakarta.validation.Valid @RequestBody com.jomap.backend.DTOs.Auth.ResetPassword.ResetPasswordRequest.VerifyOtp request) {
+        return ResponseEntity.ok(authService.verifyRegistration(request));
+    }
+
+    // @PostMapping("/google")
+    // public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(@RequestBody
+    // SocialLoginRequest request) {
+    // return ResponseEntity.ok(authService.loginWithGoogle(request.token()));
+    // }
+    //
+    // @PostMapping("/facebook")
+    // public ResponseEntity<ApiResponse<LoginResponse>> facebookLogin(@RequestBody
+    // SocialLoginRequest request) {
+    // return ResponseEntity.ok(authService.loginWithFacebook(request.token()));
+    // }
 }

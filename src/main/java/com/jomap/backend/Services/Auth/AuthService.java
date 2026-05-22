@@ -14,4 +14,6 @@ public interface AuthService {
 //    ApiResponse<LoginResponse> loginWithGoogle(String idToken);
 //
 //    ApiResponse<LoginResponse> loginWithFacebook(String accessToken);
+
+ApiResponse<String> verifyRegistration(com.jomap.backend.DTOs.Auth.ResetPassword.ResetPasswordRequest.VerifyOtp request);
 }

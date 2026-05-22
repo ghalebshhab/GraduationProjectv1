@@ -11,6 +11,7 @@ import com.jomap.backend.DTOs.Auth.Login.LoginRequest;
 import com.jomap.backend.DTOs.Auth.Login.LoginResponse;
 import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
 import com.jomap.backend.DTOs.Auth.Register.RegisterResponse;
+import com.jomap.backend.DTOs.Auth.ResetPassword.ResetPasswordRequest;
 import com.jomap.backend.DTOs.Auth.social.FacebookUserResponse;
 import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
@@ -49,7 +50,8 @@ public class AuthServiceImpl implements AuthService {
         if (request.getPhoneNumber() == null ||
                 (!request.getPhoneNumber().matches("^\\+9627\\d{8}$")
                         && !request.getPhoneNumber().matches("^07\\d{8}$"))) {
-            return ApiResponse.error("Phone number must be like +9627XXXXXXXX or 07XXXXXXXX");
+            //return ApiResponse.error("Phone number must be like +9627XXXXXXXX or 07XXXXXXXX");
+            return ApiResponse.error("يجب أن يكون رقم الهاتف بالصيغة الصحيحة مثل +9627XXXXXXXX أو 07XXXXXXXX");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -70,7 +72,10 @@ public class AuthServiceImpl implements AuthService {
         user.setPhoneNumber(request.getPhoneNumber().trim());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
-        user.setIsActive(true);
+        user.setIsActive(false);
+
+        user.setOtpCode("123456");
+        user.setOtpType("REGISTRATION_CONFIRM");
 
         User savedUser = userRepository.save(user);
 
@@ -102,8 +107,7 @@ public class AuthServiceImpl implements AuthService {
                 profile.getBirthDate(),
                 savedUser.getRole().name());
 
-        return ApiResponse.success("Registered successfully", response);
-    }
+return ApiResponse.success("تم تسجيل الحساب بنجاح، يرجى إدخال رمز التحقق لتفعيل الحساب", response);    }
     // new edits
 
     @Override
@@ -113,7 +117,8 @@ public class AuthServiceImpl implements AuthService {
         Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
 
         if (optionalUser.isEmpty()) {
-            return ApiResponse.error("User with this email does not exist");
+            //return ApiResponse.error("User with this email does not exist");
+            return ApiResponse.error("عذراً، هذا البريد الإلكتروني غير مسجل بالنظام");
         }
 
         User user = optionalUser.get();
@@ -123,13 +128,14 @@ public class AuthServiceImpl implements AuthService {
                 user.getPasswordHash());
 
         if (!passwordMatches) {
-            return ApiResponse.error("Incorrect password");
+            //return ApiResponse.error("Incorrect password");
+            return ApiResponse.error("كلمة المرور التي أدخلتها غير صحيحة");
         }
 
         if (!Boolean.TRUE.equals(user.getIsActive())) {
-            return ApiResponse.error("This user account is not active");
+return ApiResponse.error("لم يتم تفعيل هذا الحساب بعد، يرجى إدخال رمز التحقق المرسل إليك أولاً");
         }
-
+        
         if (!userProfileRepository.existsByUserId(user.getId())) {
             UserProfile profile = new UserProfile();
             profile.setUser(user);
@@ -150,8 +156,48 @@ public class AuthServiceImpl implements AuthService {
                 user.getUsername(),
                 user.getRole().name());
 
-        return ApiResponse.success("Logged in successfully", response);
+        //return ApiResponse.success("Logged in successfully", response);
+        return ApiResponse.success("تم تسجيل الدخول بنجاح", response);
     }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> verifyRegistration(ResetPasswordRequest.VerifyOtp request) {
+        // البحث عن المستخدم باستخدام الإيميل الواصل من الـ Request
+        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail().trim());
+
+        if (optionalUser.isEmpty()) {
+            return ApiResponse.error("الحساب غير موجود بالنظام");
+        }
+
+        User user = optionalUser.get();
+
+        // التأكد من أن الحساب غير مفعل أصلاً منعاً للتكرار
+        if (Boolean.TRUE.equals(user.getIsActive())) {
+            return ApiResponse.error("هذا الحساب مفعل بالفعل، يمكنك تسجيل الدخول مباشرة");
+        }
+
+        // مطابقة الرمز والنوع المعرفين في الـ Database
+        if (user.getOtpCode() != null && 
+            user.getOtpCode().equals(request.getOtpCode()) && 
+            "REGISTRATION_CONFIRM".equals(user.getOtpType())) {
+            
+            // تفعيل الحساب وتصفير خانات الـ OTP للأمان
+            user.setIsActive(true);
+            user.setOtpCode(null);
+            user.setOtpType(null);
+            
+            userRepository.save(user);
+            return ApiResponse.success("تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول", user.getEmail());
+        }
+
+        return ApiResponse.error("رمز التحقق غير صحيح أو منتهي الصلاحية");
+    }
+
+
+
+
     // @Override
     // public ApiResponse<LoginResponse> loginWithGoogle(String idTokenString) {
     // try {
