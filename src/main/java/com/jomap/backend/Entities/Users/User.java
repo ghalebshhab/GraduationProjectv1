@@ -106,6 +106,16 @@ public class User {
     @Column(name = "provider_id")
     private String providerId;
 
+    @Column(name = "otp_code", length = 6)
+    private String otpCode;
+
+    @Column(name = "otp_expiry_time")
+    private java.time.LocalDateTime otpExpiryTime;
+
+    @Column(name = "otp_type", length = 20)
+    private String otpType;
+
+
     @PrePersist
     public void onCreate() {
         this.createdAt = Instant.now();
