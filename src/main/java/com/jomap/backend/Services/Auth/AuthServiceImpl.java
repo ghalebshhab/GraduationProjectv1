@@ -39,8 +39,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final UserProfileRepository userProfileRepository;
-//    @Value("${app.google.client-id}")
-//    private String googleClientId;
+    // @Value("${app.google.client-id}")
+    // private String googleClientId;
 
     @Override
     @Transactional
@@ -74,8 +74,12 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        UserProfile profile = new UserProfile();
-        profile.setUser(savedUser);
+        UserProfile profile = new UserProfile(
+                savedUser,
+                request.getFirstName().trim(),
+                request.getLastName().trim(),
+                request.getGender(),
+                request.getDateOfBirth());
         userProfileRepository.save(profile);
 
         try {
@@ -86,14 +90,18 @@ public class AuthServiceImpl implements AuthService {
 
         RegisterResponse response = new RegisterResponse(
                 savedUser.getId(),
-                savedUser.getEmail(),
+                profile.getFirstName(),
+                profile.getLastName(),
                 savedUser.getUsername(),
-                savedUser.getRole().name()
-        );
+                savedUser.getEmail(),
+                savedUser.getPhoneNumber(),
+                profile.getGender(),
+                profile.getBirthDate(),
+                savedUser.getRole().name());
 
         return ApiResponse.success("Registered successfully", response);
     }
-    //new edits
+    // new edits
 
     @Override
     @Transactional
@@ -109,8 +117,7 @@ public class AuthServiceImpl implements AuthService {
 
         boolean passwordMatches = passwordEncoder.matches(
                 request.getPassword(),
-                user.getPasswordHash()
-        );
+                user.getPasswordHash());
 
         if (!passwordMatches) {
             return ApiResponse.error("Incorrect password");
@@ -125,11 +132,11 @@ public class AuthServiceImpl implements AuthService {
             profile.setUser(user);
             userProfileRepository.save(profile);
         }
-//        try {
-//            emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        // try {
+        // emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
         String token = jwtService.generateToken(user.getEmail());
 
         LoginResponse response = new LoginResponse(
@@ -138,156 +145,158 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getUsername(),
-                user.getRole().name()
-        );
+                user.getRole().name());
 
         return ApiResponse.success("Logged in successfully", response);
     }
-//    @Override
-//    public ApiResponse<LoginResponse> loginWithGoogle(String idTokenString) {
-//        try {
-//            if (idTokenString == null || idTokenString.isBlank()) {
-//                return new ApiResponse<>(false, "Google token is required", null);
-//            }
-//
-//            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-//                    new NetHttpTransport(),
-//                    GsonFactory.getDefaultInstance()
-//            )
-//                    .setAudience(Collections.singletonList(googleClientId))
-//                    .build();
-//
-//            GoogleIdToken idToken = verifier.verify(idTokenString);
-//
-//            if (idToken == null) {
-//                return new ApiResponse<>(false, "Invalid Google token", null);
-//            }
-//
-//            GoogleIdToken.Payload payload = idToken.getPayload();
-//
-//            String email = payload.getEmail();
-//            String username = (String) payload.get("name");
-//            String picture = (String) payload.get("picture");
-//
-//            if (email == null || email.isBlank()) {
-//                return new ApiResponse<>(false, "Google account email not found", null);
-//            }
-//
-//            User user = userRepository.findByEmail(email)
-//                    .orElseGet(() -> createSocialUser(email, username, picture));
-//
-//            ensureUserProfileExists(user);
-//
-//            String token = jwtService.generateToken(user.getEmail());
-//
-//            LoginResponse response = new LoginResponse(
-//                    token,
-//                    "Bearer",
-//                    user.getId(),
-//                    user.getEmail(),
-//                    user.getUsername(),
-//                    user.getPhoneNumber()
-//            );
-//
-//            return new ApiResponse<>(true, "Google login successful", response);
-//
-//        } catch (Exception e) {
-//            log.error("Google login failed: {}", e.getMessage());
-//            return new ApiResponse<>(false, "Google login failed", null);
-//        }
-//    }
-//
-//    @Override
-//    public ApiResponse<LoginResponse> loginWithFacebook(String accessToken) {
-//        try {
-//            if (accessToken == null || accessToken.isBlank()) {
-//                return new ApiResponse<>(false, "Facebook token is required", null);
-//            }
-//
-//            String url = "https://graph.facebook.com/me"
-//                    + "?fields=id,name,email,picture"
-//                    + "&access_token=" + accessToken;
-//
-//            RestTemplate restTemplate = new RestTemplate();
-//            FacebookUserResponse fbUser = restTemplate.getForObject(url, FacebookUserResponse.class);
-//
-//            if (fbUser == null || fbUser.email() == null || fbUser.email().isBlank()) {
-//                return new ApiResponse<>(false, "Facebook account email not found", null);
-//            }
-//
-//            String pictureUrl;
-//            if (fbUser.picture() != null && fbUser.picture().data() != null) {
-//                pictureUrl = fbUser.picture().data().url();
-//            } else {
-//                pictureUrl = null;
-//            }
-//
-//            User user = userRepository.findByEmail(fbUser.email())
-//                    .orElseGet(() -> createSocialUser(fbUser.email(), fbUser.name(), pictureUrl));
-//
-//            ensureUserProfileExists(user);
-//
-//            String token = jwtService.generateToken(user.getEmail());
-//
-//            LoginResponse response = new LoginResponse(
-//                    token,
-//                    "Bearer",
-//                    user.getId(),
-//                    user.getEmail(),
-//                    user.getUsername(),
-//                    user.getPhoneNumber()
-//            );
-//
-//            return new ApiResponse<>(true, "Facebook login successful", response);
-//
-//        } catch (Exception e) {
-//            log.error("Facebook login failed: {}", e.getMessage());
-//            return new ApiResponse<>(false, "Facebook login failed", null);
-//        }
-//    }
-//    private User createSocialUser(String email, String username, String profileImageUrl) {
-//        User user = new User();
-//
-//        user.setEmail(email);
-//        user.setUsername(generateUniqueUsername(username, email));
-//        user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-//        user.setRole(Role.USER);
-//        user.setProfileImageUrl(profileImageUrl);
-//
-//        return userRepository.save(user);
-//    }
-//
-//    private void ensureUserProfileExists(User user) {
-//        if (!userProfileRepository.existsByUserId(user.getId())) {
-//            UserProfile profile = new UserProfile();
-//            profile.setUser(user);
-//            userProfileRepository.save(profile);
-//        }
-//    }
-//
-//    private String generateUniqueUsername(String name, String email) {
-//        String baseUsername;
-//
-//        if (name != null && !name.isBlank()) {
-//            baseUsername = name.trim()
-//                    .replaceAll("\\s+", "_")
-//                    .replaceAll("[^a-zA-Z0-9_]", "");
-//        } else {
-//            baseUsername = email.substring(0, email.indexOf("@"));
-//        }
-//
-//        if (baseUsername.isBlank()) {
-//            baseUsername = "user";
-//        }
-//
-//        String username = baseUsername;
-//        int counter = 1;
-//
-//        while (userRepository.existsByUsername(username)) {
-//            username = baseUsername + "_" + counter;
-//            counter++;
-//        }
-//
-//        return username;
-//    }
+    // @Override
+    // public ApiResponse<LoginResponse> loginWithGoogle(String idTokenString) {
+    // try {
+    // if (idTokenString == null || idTokenString.isBlank()) {
+    // return new ApiResponse<>(false, "Google token is required", null);
+    // }
+    //
+    // GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+    // new NetHttpTransport(),
+    // GsonFactory.getDefaultInstance()
+    // )
+    // .setAudience(Collections.singletonList(googleClientId))
+    // .build();
+    //
+    // GoogleIdToken idToken = verifier.verify(idTokenString);
+    //
+    // if (idToken == null) {
+    // return new ApiResponse<>(false, "Invalid Google token", null);
+    // }
+    //
+    // GoogleIdToken.Payload payload = idToken.getPayload();
+    //
+    // String email = payload.getEmail();
+    // String username = (String) payload.get("name");
+    // String picture = (String) payload.get("picture");
+    //
+    // if (email == null || email.isBlank()) {
+    // return new ApiResponse<>(false, "Google account email not found", null);
+    // }
+    //
+    // User user = userRepository.findByEmail(email)
+    // .orElseGet(() -> createSocialUser(email, username, picture));
+    //
+    // ensureUserProfileExists(user);
+    //
+    // String token = jwtService.generateToken(user.getEmail());
+    //
+    // LoginResponse response = new LoginResponse(
+    // token,
+    // "Bearer",
+    // user.getId(),
+    // user.getEmail(),
+    // user.getUsername(),
+    // user.getPhoneNumber()
+    // );
+    //
+    // return new ApiResponse<>(true, "Google login successful", response);
+    //
+    // } catch (Exception e) {
+    // log.error("Google login failed: {}", e.getMessage());
+    // return new ApiResponse<>(false, "Google login failed", null);
+    // }
+    // }
+    //
+    // @Override
+    // public ApiResponse<LoginResponse> loginWithFacebook(String accessToken) {
+    // try {
+    // if (accessToken == null || accessToken.isBlank()) {
+    // return new ApiResponse<>(false, "Facebook token is required", null);
+    // }
+    //
+    // String url = "https://graph.facebook.com/me"
+    // + "?fields=id,name,email,picture"
+    // + "&access_token=" + accessToken;
+    //
+    // RestTemplate restTemplate = new RestTemplate();
+    // FacebookUserResponse fbUser = restTemplate.getForObject(url,
+    // FacebookUserResponse.class);
+    //
+    // if (fbUser == null || fbUser.email() == null || fbUser.email().isBlank()) {
+    // return new ApiResponse<>(false, "Facebook account email not found", null);
+    // }
+    //
+    // String pictureUrl;
+    // if (fbUser.picture() != null && fbUser.picture().data() != null) {
+    // pictureUrl = fbUser.picture().data().url();
+    // } else {
+    // pictureUrl = null;
+    // }
+    //
+    // User user = userRepository.findByEmail(fbUser.email())
+    // .orElseGet(() -> createSocialUser(fbUser.email(), fbUser.name(),
+    // pictureUrl));
+    //
+    // ensureUserProfileExists(user);
+    //
+    // String token = jwtService.generateToken(user.getEmail());
+    //
+    // LoginResponse response = new LoginResponse(
+    // token,
+    // "Bearer",
+    // user.getId(),
+    // user.getEmail(),
+    // user.getUsername(),
+    // user.getPhoneNumber()
+    // );
+    //
+    // return new ApiResponse<>(true, "Facebook login successful", response);
+    //
+    // } catch (Exception e) {
+    // log.error("Facebook login failed: {}", e.getMessage());
+    // return new ApiResponse<>(false, "Facebook login failed", null);
+    // }
+    // }
+    // private User createSocialUser(String email, String username, String
+    // profileImageUrl) {
+    // User user = new User();
+    //
+    // user.setEmail(email);
+    // user.setUsername(generateUniqueUsername(username, email));
+    // user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+    // user.setRole(Role.USER);
+    // user.setProfileImageUrl(profileImageUrl);
+    //
+    // return userRepository.save(user);
+    // }
+    //
+    // private void ensureUserProfileExists(User user) {
+    // if (!userProfileRepository.existsByUserId(user.getId())) {
+    // UserProfile profile = new UserProfile();
+    // profile.setUser(user);
+    // userProfileRepository.save(profile);
+    // }
+    // }
+    //
+    // private String generateUniqueUsername(String name, String email) {
+    // String baseUsername;
+    //
+    // if (name != null && !name.isBlank()) {
+    // baseUsername = name.trim()
+    // .replaceAll("\\s+", "_")
+    // .replaceAll("[^a-zA-Z0-9_]", "");
+    // } else {
+    // baseUsername = email.substring(0, email.indexOf("@"));
+    // }
+    //
+    // if (baseUsername.isBlank()) {
+    // baseUsername = "user";
+    // }
+    //
+    // String username = baseUsername;
+    // int counter = 1;
+    //
+    // while (userRepository.existsByUsername(username)) {
+    // username = baseUsername + "_" + counter;
+    // counter++;
+    // }
+    //
+    // return username;
+    // }
 }
