@@ -39,11 +39,11 @@ public class UserProfile {
     @Column(nullable = false, length = 10) // يستقبل "MALE" أو "FEMALE"
     private String gender;
 
+    @Column(name = "profile_image_url", columnDefinition = "TEXT") 
+    private String profileImageUrl;
+
     @Column(length = 500)
     private String bio;
-
-    @Column(name = "cover_image_url", columnDefinition = "TEXT")
-    private String coverImageUrl;
 
     @Column(length = 150)
     private String location;
@@ -51,15 +51,24 @@ public class UserProfile {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(length = 255)
-    private String website;
+    @Column(name = "instagram_url", length = 500)
+    private String instagramUrl;
 
-    public UserProfile(User user, String firstName, String lastName, String gender, LocalDate birthDate) {
+    @Column(name = "facebook_url", length = 500)
+    private String facebookUrl;
+
+    @Column(name = "linkedin_url", length = 500)
+    private String linkedinUrl;
+
+
+
+    public UserProfile(User user, String firstName, String lastName, String gender, LocalDate birthDate, String profileImageUrl) {
         this.user = user;
         this.firstName = firstName;
         this.lastName = lastName;
         this.gender = gender;
         this.birthDate = birthDate;
+        this.profileImageUrl = profileImageUrl;
     }
 
 }

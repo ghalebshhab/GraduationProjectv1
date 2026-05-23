@@ -79,13 +79,17 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        UserProfile profile = new UserProfile(
-                savedUser,
-                request.getFirstName().trim(),
-                request.getLastName().trim(),
-                request.getGender(),
-                request.getDateOfBirth());
-        userProfileRepository.save(profile);
+        // 🎯 التعديل الصحيح والمطابق للـ Constructor تبعك بالملي:
+UserProfile profile = new UserProfile(
+        savedUser,
+        request.getFirstName().trim(),
+        request.getLastName().trim(),
+        request.getGender(),
+        request.getDateOfBirth(), // هاد الـ birthDate (LocalDate)
+        ""                   
+);
+
+userProfileRepository.save(profile);
 
         //////////////////////////////////////////////////////////////////////////////////
         //try {

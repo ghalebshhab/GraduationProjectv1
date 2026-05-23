@@ -36,7 +36,16 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.getProfileByUserId(userId));
     }
 
-    @PutMapping("/{userId}")
+    /*@PutMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
+            Authentication authentication,
+            @Valid @RequestBody UpdateUserProfileRequest request
+    ) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(userProfileService.updateMyProfile(emailFromToken, request));
+    }*/
+
+    @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateUserProfileRequest request
@@ -44,4 +53,5 @@ public class UserProfileController {
         String emailFromToken = authentication.getName();
         return ResponseEntity.ok(userProfileService.updateMyProfile(emailFromToken, request));
     }
+    
 }

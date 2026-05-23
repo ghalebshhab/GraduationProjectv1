@@ -94,8 +94,9 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     private void applyUpdates(User user, UserProfile profile, UpdateUserProfileRequest request) {
-        if (request.getUserName() != null && !request.getUserName().isBlank()) {
-            user.setUsername(request.getUserName().trim());
+
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            user.setUsername(request.getUsername().trim());
         }
 
         if (request.getPhoneNumber() != null) {
@@ -103,27 +104,43 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
 
         if (request.getProfileImageUrl() != null) {
-            user.setProfileImageUrl(request.getProfileImageUrl().trim());
+            profile.setProfileImageUrl(request.getProfileImageUrl().trim());
+        }
+
+        if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
+            profile.setFirstName(request.getFirstName().trim());
+        }
+
+        if (request.getLastName() != null && !request.getLastName().isBlank()) {
+            profile.setLastName(request.getLastName().trim());
+        }
+
+        if (request.getGender() != null && !request.getGender().isBlank()) {
+            profile.setGender(request.getGender());
         }
 
         if (request.getBio() != null) {
             profile.setBio(request.getBio().trim());
         }
 
-        if (request.getCoverImageUrl() != null) {
-            profile.setCoverImageUrl(request.getCoverImageUrl().trim());
-        }
-
         if (request.getLocation() != null) {
             profile.setLocation(request.getLocation().trim());
         }
 
-        if (request.getBirthDate() != null) {
-            profile.setBirthDate(request.getBirthDate());
+        if (request.getDateOfBirth() != null) {
+            profile.setBirthDate(request.getDateOfBirth());
         }
 
-        if (request.getWebsite() != null) {
-            profile.setWebsite(request.getWebsite().trim());
+        if (request.getInstagramUrl() != null) {
+            profile.setInstagramUrl(request.getInstagramUrl().trim());
+        }
+
+        if (request.getFacebookUrl() != null) {
+            profile.setFacebookUrl(request.getFacebookUrl().trim());
+        }
+
+        if (request.getLinkedinUrl() != null) {
+            profile.setLinkedinUrl(request.getLinkedinUrl().trim());
         }
     }
 
@@ -134,7 +151,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setUserId(user.getId());
         response.setUsername(user.getUsername());
         response.setEmail(user.getEmail());
-        response.setProfileImageUrl(user.getProfileImageUrl());
+        response.setProfileImageUrl(profile.getProfileImageUrl());
         response.setBio(profile.getBio());
         response.setLocation(profile.getLocation());
         response.setFollowersCount(0);
@@ -150,6 +167,12 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setLocationId(loc.getId());
     });
 
+        response.setFirstName(profile.getFirstName());
+        response.setLastName(profile.getLastName());
+        response.setGender(profile.getGender());
+        response.setInstagramUrl(profile.getInstagramUrl());
+        response.setFacebookUrl(profile.getFacebookUrl());
+        response.setLinkedinUrl(profile.getLinkedinUrl());
 
         return response;
 
