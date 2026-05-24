@@ -1,4 +1,4 @@
-package com.jomap.backend.Services.Auth;
+package com.jomap.backend.Services.Auth.NormalAuth;
 
 
 import com.jomap.backend.DTOs.ApiResponse;
@@ -6,7 +6,6 @@ import com.jomap.backend.DTOs.Auth.Login.LoginRequest;
 import com.jomap.backend.DTOs.Auth.Login.LoginResponse;
 import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
 import com.jomap.backend.DTOs.Auth.Register.RegisterResponse;
-import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
     ApiResponse<RegisterResponse> register(RegisterRequest request);
@@ -15,5 +14,4 @@ public interface AuthService {
 //
 //    ApiResponse<LoginResponse> loginWithFacebook(String accessToken);
 
-ApiResponse<String> verifyRegistration(com.jomap.backend.DTOs.Auth.ResetPassword.ResetPasswordRequest.VerifyOtp request);
 }

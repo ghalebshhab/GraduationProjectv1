@@ -1,34 +1,28 @@
-package com.jomap.backend.Services.Auth;
+package com.jomap.backend.Services.Auth.NormalAuth;
 
 //import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 //import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 //import com.google.api.client.http.javanet.NetHttpTransport;
 //import com.google.api.client.json.gson.GsonFactory;
+import com.jomap.backend.Services.Auth.JwtService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Auth.Login.LoginRequest;
 import com.jomap.backend.DTOs.Auth.Login.LoginResponse;
 import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
 import com.jomap.backend.DTOs.Auth.Register.RegisterResponse;
-import com.jomap.backend.DTOs.Auth.ResetPassword.ResetPasswordRequest;
-import com.jomap.backend.DTOs.Auth.social.FacebookUserResponse;
 import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.Profile.UserProfile;
 import com.jomap.backend.Entities.Users.Profile.UserProfileRepository;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Notefications.EmailService;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -72,10 +66,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPhoneNumber(request.getPhoneNumber().trim());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
-        user.setIsActive(false);
-
-        user.setOtpCode("123456");
-        user.setOtpType("REGISTRATION_CONFIRM");
+        user.setIsActive(true);
 
         User savedUser = userRepository.save(user);
 
@@ -92,11 +83,11 @@ UserProfile profile = new UserProfile(
 userProfileRepository.save(profile);
 
         //////////////////////////////////////////////////////////////////////////////////
-        //try {
-        //    emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
-        //} catch (Exception e) {
-        //    e.printStackTrace();
-        //}
+        try {
+            emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -111,7 +102,7 @@ userProfileRepository.save(profile);
                 profile.getBirthDate(),
                 savedUser.getRole().name());
 
-return ApiResponse.success("تم تسجيل الحساب بنجاح، يرجى إدخال رمز التحقق لتفعيل الحساب", response);    }
+return ApiResponse.success("تم تسجيل الحساب بنجاح", response);    }
     // new edits
 
     @Override
@@ -136,20 +127,17 @@ return ApiResponse.success("تم تسجيل الحساب بنجاح، يرجى �
             return ApiResponse.error("كلمة المرور التي أدخلتها غير صحيحة");
         }
 
-        if (!Boolean.TRUE.equals(user.getIsActive())) {
-return ApiResponse.error("لم يتم تفعيل هذا الحساب بعد، يرجى إدخال رمز التحقق المرسل إليك أولاً");
-        }
         
         if (!userProfileRepository.existsByUserId(user.getId())) {
             UserProfile profile = new UserProfile();
             profile.setUser(user);
             userProfileRepository.save(profile);
         }
-        // try {
-        // emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // }
+         try {
+         emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
+         } catch (Exception e) {
+         e.printStackTrace();
+         }
         String token = jwtService.generateToken(user.getEmail());
 
         LoginResponse response = new LoginResponse(
@@ -165,39 +153,7 @@ return ApiResponse.error("لم يتم تفعيل هذا الحساب بعد، ي
     }
 
 
-    @Override
-    @Transactional
-    public ApiResponse<String> verifyRegistration(ResetPasswordRequest.VerifyOtp request) {
-        // البحث عن المستخدم باستخدام الإيميل الواصل من الـ Request
-        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail().trim());
 
-        if (optionalUser.isEmpty()) {
-            return ApiResponse.error("الحساب غير موجود بالنظام");
-        }
-
-        User user = optionalUser.get();
-
-        // التأكد من أن الحساب غير مفعل أصلاً منعاً للتكرار
-        if (Boolean.TRUE.equals(user.getIsActive())) {
-            return ApiResponse.error("هذا الحساب مفعل بالفعل، يمكنك تسجيل الدخول مباشرة");
-        }
-
-        // مطابقة الرمز والنوع المعرفين في الـ Database
-        if (user.getOtpCode() != null && 
-            user.getOtpCode().equals(request.getOtpCode()) && 
-            "REGISTRATION_CONFIRM".equals(user.getOtpType())) {
-            
-            // تفعيل الحساب وتصفير خانات الـ OTP للأمان
-            user.setIsActive(true);
-            user.setOtpCode(null);
-            user.setOtpType(null);
-            
-            userRepository.save(user);
-            return ApiResponse.success("تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول", user.getEmail());
-        }
-
-        return ApiResponse.error("رمز التحقق غير صحيح أو منتهي الصلاحية");
-    }
 
 
 

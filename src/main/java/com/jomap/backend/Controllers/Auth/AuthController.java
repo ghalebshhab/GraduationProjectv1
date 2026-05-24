@@ -1,15 +1,18 @@
 package com.jomap.backend.Controllers.Auth;
 
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Auth.ForgetPassword.ForgotPasswordRequest;
+import com.jomap.backend.DTOs.Auth.ForgetPassword.ResetPasswordRequest;
+import com.jomap.backend.DTOs.Auth.ForgetPassword.VerifyOtpRequest;
+import com.jomap.backend.DTOs.Auth.ForgetPassword.VerifyOtpResponse;
 import com.jomap.backend.DTOs.Auth.Login.LoginRequest;
-import com.jomap.backend.DTOs.Auth.Login.LoginResponse;
 import com.jomap.backend.DTOs.Auth.Register.RegisterRequest;
-import com.jomap.backend.DTOs.Auth.social.SocialLoginRequest;
 import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import com.jomap.backend.Services.Auth.AuthService;
+import com.jomap.backend.Services.Auth.NormalAuth.AuthService;
 
+import com.jomap.backend.Services.Auth.ResetPassword.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
@@ -54,10 +58,19 @@ public class AuthController {
         return ApiResponse.success("User is now ADMIN", email);
     }
 
-    @PostMapping("/verify-registration")
-    public ResponseEntity<ApiResponse<String>> verifyRegistration(
-            @jakarta.validation.Valid @RequestBody com.jomap.backend.DTOs.Auth.ResetPassword.ResetPasswordRequest.VerifyOtp request) {
-        return ResponseEntity.ok(authService.verifyRegistration(request));
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return passwordResetService.sendOtp(request);
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ApiResponse<VerifyOtpResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        return passwordResetService.verifyOtp(request);
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return passwordResetService.resetPassword(request);
     }
 
     // @PostMapping("/google")

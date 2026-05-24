@@ -33,10 +33,9 @@ public class RegisterRequest {
     @NotBlank(message = "رقم الهاتف مطلوب")
     private String phoneNumber;
 
-    @NotBlank(message = "تحديد الجنس مطلوب") 
+
     private String gender;
 
-    @NotNull(message = "تاريخ الميلاد مطلوب")
     private LocalDate dateOfBirth; 
 
     @NotBlank(message = "كلمة المرور مطلوبة")

@@ -1,4 +1,4 @@
-package com.jomap.backend.Services.Auth;
+package com.jomap.backend.Services.Auth.SocialAuth;
 
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Auth.Login.LoginResponse;
@@ -7,6 +7,7 @@ import com.jomap.backend.Entities.Auth.AuthProvider;
 import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Services.Auth.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

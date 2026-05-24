@@ -3,6 +3,7 @@ package com.jomap.backend.Services.Notefications;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,104 @@ public class EmailService {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    public boolean sendPasswordResetOtp(String to, String otp) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("JoMap Password Reset OTP");
+
+            String htmlContent = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin:0; padding:0; background-color:#f3f7f4; font-family:Arial, Helvetica, sans-serif;">
+                
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f7f4; padding:40px 0;">
+                        <tr>
+                            <td align="center">
+                
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.10);">
+                                    
+                                    <tr>
+                                        <td style="background:linear-gradient(135deg,#0f766e,#16a34a); padding:35px 25px; text-align:center;">
+                                            <h1 style="margin:0; color:#ffffff; font-size:32px; letter-spacing:1px;">
+                                                JoMap
+                                            </h1>
+                                            <p style="margin:10px 0 0; color:#dff7ea; font-size:15px;">
+                                                Explore Jordan safely and easily
+                                            </p>
+                                        </td>
+                                    </tr>
+                
+                                    <tr>
+                                        <td style="padding:35px 40px; text-align:center;">
+                                            <h2 style="margin:0; color:#1f2937; font-size:24px;">
+                                                Password Reset Request
+                                            </h2>
+                
+                                            <p style="color:#6b7280; font-size:15px; line-height:1.7; margin:18px 0 25px;">
+                                                We received a request to reset your JoMap account password.
+                                                Use the OTP code below to continue.
+                                            </p>
+                
+                                            <div style="background:#ecfdf5; border:2px dashed #10b981; border-radius:14px; padding:22px; margin:25px 0;">
+                                                <p style="margin:0 0 8px; color:#065f46; font-size:14px; font-weight:bold;">
+                                                    Your OTP Code
+                                                </p>
+                                                <div style="font-size:38px; font-weight:bold; letter-spacing:8px; color:#047857;">
+                                                    {{OTP_CODE}}
+                                                </div>
+                                            </div>
+                
+                                            <p style="background:#fff7ed; color:#c2410c; padding:12px 16px; border-radius:10px; font-size:14px; margin:25px 0;">
+                                                This OTP is valid for <strong>1 minute only</strong>.
+                                            </p>
+                
+                                            <p style="color:#6b7280; font-size:14px; line-height:1.6;">
+                                                If you did not request a password reset, please ignore this email.
+                                                Your account will remain secure.
+                                            </p>
+                                        </td>
+                                    </tr>
+                
+                                    <tr>
+                                        <td style="background-color:#f9fafb; padding:22px; text-align:center; border-top:1px solid #e5e7eb;">
+                                            <p style="margin:0; color:#9ca3af; font-size:13px;">
+                                                © 2026 JoMap. All rights reserved.
+                                            </p>
+                                            <p style="margin:8px 0 0; color:#9ca3af; font-size:12px;">
+                                                This is an automated message. Please do not reply.
+                                            </p>
+                                        </td>
+                                    </tr>
+                
+                                </table>
+                
+                            </td>
+                        </tr>
+                    </table>
+                
+                </body>
+                </html>
+                """;
+
+            htmlContent = htmlContent.replace("{{OTP_CODE}}", otp);
+
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            return true;
+
+        } catch (Exception e) {
+            System.out.println("Failed to send OTP email: " + e.getMessage());
+            return false;
         }
     }
 
