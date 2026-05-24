@@ -2,9 +2,14 @@ package com.jomap.backend.Entities.Users;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.jomap.backend.Entities.Activities.Activity;
 import com.jomap.backend.Entities.Auth.AuthProvider;
+import com.jomap.backend.Entities.Governorate.Place;
+import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.postComments.PostComment;
 import com.jomap.backend.Entities.Posts.postLikes.PostLikes;
@@ -13,25 +18,14 @@ import com.jomap.backend.Entities.Stories.StoryLike;
 import com.jomap.backend.Entities.Stories.StoryView;
 import com.jomap.backend.Entities.Users.Profile.UserProfile;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import lombok.Data;
+import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "users")
 @NoArgsConstructor
 public class User {
@@ -139,5 +133,30 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_favorite_locations",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "location_id")
+    )
+    private Set<LocationList> favoriteLocations = new HashSet<>();
+
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_favorite_places",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "place_id")
+    )
+    private Set<Place> favoritePlaces = new HashSet<>();
+
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_favorite_events",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "event_id")
+    )
+    private Set<Activity> favoriteEvents = new HashSet<>();
 
 }
