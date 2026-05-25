@@ -35,4 +35,6 @@ public interface LocationRepo extends JpaRepository<LocationList, Long> {
     List<LocationList> findByStatusAndDeletedAtBefore(LocationStatus status, LocalDateTime thresholdTime);
 
     Optional<LocationList> findByOwnerIdAndStatusNot(Long ownerId, LocationStatus status);
+
+    List<LocationList> findTop10ByActiveTrueAndApprovedTrueOrderByIdDesc();
 }

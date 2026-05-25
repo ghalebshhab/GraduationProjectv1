@@ -22,4 +22,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
                    "WHERE a.governorate_id = :govId AND a.status = 'APPROVED' " +
                    "ORDER BY s.date ASC LIMIT 5", nativeQuery = true)
     List<Activity> findTop5Activities(@Param("govId") Long govId);
+
+    List<Activity> findTop10ByStatusOrderByIdDesc(ActivityStatus status);
 }
