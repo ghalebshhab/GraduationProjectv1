@@ -10,10 +10,13 @@ public class UserProfileResponse {
     private String username;
     private String profileImageUrl;
     private String email;
+    private String phoneNumber;
     
     private String firstName;
     private String lastName;
     private String gender;
+    private String birthDate;
+
     
     private String bio;
     private String location;

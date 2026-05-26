@@ -18,6 +18,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final LocationRepo locationRepository; 
 
     @Override
     @Transactional(readOnly = true)
@@ -99,7 +100,8 @@ public class UserProfileServiceImpl implements UserProfileService {
             user.setUsername(request.getUsername().trim());
         }
 
-        if (request.getPhoneNumber() != null) {
+        // 🎯 تعديل 1: حمينا رقم الهاتف من الفراغات ليتجاوز الـ Validation بنجاح ✅
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
             user.setPhoneNumber(request.getPhoneNumber().trim());
         }
 
@@ -144,12 +146,11 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
     }
 
-    private final LocationRepo locationRepository;
-
     private UserProfileResponse mapToResponse(User user, UserProfile profile) {
         UserProfileResponse response = new UserProfileResponse();
         response.setUserId(user.getId());
         response.setUsername(user.getUsername());
+        response.setPhoneNumber(user.getPhoneNumber()); 
         response.setEmail(user.getEmail());
         response.setProfileImageUrl(profile.getProfileImageUrl());
         response.setBio(profile.getBio());
@@ -157,24 +158,22 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setFollowersCount(0);
         response.setFollowingCount(0);
         response.setPostsCount(user.getPosts() != null ? user.getPosts().size() : 0);
-       
-       // 1. الرتبة (نجلبها من كلاس User مباشرة)
-    response.setRole(user.getRole() != null ? user.getRole().name() : "USER");
+        
+        response.setRole(user.getRole() != null ? user.getRole().name() : "USER");
 
-    // 2. معرف الموقع (الحل السحري للأحمر)
-    // نبحث في جدول المواقع عن الموقع الذي يملكه هذا الـ userId
-    locationRepository.findByOwnerId(user.getId()).ifPresent(loc -> {
-        response.setLocationId(loc.getId());
-    });
+        locationRepository.findByOwnerId(user.getId()).ifPresent(loc -> {
+            response.setLocationId(loc.getId());
+        });
 
         response.setFirstName(profile.getFirstName());
         response.setLastName(profile.getLastName());
         response.setGender(profile.getGender());
+        response.setBirthDate(profile.getBirthDate() != null ? profile.getBirthDate().toString() : ""); 
         response.setInstagramUrl(profile.getInstagramUrl());
         response.setFacebookUrl(profile.getFacebookUrl());
         response.setLinkedinUrl(profile.getLinkedinUrl());
+        
 
         return response;
-
     }
 }
