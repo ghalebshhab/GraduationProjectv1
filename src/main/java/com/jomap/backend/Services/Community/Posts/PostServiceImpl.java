@@ -441,6 +441,39 @@ public class PostServiceImpl implements PostsServices {
         return "Popular post";
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<List<PostResponse>> getMyPosts(String emailFromToken) {
+        User currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
+        if (currentUser == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        List<PostResponse> responses = postRepository
+                .findActivePostsByUserIdAndType(currentUser.getId(), Post.PostType.COMMUNITY)
+                .stream()
+                .map(p -> toResponse(p, null, null))
+                .toList();
+
+        return ApiResponse.success("My posts fetched successfully", responses);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<List<PostResponse>> getUserPosts(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            return ApiResponse.error("User not found");
+        }
+
+        List<PostResponse> responses = postRepository
+                .findActivePostsByUserIdAndType(userId, Post.PostType.COMMUNITY)
+                .stream()
+                .map(p -> toResponse(p, null, null))
+                .toList();
+
+        return ApiResponse.success("User posts fetched successfully", responses);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // RESPONSE MAPPER
     // ─────────────────────────────────────────────────────────────────────────

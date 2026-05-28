@@ -23,4 +23,8 @@ public interface PostsServices {
         ApiResponse<String> deletePost(String emailFromToken, Long postId);
 
         ApiResponse<List<PostResponse>> getPersonalizedFeed(String emailFromToken, double userLat, double userLng, int page, int size);
+
+        ApiResponse<List<PostResponse>> getMyPosts(String emailFromToken);
+
+        ApiResponse<List<PostResponse>> getUserPosts(Long userId);
 }

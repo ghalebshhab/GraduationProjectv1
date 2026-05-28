@@ -68,9 +68,11 @@ public class SearchServiceImpl implements SearchService {
             UserProfile p = profile.get();
             item.setTitle(trimJoin(p.getFirstName(), p.getLastName()));
             item.setSubTitle(firstNonBlank(p.getBio(), p.getLocation(), user.getUsername()));
+            item.setImageUrl(p.getProfileImageUrl());
         } else {
             item.setTitle(user.getUsername());
             item.setSubTitle(user.getEmail());
+            item.setImageUrl(user.getProfileImageUrl());
         }
 
         item.setImageRes(0);
@@ -84,6 +86,7 @@ public class SearchServiceImpl implements SearchService {
         item.setTitle(activity.getTitle());
         item.setSubTitle(firstNonBlank(activity.getActivityLocation(), activity.getDescription()));
         item.setLocationName(activity.getActivityLocation());
+        item.setImageUrl(activity.getImageUrl());
         item.setImageRes(0);
 
         if (activity.getSchedules() != null && !activity.getSchedules().isEmpty()) {
@@ -102,6 +105,7 @@ public class SearchServiceImpl implements SearchService {
         item.setSubTitle(firstNonBlank(location.getDescription(), categoryLabel(location)));
         item.setLocationName(location.getName());
         item.setRating(location.getRating());
+        item.setImageUrl(location.getCoverUrl() != null ? location.getCoverUrl() : location.getLogoUrl());
         item.setImageRes(0);
         return item;
     }

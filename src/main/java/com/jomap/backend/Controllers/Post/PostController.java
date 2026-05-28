@@ -86,4 +86,14 @@ public class PostController {
     ) {
         return ResponseEntity.ok(postService.deletePost(authentication.getName(), postId));
     }
+
+    @GetMapping("/my-posts")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getMyPosts(Authentication authentication) {
+        return ResponseEntity.ok(postService.getMyPosts(authentication.getName()));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getUserPosts(@PathVariable Long userId) {
+        return ResponseEntity.ok(postService.getUserPosts(userId));
+    }
 }

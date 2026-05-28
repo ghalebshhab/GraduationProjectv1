@@ -9,6 +9,7 @@ public class SearchItem {
     private String title;
     private String subTitle;
     private int imageRes;
+    private String imageUrl;
     private SearchType type;
     private Double rating;
     private Double distanceKm;
