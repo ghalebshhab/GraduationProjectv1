@@ -208,6 +208,7 @@ public class PasswordResetService {
 
         return new ApiResponse<>(true, "Password changed successfully", null);
     }
+    // Done And Tested on the postman
 
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
