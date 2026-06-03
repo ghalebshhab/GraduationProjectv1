@@ -33,8 +33,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        // skip auth endpoints
-        if (path.startsWith("/api/auth/")) {
+        // skip only public auth endpoints
+        if (path.equals("/api/auth/login") ||
+                path.equals("/api/auth/register") ||
+                path.equals("/api/auth/forgot-password") ||
+                path.equals("/api/auth/reset-password")) {
+
             filterChain.doFilter(request, response);
             return;
         }
@@ -55,11 +59,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             System.out.println("JWT extracted email = " + email);
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = (UserDetails) userDetailsService.loadUserByUsername(email);
+
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 System.out.println("Loaded userDetails username = " + userDetails.getUsername());
 
                 if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
@@ -67,12 +73,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     userDetails.getAuthorities()
                             );
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
                     System.out.println("Authentication set successfully");
                 }
             }
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }

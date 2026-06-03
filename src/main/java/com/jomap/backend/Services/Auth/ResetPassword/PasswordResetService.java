@@ -1,6 +1,7 @@
 package com.jomap.backend.Services.Auth.ResetPassword;
 
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Auth.ChangePassword.ChangePasswordRequest;
 import com.jomap.backend.DTOs.Auth.ForgetPassword.ForgotPasswordRequest;
 import com.jomap.backend.DTOs.Auth.ForgetPassword.ResetPasswordRequest;
 import com.jomap.backend.DTOs.Auth.ForgetPassword.VerifyOtpRequest;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -178,6 +180,35 @@ public class PasswordResetService {
 
         return new ApiResponse<>(true, "Password reset successfully.", null);
     }
+    @Transactional
+    public ApiResponse<String> changePassword(ChangePasswordRequest request, String emailFromToken) {
+
+        Optional<User> opUser = userRepository.findByEmail(emailFromToken);
+
+        if (opUser.isEmpty()) {
+            return new ApiResponse<>(false, "Invalid email.", null);
+        }
+        User user = opUser.get();
+
+
+
+        // Check old password
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            return new ApiResponse<>(false, "Old password is incorrect", null);
+        }
+
+        // Optional: prevent same password
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            return new ApiResponse<>(false, "New password cannot be the same as old password", null);
+        }
+
+        // Save new password encoded
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return new ApiResponse<>(true, "Password changed successfully", null);
+    }
+    // Done And Tested on the postman
 
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
