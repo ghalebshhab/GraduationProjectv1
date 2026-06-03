@@ -7,7 +7,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
+import org.springframework.data.domain.Pageable;
+
 public interface PostRepository extends JpaRepository<Post,Long> {
+
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false AND p.type IN :types ORDER BY p.createdAt DESC")
+    List<Post> findActivePostsByTypes(@Param("types") List<Post.PostType> types, Pageable pageable);
 
     @Query("SELECT p FROM Post p WHERE p.author.Id = :author_id AND p.isDeleted = false and p.category = :category ORDER BY p.createdAt DESC")
     List<Post> findActivePostsByUserId(@Param("author_id") int userId, @Param("category") String Category);

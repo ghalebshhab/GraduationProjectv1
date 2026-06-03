@@ -92,10 +92,10 @@ public class PostServiceImpl implements PostsServices {
     public ApiResponse<List<PostResponse>> getFeedSummary(int page, int size) {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        List<PostResponse> responses = postRepository.findAll(pageable)
-                .getContent()
+        List<Post.PostType> types = List.of(Post.PostType.USER, Post.PostType.OFFER, Post.PostType.Activity);
+
+        List<PostResponse> responses = postRepository.findActivePostsByTypes(types, pageable)
                 .stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
                 .map(p -> toResponse(p, null, null))
                 .toList();
 

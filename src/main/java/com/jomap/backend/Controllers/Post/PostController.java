@@ -46,7 +46,7 @@ public class PostController {
     @GetMapping("/feed/summary")
     public ResponseEntity<ApiResponse<List<PostResponse>>> getFeedSummary(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "30") int size
     ) {
         return ResponseEntity.ok(postService.getFeedSummary(page, size));
     }
