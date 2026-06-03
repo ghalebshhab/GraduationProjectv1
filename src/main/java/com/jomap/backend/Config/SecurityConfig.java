@@ -37,7 +37,8 @@ public class SecurityConfig {
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                                .requestMatchers("/api/auth/**").permitAll()
+                                                .requestMatchers("/api/auth/login").permitAll()
+                                        .requestMatchers("/api/auth/register").permitAll()
                                                 .requestMatchers("/api/admin/auth/**").permitAll()
                                                 .requestMatchers("/api/test/**").authenticated()
                                                 .requestMatchers(
@@ -45,6 +46,7 @@ public class SecurityConfig {
                                                                 "/v3/api-docs/**",
                                                                 "/swagger-ui.html")
                                                 .permitAll()
+                                        .requestMatchers("/api/auth/change-password").authenticated()
                                                 .requestMatchers("/api/dev/**").permitAll()
                                                 .requestMatchers("/api/governorates/**").permitAll()
                                                 .requestMatchers("/api/activities/admin/**").hasAuthority("ADMIN")

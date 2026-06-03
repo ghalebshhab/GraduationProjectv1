@@ -1,6 +1,7 @@
 package com.jomap.backend.Controllers.Auth;
 
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Auth.ChangePassword.ChangePasswordRequest;
 import com.jomap.backend.DTOs.Auth.ForgetPassword.ForgotPasswordRequest;
 import com.jomap.backend.DTOs.Auth.ForgetPassword.ResetPasswordRequest;
 import com.jomap.backend.DTOs.Auth.ForgetPassword.VerifyOtpRequest;
@@ -16,6 +17,7 @@ import com.jomap.backend.Services.Auth.ResetPassword.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -71,6 +73,25 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         return passwordResetService.resetPassword(request);
+    }
+    @PostMapping("/change-password")
+    public ApiResponse<String> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            return new ApiResponse<>(false, "Unauthorized: token is missing or invalid", null);
+        }
+
+        String email = authentication.getName();
+
+        ApiResponse<String> response = passwordResetService.changePassword(request, email);
+
+        if (!response.isSuccess()) {
+            return response;
+        }
+
+        return response;
     }
 
     // @PostMapping("/google")
