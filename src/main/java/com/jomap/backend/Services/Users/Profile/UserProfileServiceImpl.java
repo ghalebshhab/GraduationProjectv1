@@ -38,6 +38,22 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     @Transactional(readOnly = true)
+    public ApiResponse<String> getMyProfilePhoto(String usernameFromToken) {
+        User user = userRepository.findByEmail(usernameFromToken).orElse(null);
+        if (user == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElse(null);
+        if (profile == null) {
+            return ApiResponse.error("Profile not found");
+        }
+
+        return ApiResponse.success("Profile photo fetched successfully", profile.getProfileImageUrl());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ApiResponse<UserProfileResponse> getProfileByUserId(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) {

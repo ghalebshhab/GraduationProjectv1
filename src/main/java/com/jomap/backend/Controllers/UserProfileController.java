@@ -31,6 +31,12 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.getMyProfile(emailFromToken));
     }
 
+    @GetMapping("/me/photo")
+    public ResponseEntity<ApiResponse<String>> getMyProfilePhoto(Authentication authentication) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(userProfileService.getMyProfilePhoto(emailFromToken));
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUserProfile(@PathVariable Long userId) {
         return ResponseEntity.ok(userProfileService.getProfileByUserId(userId));

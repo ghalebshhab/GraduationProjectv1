@@ -10,6 +10,9 @@ public interface UserProfileService {
     @Transactional(readOnly = true)
    ApiResponse<UserProfileResponse> getMyProfile(String usernameFromToken);
 
+    @Transactional(readOnly = true)
+    ApiResponse<String> getMyProfilePhoto(String usernameFromToken);
+
     ApiResponse<UserProfileResponse> getProfileByUserId(Long userId);
 
     @Transactional
