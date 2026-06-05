@@ -1,26 +1,25 @@
 package com.jomap.backend.Services.Activities;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.ArrayList;
 
-import com.jomap.backend.Entities.Posts.Post;
-import com.jomap.backend.Entities.Posts.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jomap.backend.DTOs.Activities.ActivityResponse;
-import com.jomap.backend.DTOs.Activities.CreateActivityRequest;
 import com.jomap.backend.DTOs.Activities.ActivitySchedule;
+import com.jomap.backend.DTOs.Activities.CreateActivityRequest;
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.Entities.Activities.Activity;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivityStatus;
 import com.jomap.backend.Entities.Governorate.Governorate;
 import com.jomap.backend.Entities.Governorate.GovernorateRepository;
+import com.jomap.backend.Entities.Posts.Post;
+import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 

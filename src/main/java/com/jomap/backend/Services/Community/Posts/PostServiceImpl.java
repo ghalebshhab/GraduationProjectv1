@@ -22,6 +22,10 @@ import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Community.Posts.Comments.PostCommentService;
 import com.jomap.backend.Services.Community.Posts.Likes.PostLikeService;
+import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Activities.ActivityRepository;
+import com.jomap.backend.Entities.Activities.Activity;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -34,6 +38,8 @@ public class PostServiceImpl implements PostsServices {
     private final UserRepository userRepository;
     private final PostLikeService likesService;
     private final PostCommentService commentsService;
+    private final LocationRepo locationRepo;
+    private final ActivityRepository activityRepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // ALGORITHM WEIGHTS (each mode must sum to 1.0)
@@ -496,8 +502,30 @@ public class PostServiceImpl implements PostsServices {
         if (post.getAuthor() != null) {
             r.setAuthorId(post.getAuthor().getId());
             r.setAuthorEmail(post.getAuthor().getEmail());
-            r.setAuthorUsername(post.getAuthor().getUsername());
-            r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+
+            String typeStr = post.getType() != null ? post.getType().name() : "";
+            String categoryStr = post.getCategory() != null ? post.getCategory().toUpperCase() : "";
+
+            if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
+                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresentOrElse(location -> {
+                    r.setAuthorUsername(location.getName());
+                    r.setAuthorProfileImageUrl(location.getLogoUrl());
+                }, () -> {
+                    r.setAuthorUsername(post.getAuthor().getUsername());
+                    r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                });
+            } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getEventId() != null) {
+                activityRepository.findById(post.getEventId()).ifPresentOrElse(activity -> {
+                    r.setAuthorUsername(activity.getTitle());
+                    r.setAuthorProfileImageUrl(activity.getImageUrl());
+                }, () -> {
+                    r.setAuthorUsername(post.getAuthor().getUsername());
+                    r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                });
+            } else {
+                r.setAuthorUsername(post.getAuthor().getUsername());
+                r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+            }
         }
 
         r.setLikeCount(likesService.countByPostId(post.getId()).getData());

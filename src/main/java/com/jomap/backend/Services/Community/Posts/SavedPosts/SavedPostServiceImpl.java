@@ -6,8 +6,11 @@ import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Posts.SavedPosts.SavedPost;
 import com.jomap.backend.Entities.Posts.SavedPosts.SavedPostsRepository;
-import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Activities.ActivityRepository;
+import com.jomap.backend.Entities.Activities.Activity;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,8 @@ public class SavedPostServiceImpl implements SavedPostService {
     private final SavedPostsRepository savedPostRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final LocationRepo locationRepo;
+    private final ActivityRepository activityRepository;
 
     @Override
     @Transactional
@@ -113,8 +118,30 @@ public class SavedPostServiceImpl implements SavedPostService {
         if (post.getAuthor() != null) {
             response.setAuthorId(post.getAuthor().getId());
             response.setAuthorEmail(post.getAuthor().getEmail());
-            response.setAuthorUsername(post.getAuthor().getUsername());
-            response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+
+            String typeStr = post.getType() != null ? post.getType().name() : "";
+            String categoryStr = post.getCategory() != null ? post.getCategory().toUpperCase() : "";
+
+            if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
+                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresentOrElse(location -> {
+                    response.setAuthorUsername(location.getName());
+                    response.setAuthorProfileImageUrl(location.getLogoUrl());
+                }, () -> {
+                    response.setAuthorUsername(post.getAuthor().getUsername());
+                    response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                });
+            } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getEventId() != null) {
+                activityRepository.findById(post.getEventId()).ifPresentOrElse(activity -> {
+                    response.setAuthorUsername(activity.getTitle());
+                    response.setAuthorProfileImageUrl(activity.getImageUrl());
+                }, () -> {
+                    response.setAuthorUsername(post.getAuthor().getUsername());
+                    response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                });
+            } else {
+                response.setAuthorUsername(post.getAuthor().getUsername());
+                response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+            }
         }
 
         return response;
