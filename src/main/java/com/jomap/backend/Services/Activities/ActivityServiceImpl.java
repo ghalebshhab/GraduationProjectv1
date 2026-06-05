@@ -81,6 +81,13 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
+    public ApiResponse<ActivityResponse> getActivityById(Long activityId) {
+        return activityRepository.findById(activityId)
+                .map(activity -> ApiResponse.success("تم جلب تفاصيل الفعالية بنجاح", mapToResponse(activity)))
+                .orElse(ApiResponse.error("الفعالية غير موجودة"));
+    }
+
+    @Override
     public ApiResponse<List<ActivityResponse>> getMyActivities(String email) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {

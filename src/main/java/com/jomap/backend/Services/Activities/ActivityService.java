@@ -10,6 +10,8 @@ public interface ActivityService {
     
     ApiResponse<List<ActivityResponse>> getAllActivitiesForAdmin();
 
+    ApiResponse<ActivityResponse> getActivityById(Long activityId);
+
     ApiResponse<ActivityResponse> createActivity(CreateActivityRequest request, String email);
 
     ApiResponse<List<ActivityResponse>> getMyActivities(String email);
