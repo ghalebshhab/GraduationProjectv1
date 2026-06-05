@@ -34,6 +34,5 @@ public class PostResponse {
     private String category;
     private Double distanceKm;
     private String scoreReason;
-    
-
+    private Long eventId;
 }

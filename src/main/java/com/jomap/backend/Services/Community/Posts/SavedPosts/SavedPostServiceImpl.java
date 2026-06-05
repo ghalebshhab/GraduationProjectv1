@@ -108,6 +108,7 @@ public class SavedPostServiceImpl implements SavedPostService {
         response.setMediaUrl(post.getMediaUrl());
         response.setType(post.getType() != null ? post.getType().name() : null);
         response.setCreatedAt(post.getCreatedAt());
+        response.setEventId(post.getEventId());
 
         if (post.getAuthor() != null) {
             response.setAuthorId(post.getAuthor().getId());

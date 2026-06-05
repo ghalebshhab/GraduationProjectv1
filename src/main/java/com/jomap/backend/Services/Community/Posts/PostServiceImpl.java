@@ -491,6 +491,7 @@ public class PostServiceImpl implements PostsServices {
         r.setLongitude(post.getLongitude());
         r.setDistanceKm(distanceKm);
         r.setScoreReason(scoreReason);
+        r.setEventId(post.getEventId());
 
         if (post.getAuthor() != null) {
             r.setAuthorId(post.getAuthor().getId());

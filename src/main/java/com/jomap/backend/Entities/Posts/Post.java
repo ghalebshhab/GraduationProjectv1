@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
 public class Post {
 
     public enum PostType {
-        COMMUNITY, Activity, OFFER, USER
+        COMMUNITY, ACTIVITY, OFFER, USER
     }
 
     @Id
@@ -78,6 +78,9 @@ public class Post {
     private Double latitude;
     @Column(name = "lon")
     private Double longitude;
+
+    @Column(name = "event_id")
+    private Long eventId;
 
     @PrePersist
     public void onCreate() {

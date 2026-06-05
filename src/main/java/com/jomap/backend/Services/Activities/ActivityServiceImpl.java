@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 
+import com.jomap.backend.Entities.Posts.Post;
+import com.jomap.backend.Entities.Posts.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
     private final GovernorateRepository governorateRepository;
+    private final PostRepository postRepository;
 
     @Override
     @Transactional
@@ -77,6 +80,26 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setSchedules(schedules);
 
         Activity savedActivity = activityRepository.save(activity);
+
+        String postContent = "New Activity: " + (savedActivity.getTitle() != null ? savedActivity.getTitle() : "") 
+                           + "\n" + (savedActivity.getDescription() != null ? savedActivity.getDescription() : "");
+        if (postContent.length() > 2000) {
+            postContent = postContent.substring(0, 1997) + "...";
+        }
+
+        Post activityPost = new Post(
+                user,
+                postContent,
+                savedActivity.getImageUrl(),
+                Post.PostType.COMMUNITY
+        );
+        activityPost.setLatitude(savedActivity.getLatitude());
+        activityPost.setLongitude(savedActivity.getLongitude());
+        activityPost.setCategory("ACTIVITY");
+        activityPost.setEventId(savedActivity.getId());
+        
+        postRepository.save(activityPost);
+
         return ApiResponse.success("تم إنشاء النشاط بنجاح وهو بانتظار موافقة المسؤول", mapToResponse(savedActivity));
     }
 
