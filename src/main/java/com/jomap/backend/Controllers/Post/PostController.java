@@ -34,8 +34,8 @@ public class PostController {
     private final PostsServices postService;
 
     @GetMapping("getpostsuser/{userId}")
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts(@PathVariable int userId, @Valid @RequestBody PostCategory request) {
-        return ResponseEntity.ok(postService.getAllPosts(userId, request.category));
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getAllPosts(@PathVariable int userId) {
+        return ResponseEntity.ok(postService.getAllPosts(userId, "OWNER"));
     }
 
     @GetMapping("/{postId}")

@@ -31,6 +31,7 @@ public class LocationResponse {
     private String ownerUpdate;
     private Long ownerId;
     private String ownerName;
+    private String ownerProfileImageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;

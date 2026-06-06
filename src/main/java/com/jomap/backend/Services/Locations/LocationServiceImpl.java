@@ -307,6 +307,11 @@ public class LocationServiceImpl implements LocationService {
         if (location.getOwner() != null) {
             response.setOwnerId(location.getOwner().getId());
             response.setOwnerName(location.getOwner().getUsername());
+            if (location.getOwner().getProfile() != null) {
+                response.setOwnerProfileImageUrl(location.getOwner().getProfile().getProfileImageUrl());
+            } else {
+                response.setOwnerProfileImageUrl(location.getOwner().getProfileImageUrl());
+            }
         }
         response.setFacebookUrl(location.getFacebookUrl());
         response.setInstagramUrl(location.getInstagramUrl());
