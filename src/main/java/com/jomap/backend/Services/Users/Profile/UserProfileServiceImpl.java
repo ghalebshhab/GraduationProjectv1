@@ -173,7 +173,26 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setLocation(profile.getLocation());
         response.setFollowersCount(0);
         response.setFollowingCount(0);
-        response.setPostsCount(user.getPosts() != null ? user.getPosts().size() : 0);
+        int activeUserPostsCount = 0;
+        if (user.getPosts() != null) {
+            activeUserPostsCount = (int) user.getPosts().stream()
+                    .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                    .filter(p -> {
+                        String type = p.getType() != null ? p.getType().name().toUpperCase() : "";
+                        String category = p.getCategory() != null ? p.getCategory().toUpperCase() : "";
+
+                        // Exclude Activity and Offer posts entirely
+                        if ("ACTIVITY".equals(category) || "OFFER".equals(category) || 
+                            "ACTIVITY".equals(type) || "OFFER".equals(type)) {
+                            return false;
+                        }
+
+                        return "USER".equals(type) || "COMMUNITY".equals(type) ||
+                               "USER".equals(category) || "COMMUNITY".equals(category) || category.isEmpty();
+                    })
+                    .count();
+        }
+        response.setPostsCount(activeUserPostsCount);
         
         response.setRole(user.getRole() != null ? user.getRole().name() : "USER");
 
