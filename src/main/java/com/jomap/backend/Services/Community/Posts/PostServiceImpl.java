@@ -460,6 +460,10 @@ public class PostServiceImpl implements PostsServices {
         List<PostResponse> responses = postRepository
                 .findActivePostsByUserIdAndType(currentUser.getId(), Post.PostType.COMMUNITY)
                 .stream()
+                .filter(p -> {
+                    String category = p.getCategory() != null ? p.getCategory().toUpperCase() : "";
+                    return !"ACTIVITY".equals(category) && !"OFFER".equals(category);
+                })
                 .map(p -> toResponse(p, null, null))
                 .toList();
 
@@ -485,6 +489,10 @@ public class PostServiceImpl implements PostsServices {
         List<PostResponse> responses = postRepository
                 .findActivePostsByUserIdAndType(userId, Post.PostType.COMMUNITY)
                 .stream()
+                .filter(p -> {
+                    String category = p.getCategory() != null ? p.getCategory().toUpperCase() : "";
+                    return !"ACTIVITY".equals(category) && !"OFFER".equals(category);
+                })
                 .map(p -> toResponse(p, null, null))
                 .toList();
 
