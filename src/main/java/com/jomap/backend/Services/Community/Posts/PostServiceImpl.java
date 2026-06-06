@@ -22,6 +22,7 @@ import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Community.Posts.Comments.PostCommentService;
 import com.jomap.backend.Services.Community.Posts.Likes.PostLikeService;
+import com.jomap.backend.Entities.Posts.SavedPosts.SavedPostsRepository;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
@@ -40,6 +41,7 @@ public class PostServiceImpl implements PostsServices {
     private final PostCommentService commentsService;
     private final LocationRepo locationRepo;
     private final ActivityRepository activityRepository;
+    private final SavedPostsRepository savedPostsRepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // ALGORITHM WEIGHTS (each mode must sum to 1.0)
@@ -460,6 +462,15 @@ public class PostServiceImpl implements PostsServices {
                 .stream()
                 .map(p -> toResponse(p, null, null))
                 .toList();
+
+        List<Long> likedPostIds = likesService.getPostIdsLikedByUser(currentUser.getId());
+        List<Long> savedPostIds = savedPostsRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
+                .stream().map(sp -> sp.getPost().getId()).toList();
+
+        responses.forEach(r -> {
+            r.setLikedByCurrentUser(likedPostIds.contains(r.getId()));
+            r.setSavedByCurrentUser(savedPostIds.contains(r.getId()));
+        });
 
         return ApiResponse.success("My posts fetched successfully", responses);
     }

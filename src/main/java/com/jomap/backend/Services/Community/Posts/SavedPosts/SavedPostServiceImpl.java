@@ -6,6 +6,7 @@ import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Posts.SavedPosts.SavedPost;
 import com.jomap.backend.Entities.Posts.SavedPosts.SavedPostsRepository;
+import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationList;
