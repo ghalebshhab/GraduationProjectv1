@@ -95,7 +95,7 @@ public class ActivityServiceImpl implements ActivityService {
         activityPost.setLatitude(savedActivity.getLatitude());
         activityPost.setLongitude(savedActivity.getLongitude());
         activityPost.setCategory("ACTIVITY");
-        activityPost.setEventId(savedActivity.getId());
+        activityPost.setActivityId(savedActivity.getId());
         
         postRepository.save(activityPost);
 

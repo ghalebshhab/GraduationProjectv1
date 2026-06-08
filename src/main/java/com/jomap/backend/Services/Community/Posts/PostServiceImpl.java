@@ -24,6 +24,7 @@ import com.jomap.backend.Services.Community.Posts.Comments.PostCommentService;
 import com.jomap.backend.Services.Community.Posts.Likes.PostLikeService;
 import com.jomap.backend.Entities.Posts.SavedPosts.SavedPostsRepository;
 import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Offers.OfferRepo;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.Activity;
@@ -39,9 +40,10 @@ public class PostServiceImpl implements PostsServices {
     private final UserRepository userRepository;
     private final PostLikeService likesService;
     private final PostCommentService commentsService;
-    private final LocationRepo locationRepo;
-    private final ActivityRepository activityRepository;
     private final SavedPostsRepository savedPostsRepository;
+    private final com.jomap.backend.Entities.Locations.LocationRepo locationRepo;
+    private final ActivityRepository activityRepository;
+    private final OfferRepo offerRepo;
 
     // ─────────────────────────────────────────────────────────────────────────
     // ALGORITHM WEIGHTS (each mode must sum to 1.0)
@@ -504,19 +506,22 @@ public class PostServiceImpl implements PostsServices {
     // ─────────────────────────────────────────────────────────────────────────
 
     private PostResponse toResponse(Post post, Double distanceKm, String scoreReason) {
-        PostResponse r = new PostResponse();
-        r.setId(post.getId());
-        r.setContent(post.getContent());
-        r.setMediaUrl(post.getMediaUrl());
-        r.setType(post.getType() != null ? post.getType().name() : null);
-        r.setCreatedAt(post.getCreatedAt());
-        r.setUpdatedAt(post.getUpdatedAt());
-        r.setCategory(post.getCategory());
-        r.setLatitude(post.getLatitude());
-        r.setLongitude(post.getLongitude());
-        r.setDistanceKm(distanceKm);
-        r.setScoreReason(scoreReason);
-        r.setEventId(post.getEventId());
+    PostResponse r = new PostResponse();
+    r.setId(post.getId());
+    r.setContent(post.getContent());
+    r.setMediaUrl(post.getMediaUrl());
+    r.setType(post.getType() != null ? post.getType().name() : null);
+    r.setCreatedAt(post.getCreatedAt());
+    r.setUpdatedAt(post.getUpdatedAt());
+    r.setCategory(post.getCategory());
+    r.setLatitude(post.getLatitude());
+    r.setLongitude(post.getLongitude());
+    r.setDistanceKm(distanceKm);
+    r.setScoreReason(scoreReason);
+    
+    // شحن المعرفات للفرونت إند
+    r.setActivityId(post.getActivityId()); 
+    r.setOfferId(post.getOfferId());       
 
         if (post.getAuthor() != null) {
             r.setAuthorId(post.getAuthor().getId());
@@ -525,21 +530,42 @@ public class PostServiceImpl implements PostsServices {
             String typeStr = post.getType() != null ? post.getType().name() : "";
             String categoryStr = post.getCategory() != null ? post.getCategory().toUpperCase() : "";
 
+            // 🎯 اللوجيك الذكي المزدوج للعروض بفيد الكومينتي
             if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
-                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresentOrElse(location -> {
-                    r.setAuthorUsername(location.getName());
-                    r.setAuthorProfileImageUrl(location.getLogoUrl());
-                }, () -> {
-                    r.setAuthorUsername(post.getAuthor().getUsername());
-                    r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
-                });
-            } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getEventId() != null) {
-                activityRepository.findById(post.getEventId()).ifPresentOrElse(activity -> {
+                
+                // 🌟 الحالة أ: عرض رسمي تفاعلي (له offerId)
+                if (post.getOfferId() != null) {
+                    offerRepo.findById(post.getOfferId()).ifPresentOrElse(offer -> {
+                        r.setAuthorUsername(offer.getTitle());
+                        r.setAuthorProfileImageUrl(offer.getImageUrl());
+                    }, () -> {
+                        r.setAuthorUsername(post.getAuthor().getUsername());
+                        r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                    });
+                } 
+                // 🌟 الحالة ب: منشور عادي من صفحة المنشأة (ما إله offerId)
+                else {
+                    locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresentOrElse(location -> {
+                        r.setAuthorUsername(location.getName());
+                        r.setAuthorProfileImageUrl(location.getLogoUrl());
+                    }, () -> {
+                        r.setAuthorUsername(post.getAuthor().getUsername());
+                        r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                    });
+                }
+                
+            } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getActivityId() != null) {
+                activityRepository.findById(post.getActivityId()).ifPresentOrElse(activity -> {
                     r.setAuthorUsername(activity.getTitle());
                     r.setAuthorProfileImageUrl(activity.getImageUrl());
                 }, () -> {
                     r.setAuthorUsername(post.getAuthor().getUsername());
                     r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                });
+            } else if ("OWNER".equalsIgnoreCase(post.getCategory())) {
+                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresent(loc -> {
+                    r.setAuthorUsername(loc.getName());
+                    r.setAuthorProfileImageUrl(loc.getLogoUrl());
                 });
             } else {
                 r.setAuthorUsername(post.getAuthor().getUsername());
@@ -547,11 +573,10 @@ public class PostServiceImpl implements PostsServices {
             }
         }
 
-        r.setLikeCount(likesService.countByPostId(post.getId()).getData());
-        r.setCommentCount(commentsService.countByPostId(post.getId()).getData());
-        return r;
-    }
-
+    r.setLikeCount(likesService.countByPostId(post.getId()).getData());
+    r.setCommentCount(commentsService.countByPostId(post.getId()).getData());
+    return r;
+}
     // ─────────────────────────────────────────────────────────────────────────
     // INTERNAL RECORD
     // ─────────────────────────────────────────────────────────────────────────

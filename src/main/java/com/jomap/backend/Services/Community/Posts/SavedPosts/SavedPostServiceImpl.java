@@ -15,6 +15,7 @@ import com.jomap.backend.Entities.Activities.Activity;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.jomap.backend.Entities.Offers.OfferRepo;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class SavedPostServiceImpl implements SavedPostService {
     private final UserRepository userRepository;
     private final LocationRepo locationRepo;
     private final ActivityRepository activityRepository;
+    private final OfferRepo offerRepo;
 
     @Override
     @Transactional
@@ -107,23 +109,41 @@ public class SavedPostServiceImpl implements SavedPostService {
     }
 
     private PostResponse mapToPostResponse(Post post) {
-        PostResponse response = new PostResponse();
+    PostResponse response = new PostResponse();
 
-        response.setId(post.getId());
-        response.setContent(post.getContent());
-        response.setMediaUrl(post.getMediaUrl());
-        response.setType(post.getType() != null ? post.getType().name() : null);
-        response.setCreatedAt(post.getCreatedAt());
-        response.setEventId(post.getEventId());
+    response.setId(post.getId());
+    response.setContent(post.getContent());
+    response.setMediaUrl(post.getMediaUrl());
+    response.setType(post.getType() != null ? post.getType().name() : null);
+    response.setCreatedAt(post.getCreatedAt());
+    
+    // شحن المعرفات للفرونت إند
+    response.setActivityId(post.getActivityId());
+    response.setOfferId(post.getOfferId()); 
 
-        if (post.getAuthor() != null) {
-            response.setAuthorId(post.getAuthor().getId());
-            response.setAuthorEmail(post.getAuthor().getEmail());
+    if (post.getAuthor() != null) {
+        response.setAuthorId(post.getAuthor().getId());
+        response.setAuthorEmail(post.getAuthor().getEmail());
 
-            String typeStr = post.getType() != null ? post.getType().name() : "";
-            String categoryStr = post.getCategory() != null ? post.getCategory().toUpperCase() : "";
+        String typeStr = post.getType() != null ? post.getType().name() : "";
+        String categoryStr = post.getCategory() != null ? post.getCategory().toUpperCase() : "";
 
-            if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
+        // 🎯 اللوجيك الذكي الجديد للعروض
+        if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
+            
+            // 🌟 الحالة أ: إذا كان عرض رسمي تفاعلي من الفورم (له offerId)
+            if (post.getOfferId() != null) {
+                // بنجيب اسم العرض وصورته كـ كاتب للمنشور لتشابه نظام الأنشطة بالملي
+                offerRepo.findById(post.getOfferId()).ifPresentOrElse(offer -> {
+                    response.setAuthorUsername(offer.getTitle());
+                    response.setAuthorProfileImageUrl(offer.getImageUrl());
+                }, () -> {
+                    response.setAuthorUsername(post.getAuthor().getUsername());
+                    response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+                });
+            } 
+            // 🌟 الحالة ب: منشور عادي كتبه الأونر من صفحة الموقع (ما إله offerId)
+            else {
                 locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresentOrElse(location -> {
                     response.setAuthorUsername(location.getName());
                     response.setAuthorProfileImageUrl(location.getLogoUrl());
@@ -131,20 +151,22 @@ public class SavedPostServiceImpl implements SavedPostService {
                     response.setAuthorUsername(post.getAuthor().getUsername());
                     response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
                 });
-            } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getEventId() != null) {
-                activityRepository.findById(post.getEventId()).ifPresentOrElse(activity -> {
-                    response.setAuthorUsername(activity.getTitle());
-                    response.setAuthorProfileImageUrl(activity.getImageUrl());
-                }, () -> {
-                    response.setAuthorUsername(post.getAuthor().getUsername());
-                    response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
-                });
-            } else {
+            }
+            
+        } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getActivityId() != null) {
+            activityRepository.findById(post.getActivityId()).ifPresentOrElse(activity -> {
+                response.setAuthorUsername(activity.getTitle());
+                response.setAuthorProfileImageUrl(activity.getImageUrl());
+            }, () -> {
                 response.setAuthorUsername(post.getAuthor().getUsername());
                 response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
-            }
+            });
+        } else {
+            response.setAuthorUsername(post.getAuthor().getUsername());
+            response.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
         }
-
-        return response;
     }
+
+    return response;
+}
 }

@@ -11,6 +11,10 @@ import com.jomap.backend.DTOs.Locations.CreateLocationRequest;
 import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.DTOs.Locations.UpdateLocationRequest;
 import com.jomap.backend.Entities.Locations.LocationCategory;
+import com.jomap.backend.DTOs.Posts.PostResponse;
+import com.jomap.backend.Services.Community.Posts.PostsServices;
+import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Services.Locations.LocationService;
 
 import jakarta.validation.Valid;
@@ -23,6 +27,20 @@ import lombok.AllArgsConstructor;
 public class LocationController {
 
     private final LocationService locationService; 
+    private final PostsServices postsServices;
+    private final LocationRepo locationRepo;
+
+    @GetMapping("/{locationId}/posts")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getLocationPosts(
+            @PathVariable("locationId") Long locationId
+    ) {
+        LocationList location = locationRepo.findById(locationId).orElse(null);
+        if (location == null || location.getOwner() == null) {
+            return ResponseEntity.ok(ApiResponse.error("Location not found"));
+        }
+        Long ownerId = location.getOwner().getId();
+        return ResponseEntity.ok(postsServices.getAllPosts(ownerId.intValue(), "OWNER"));
+    } 
 
     // 1. إنشاء موقع جديد
     @PostMapping("/create")

@@ -1,0 +1,165 @@
+package com.jomap.backend.Services.Offers;
+
+import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Offers.OfferProductResponse;
+import com.jomap.backend.DTOs.Offers.OfferRequest;
+import com.jomap.backend.DTOs.Offers.OfferResponse;
+import com.jomap.backend.Entities.Governorate.Governorate;
+import com.jomap.backend.Entities.Governorate.GovernorateRepository;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Offers.Offer;
+import com.jomap.backend.Entities.Offers.OfferProduct;
+import com.jomap.backend.Entities.Offers.OfferRepo;
+import com.jomap.backend.Entities.Offers.OfferStatus;
+import com.jomap.backend.Entities.Posts.Post;
+import com.jomap.backend.Entities.Posts.PostRepository;
+import com.jomap.backend.Entities.Users.User;
+import com.jomap.backend.Entities.Users.UserRepository;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class OfferServiceImpl implements OfferService {
+
+    private final OfferRepo offerRepo;
+    private final LocationRepo locationRepo;
+    private final GovernorateRepository governorateRepository;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+
+    public OfferServiceImpl(OfferRepo offerRepo, 
+                            LocationRepo locationRepo, 
+                            GovernorateRepository governorateRepository,
+                            UserRepository userRepository,
+                            PostRepository postRepository) {
+        this.offerRepo = offerRepo;
+        this.locationRepo = locationRepo;
+        this.governorateRepository = governorateRepository;
+        this.userRepository = userRepository;
+        this.postRepository = postRepository;
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<OfferResponse> createOffer(OfferRequest request, String email) {
+        try {
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            if (userOptional.isEmpty()) {
+                return ApiResponse.error("فشل الإنشاء: المستخدم غير موجود في النظام");
+            }
+            User user = userOptional.get();
+
+            Optional<LocationList> locationOptional = locationRepo.findById(request.getLocationId());
+            if (locationOptional.isEmpty()) {
+                return ApiResponse.error("فشل الإنشاء: المنشأة المحددة غير موجودة");
+            }
+            LocationList location = locationOptional.get();
+
+            Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
+            if (optionalGov.isEmpty()) {
+                return ApiResponse.error("العملية مرفوضة: المحافظة المحددة غير مدعومة حالياً");
+            }
+
+            Offer offer = new Offer();
+            offer.setImageUrl(request.getImageUrl());
+            offer.setTitle(request.getTitle());
+            offer.setDescription(request.getDescription());
+            offer.setScheduleType(request.getScheduleType());
+            offer.setStartDate(request.getStartDate());
+            offer.setEndDate(request.getEndDate());
+            offer.setStartTime(request.getStartTime());
+            offer.setEndTime(request.getEndTime());
+            offer.setLatitude(request.getLatitude());
+            offer.setLongitude(request.getLongitude());
+            offer.setLocation(location);
+            offer.setGovernorate(optionalGov.get());
+            offer.setStatus(OfferStatus.PENDING);
+            offer.setCreatedBy(user);
+
+            List<OfferProduct> products = new ArrayList<>();
+            if (request.getProducts() != null && !request.getProducts().isEmpty()) {
+                for (com.jomap.backend.DTOs.Offers.OfferProductRequest prodReq : request.getProducts()) {
+                    OfferProduct product = new OfferProduct();
+                    product.setProductName(prodReq.getProductName());
+                    product.setPriceBefore(prodReq.getPriceBefore());
+                    product.setPriceAfter(prodReq.getPriceAfter());
+                    product.setOffer(offer);
+                    products.add(product);
+                }
+            }
+            offer.setProducts(products);
+
+            Offer savedOffer = offerRepo.save(offer);
+
+            // تحويل العرض إلى بوست تلقائي بـ محتوى واضح ونظيف
+            String postContent = "New Offer: " + (savedOffer.getTitle() != null ? savedOffer.getTitle() : "") 
+                               + "\n" + (savedOffer.getDescription() != null ? savedOffer.getDescription() : "");
+            if (postContent.length() > 2000) {
+                postContent = postContent.substring(0, 1997) + "...";
+            }
+
+            Post offerPost = new Post(
+                    user,
+                    postContent,
+                    savedOffer.getImageUrl(),
+                    Post.PostType.COMMUNITY
+            );
+            offerPost.setLatitude(savedOffer.getLatitude());
+            offerPost.setLongitude(savedOffer.getLongitude());
+            offerPost.setCategory("OFFER");
+            
+            // ✨ التعديل الهندسي الجديد بناءً على طلبك:
+            offerPost.setOfferId(savedOffer.getId());    // تخزين المعرف بالحقل الجديد الخاص بالعروض 🚀
+            offerPost.setActivityId(null);               // تصفير حقل الأنشطة تماماً هنا
+
+            postRepository.save(offerPost);
+
+            return ApiResponse.success("تم تقديم طلب العرض بنجاح وهو بانتظار موافقة المسؤول", mapToResponse(savedOffer));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error("حدث خطأ غير متوقع أثناء إنشاء العرض: " + e.getMessage());
+        }
+    }
+
+    private OfferResponse mapToResponse(Offer offer) {
+        List<OfferProductResponse> productDtos = new ArrayList<>();
+        if (offer.getProducts() != null) {
+            for (OfferProduct p : offer.getProducts()) {
+                productDtos.add(OfferProductResponse.builder()
+                        .id(p.getId())
+                        .productName(p.getProductName())
+                        .priceBefore(p.getPriceBefore())
+                        .priceAfter(p.getPriceAfter())
+                        .build());
+            }
+        }
+
+        return OfferResponse.builder()
+                .id(offer.getId())
+                .title(offer.getTitle())
+                .description(offer.getDescription())
+                .scheduleType(offer.getScheduleType())
+                .startDate(offer.getStartDate())
+                .endDate(offer.getEndDate())
+                .startTime(offer.getStartTime())
+                .endTime(offer.getEndTime())
+                .products(productDtos)
+                .locationId(offer.getLocation().getId())
+                .imageUrl(offer.getImageUrl())
+                .latitude(offer.getLatitude())
+                .longitude(offer.getLongitude())
+                .governorateId(offer.getGovernorate().getId())
+                .statusId((long) offer.getStatus().getId())
+                .createdById(offer.getCreatedBy().getId())
+                .createdByUsername(offer.getCreatedBy().getUsername())
+                .build();
+    }
+}
