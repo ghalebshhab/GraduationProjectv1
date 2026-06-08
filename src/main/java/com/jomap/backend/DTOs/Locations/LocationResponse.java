@@ -20,6 +20,8 @@ public class LocationResponse {
     private String governorateName;
     private LocationCategory category;
     private LocationStatus status;
+    private Boolean isActive;
+    private Boolean isApproved;
     
     private String facebookUrl;
     private String instagramUrl;

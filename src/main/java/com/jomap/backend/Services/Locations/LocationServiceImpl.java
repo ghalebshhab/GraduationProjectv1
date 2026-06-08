@@ -300,6 +300,8 @@ public class LocationServiceImpl implements LocationService {
         }
         response.setCategory(location.getCategory());
         response.setStatus(location.getStatus());
+        response.setIsActive(location.getActive());
+        response.setIsApproved(location.getApproved());
         response.setRating(location.getRating());
         response.setDeletedAt(location.getDeletedAt());
         response.setReviewCount(location.getReviewCount());
