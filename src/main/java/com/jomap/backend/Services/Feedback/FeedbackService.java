@@ -12,4 +12,9 @@ public interface FeedbackService {
     ApiResponse<List<FeedbackResponse>> getFeedbacks(TargetType targetType, Long targetId);
     ApiResponse<FeedbackResponse> addFeedback(FeedbackRequest request, String currentUserEmail);
     ApiResponse<FeedbackResponse> replyToFeedback(Long feedbackId, FeedbackReplyRequest request, String currentUserEmail);
+    ApiResponse<FeedbackResponse> updateFeedback(Long feedbackId, com.jomap.backend.DTOs.Feedback.UpdateFeedbackRequest request, String currentUserEmail);
+    ApiResponse<Void> deleteFeedback(Long feedbackId, String currentUserEmail);
+    ApiResponse<FeedbackResponse> editReply(Long feedbackId, FeedbackReplyRequest request, String currentUserEmail);
+    ApiResponse<FeedbackResponse> deleteReply(Long feedbackId, String currentUserEmail);
+    ApiResponse<List<com.jomap.backend.DTOs.Feedback.FeedbackHistoryResponse>> getFeedbackHistory(Long feedbackId);
 }

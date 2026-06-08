@@ -57,6 +57,18 @@ public class Feedback {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "is_edited")
+    private Boolean isEdited = false;
+
+    @Column(name = "reply_updated_at")
+    private LocalDateTime replyUpdatedAt;
+
+    @Column(name = "is_reply_edited")
+    private Boolean isReplyEdited = false;
+
     @PrePersist
     public void beforeCreate() {
         createdAt = LocalDateTime.now();
