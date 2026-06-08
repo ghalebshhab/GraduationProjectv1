@@ -79,8 +79,12 @@ public class Post {
     @Column(name = "lon")
     private Double longitude;
 
-    @Column(name = "event_id")
-    private Long eventId;
+
+    @Column(name = "activity_id")
+    private Long activityId; 
+
+    @Column(name = "offer_id")
+    private Long offerId; 
 
     @PrePersist
     public void onCreate() {
