@@ -129,6 +129,21 @@ public class OfferServiceImpl implements OfferService {
         }
     }
 
+    @Override
+    public ApiResponse<List<OfferResponse>> getMyOffers(String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ApiResponse.error("لا يمكن جلب البيانات: المستخدم غير موثق");
+        }
+
+        List<OfferResponse> offers = offerRepo.findByCreatedById(userOptional.get().getId())
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return ApiResponse.success("تم جلب عروضك بنجاح", offers);
+    }
+
     private OfferResponse mapToResponse(Offer offer) {
         List<OfferProductResponse> productDtos = new ArrayList<>();
         if (offer.getProducts() != null) {

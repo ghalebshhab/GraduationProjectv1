@@ -40,4 +40,19 @@ public class OfferController {
             return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ داخلي في الخادم: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<java.util.List<OfferResponse>>> getMyOffers(Principal principal) {
+        try {
+            ApiResponse<java.util.List<OfferResponse>> response = offerService.getMyOffers(principal.getName());
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء جلب العروض: " + e.getMessage()));
+        }
+    }
 }

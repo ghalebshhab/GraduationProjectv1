@@ -3,7 +3,9 @@ package com.jomap.backend.Services.Offers;
 import com.jomap.backend.DTOs.Offers.OfferRequest;
 import com.jomap.backend.DTOs.Offers.OfferResponse;
 import com.jomap.backend.DTOs.ApiResponse;
+import java.util.List;
 
 public interface OfferService {
     ApiResponse<OfferResponse> createOffer(OfferRequest request, String email);
+    ApiResponse<List<OfferResponse>> getMyOffers(String email);
 }
