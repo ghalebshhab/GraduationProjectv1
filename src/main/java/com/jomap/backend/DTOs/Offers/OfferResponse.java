@@ -27,7 +27,10 @@ public class OfferResponse {
     private Double latitude;
     private Double longitude;
     private Long governorateId;
+    private String governorateName;
     private Long statusId; 
     private Long createdById;
     private String createdByUsername;
+    private String phoneNumber;
+    private Integer viewsCount;
 }

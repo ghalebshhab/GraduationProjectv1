@@ -144,6 +144,13 @@ public class OfferServiceImpl implements OfferService {
         return ApiResponse.success("تم جلب عروضك بنجاح", offers);
     }
 
+    @Override
+    public ApiResponse<OfferResponse> getOfferById(Long offerId) {
+        return offerRepo.findById(offerId)
+                .map(offer -> ApiResponse.success("تم جلب تفاصيل العرض بنجاح", mapToResponse(offer)))
+                .orElse(ApiResponse.error("العرض غير موجود"));
+    }
+
     private OfferResponse mapToResponse(Offer offer) {
         List<OfferProductResponse> productDtos = new ArrayList<>();
         if (offer.getProducts() != null) {
@@ -156,6 +163,10 @@ public class OfferServiceImpl implements OfferService {
                         .build());
             }
         }
+
+        String phone = (offer.getLocation() != null && offer.getLocation().getPhoneNumber() != null) 
+                        ? offer.getLocation().getPhoneNumber() 
+                        : (offer.getCreatedBy() != null ? offer.getCreatedBy().getPhoneNumber() : null);
 
         return OfferResponse.builder()
                 .id(offer.getId())
@@ -172,9 +183,12 @@ public class OfferServiceImpl implements OfferService {
                 .latitude(offer.getLatitude())
                 .longitude(offer.getLongitude())
                 .governorateId(offer.getGovernorate().getId())
+                .governorateName(offer.getGovernorate().getName())
                 .statusId((long) offer.getStatus().getId())
                 .createdById(offer.getCreatedBy().getId())
                 .createdByUsername(offer.getCreatedBy().getUsername())
+                .phoneNumber(phone)
+                .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
                 .build();
     }
 }

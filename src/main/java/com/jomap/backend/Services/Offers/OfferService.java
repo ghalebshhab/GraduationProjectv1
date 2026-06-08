@@ -8,4 +8,5 @@ import java.util.List;
 public interface OfferService {
     ApiResponse<OfferResponse> createOffer(OfferRequest request, String email);
     ApiResponse<List<OfferResponse>> getMyOffers(String email);
+    ApiResponse<OfferResponse> getOfferById(Long offerId);
 }

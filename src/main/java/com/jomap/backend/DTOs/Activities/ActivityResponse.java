@@ -26,6 +26,7 @@ public class ActivityResponse {
     private String activityLocation;
 
     private Long governorateId;
+    private String governorateName;
 
     private String imageUrl;
 

@@ -76,6 +76,9 @@ public class Offer {
     @JsonManagedReference("offer-products")
     private List<OfferProduct> products = new ArrayList<>();
 
+    @Column(name = "views_count")
+    private Integer viewsCount = 0;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

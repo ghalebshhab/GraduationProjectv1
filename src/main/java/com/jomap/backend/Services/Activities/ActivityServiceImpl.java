@@ -323,6 +323,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .description(activity.getDescription())
                 .activityLocation(activity.getActivityLocation())
                 .governorateId(activity.getGovernorate().getId())
+                .governorateName(activity.getGovernorate().getName())
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
                 .price(activity.getPrice())

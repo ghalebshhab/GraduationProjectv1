@@ -55,4 +55,14 @@ public class OfferController {
             return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء جلب العروض: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<OfferResponse>> getOfferById(@PathVariable Long id) {
+        ApiResponse<OfferResponse> response = offerService.getOfferById(id);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }
