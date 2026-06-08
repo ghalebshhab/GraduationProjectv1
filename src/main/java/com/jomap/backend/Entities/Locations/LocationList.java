@@ -69,6 +69,9 @@ public class LocationList {
 
     private Double rating = 0.0;
     private Integer reviewCount = 0;
+    
+    @Column(name = "profile_visits")
+    private Integer profileVisits = 0;
 
     private Boolean active = true;
     private Boolean approved = false;
@@ -97,6 +100,7 @@ public class LocationList {
 
         if (rating == null) rating = 0.0;
         if (reviewCount == null) reviewCount = 0;
+        if (profileVisits == null) profileVisits = 0;
     }
 
     @PreUpdate

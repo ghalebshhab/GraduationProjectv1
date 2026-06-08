@@ -305,6 +305,7 @@ public class LocationServiceImpl implements LocationService {
         response.setRating(location.getRating());
         response.setDeletedAt(location.getDeletedAt());
         response.setReviewCount(location.getReviewCount());
+        response.setProfileVisits(location.getProfileVisits());
         response.setCreatedAt(location.getCreatedAt());
         if (location.getOwner() != null) {
             response.setOwnerId(location.getOwner().getId());

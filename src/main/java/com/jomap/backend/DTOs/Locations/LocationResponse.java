@@ -30,6 +30,7 @@ public class LocationResponse {
 
     private Double rating;
     private Integer reviewCount;
+    private Integer profileVisits;
     private String ownerUpdate;
     private Long ownerId;
     private String ownerName;
