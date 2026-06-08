@@ -11,6 +11,9 @@ import com.jomap.backend.Entities.Activities.ActivitySchedule;
 import com.jomap.backend.Entities.Locations.LocationCategory;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Offers.OfferRepo;
+import com.jomap.backend.Entities.Offers.OfferStatus;
+import com.jomap.backend.DTOs.Offers.OfferResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,7 @@ public class GovernorateService {
     private final PlaceRepository placeRepository;
     private final ActivityRepository activityRepository;
     private final LocationRepo locationRepo; 
+    private final OfferRepo offerRepository;
 
     public List<Governorate> getAllGovernorates() {
         return governorateRepository.findAll();
@@ -88,15 +92,18 @@ public class GovernorateService {
         // 3. سحب المواقع النشطة والمقبولة التي أنشأها المستخدمون في هذه المحافظة
         List<LocationList> userLocations = locationRepo.findByGovernorateIdAndActiveTrueAndApprovedTrue(id);
 
-        // 🎯 هندسة الأماكن المقترحة (Suggested Places): دمج الثابت والمستند للمستخدمين
-        List<PlaceResponse> combinedSuggestions = new ArrayList<>();
-        
-        staticPlaces.forEach(p -> combinedSuggestions.add(mapStaticToPlaceResponse(p)));
-        userLocations.forEach(loc -> combinedSuggestions.add(mapUserLocationToPlaceResponse(loc)));
-
-        Collections.shuffle(combinedSuggestions);
-        List<PlaceResponse> finalSuggestions = combinedSuggestions.stream()
+        // 🎯 أماكن مقترحة: User locations ONLY (excluding teams/organizations)
+        List<PlaceResponse> suggestedPlaces = userLocations.stream()
+                .filter(loc -> loc.getCategory() != LocationCategory.VOLUNTEER_TEAM && loc.getCategory() != LocationCategory.ORGANIZATION)
                 .limit(5)
+                .map(this::mapUserLocationToPlaceResponse)
+                .collect(Collectors.toList());
+
+        // 🎯 افرقة مقترحة: User locations ONLY of team/organization categories
+        List<PlaceResponse> suggestedTeams = userLocations.stream()
+                .filter(loc -> loc.getCategory() == LocationCategory.VOLUNTEER_TEAM || loc.getCategory() == LocationCategory.ORGANIZATION)
+                .limit(5)
+                .map(this::mapUserLocationToPlaceResponse)
                 .collect(Collectors.toList());
 
         // 🎯 1️⃣ التعديل الأول: تصفية الأماكن التاريخية الأثرية بناءً على الفئة الموحدة HISTORICAL
@@ -144,14 +151,42 @@ public class GovernorateService {
                 })
                 .collect(Collectors.toList());
 
+        // 🎯 هندسة العروض (Offers)
+        List<OfferResponse> approvedOffers = offerRepository
+                .findByStatusAndGovernorateId(OfferStatus.APPROVED, id).stream()
+                .limit(5)
+                .map(offer -> OfferResponse.builder()
+                        .id(offer.getId())
+                        .title(offer.getTitle())
+                        .description(offer.getDescription())
+                        .imageUrl(offer.getImageUrl())
+                        .scheduleType(offer.getScheduleType())
+                        .startDate(offer.getStartDate())
+                        .endDate(offer.getEndDate())
+                        .startTime(offer.getStartTime())
+                        .endTime(offer.getEndTime())
+                        .latitude(offer.getLatitude())
+                        .longitude(offer.getLongitude())
+                        .locationId(offer.getLocation().getId())
+                        .governorateId(offer.getGovernorate().getId())
+                        .governorateName(offer.getGovernorate().getName())
+                        .statusId((long) offer.getStatus().getId())
+                        .createdById(offer.getCreatedBy().getId())
+                        .createdByUsername(offer.getCreatedBy().getUsername())
+                        .viewsCount(offer.getViewsCount())
+                        .build())
+                .collect(Collectors.toList());
+
         GovernorateDetailsResponse details = GovernorateDetailsResponse.builder()
                 .id(gov.getId())
                 .name(gov.getName())
                 .description(gov.getDescription()) 
                 .images(imageUrls)
-                .suggestedPlaces(finalSuggestions)       
+                .suggestedPlaces(suggestedPlaces)       
                 .historicalPlaces(historicalPlaces)
+                .suggestedTeams(suggestedTeams)
                 .upcomingActivities(approvedActivities)   
+                .offers(approvedOffers)
                 .build();
 
         return new ApiResponse<>(true, "تم استرجاع تفاصيل المحافظة بنجاح", details);
@@ -179,5 +214,13 @@ public class GovernorateService {
                 .category(loc.getCategory() != null ? loc.getCategory().getLabel() : "اخرى")
                 .isUserGenerated(true) 
                 .build();
+    }
+
+    public ApiResponse<PlaceResponse> getPlaceDetails(Long placeId) {
+        Place place = placeRepository.findById(placeId).orElse(null);
+        if (place == null) {
+            return new ApiResponse<>(false, "المكان الأثري غير موجود", null);
+        }
+        return new ApiResponse<>(true, "تم استرجاع تفاصيل المكان بنجاح", mapStaticToPlaceResponse(place));
     }
 }

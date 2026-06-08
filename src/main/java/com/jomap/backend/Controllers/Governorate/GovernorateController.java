@@ -37,6 +37,16 @@ public class GovernorateController {
         }
     }
 
+    @GetMapping("/places/{placeId}")
+    public ResponseEntity<ApiResponse<com.jomap.backend.DTOs.Governorate.PlaceResponse>> getPlaceDetails(@PathVariable Long placeId) {
+        ApiResponse<com.jomap.backend.DTOs.Governorate.PlaceResponse> response = governorateService.getPlaceDetails(placeId);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
     @PostMapping("/{id}/images")
     public ResponseEntity<ApiResponse<?>> addImageUrl(
             @PathVariable Long id,

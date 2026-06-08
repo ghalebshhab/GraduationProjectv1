@@ -15,6 +15,8 @@ public class GovernorateDetailsResponse {
     
     private List<PlaceResponse> suggestedPlaces;
     private List<PlaceResponse> historicalPlaces;
+    private List<PlaceResponse> suggestedTeams;
 
     private List<ActivityResponse> upcomingActivities; 
+    private List<com.jomap.backend.DTOs.Offers.OfferResponse> offers;
 }
