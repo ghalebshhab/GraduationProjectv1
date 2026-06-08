@@ -21,6 +21,12 @@ import com.jomap.backend.Entities.Users.Profile.UserProfileRepository;
 import com.jomap.backend.Entities.Users.Role;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Friendship.Friendship;
+import com.jomap.backend.Entities.Friendship.FriendshipRepository;
+import com.jomap.backend.Entities.Friendship.FriendshipStatus;
+import com.jomap.backend.Entities.Offers.Offer;
+import com.jomap.backend.Entities.Offers.OfferRepo;
+import com.jomap.backend.Entities.Offers.OfferStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,15 +40,23 @@ public class SearchServiceImpl implements SearchService {
     private final UserProfileRepository userProfileRepository;
     private final ActivityRepository activityRepository;
     private final LocationRepo locationRepository;
+    private final FriendshipRepository friendshipRepository;
+    private final OfferRepo offerRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<SearchItem>> getAllItems() {
+    public ApiResponse<List<SearchItem>> getAllItems(String userEmail) {
         List<SearchItem> items = new ArrayList<>(SEARCH_LIMIT * 3);
+
+        User currentUser = null;
+        if (userEmail != null) {
+            currentUser = userRepository.findByEmail(userEmail).orElse(null);
+        }
+        final User finalCurrentUser = currentUser;
 
         userRepository.findTop10ByIsActiveTrueAndRoleNotOrderByIdDesc(Role.ADMIN)
                 .stream()
-                .map(this::toUserSearchItem)
+                .map(u -> toUserSearchItem(u, finalCurrentUser))
                 .forEach(items::add);
 
         activityRepository.findTop10ByStatusOrderByIdDesc(ActivityStatus.APPROVED)
@@ -50,15 +64,20 @@ public class SearchServiceImpl implements SearchService {
                 .map(this::toEventSearchItem)
                 .forEach(items::add);
 
-        locationRepository.findTop10ByActiveTrueAndApprovedTrueOrderByIdDesc()
+        locationRepository.findTop10ByActiveTrueOrderByIdDesc()
                 .stream()
                 .map(this::toLocationSearchItem)
+                .forEach(items::add);
+
+        offerRepository.findTop10ByStatusOrderByIdDesc(OfferStatus.APPROVED)
+                .stream()
+                .map(this::toOfferSearchItem)
                 .forEach(items::add);
 
         return ApiResponse.success("Items retrieved successfully", items);
     }
 
-    private SearchItem toUserSearchItem(User user) {
+    private SearchItem toUserSearchItem(User user, User currentUser) {
         SearchItem item = new SearchItem();
         item.setId(user.getId());
         item.setType(SearchType.USER);
@@ -69,6 +88,7 @@ public class SearchServiceImpl implements SearchService {
             item.setTitle(trimJoin(p.getFirstName(), p.getLastName()));
             item.setSubTitle(firstNonBlank(p.getBio(), p.getLocation(), user.getUsername()));
             item.setImageUrl(p.getProfileImageUrl());
+            item.setLocationName(p.getLocation());
         } else {
             item.setTitle(user.getUsername());
             item.setSubTitle(user.getEmail());
@@ -76,6 +96,26 @@ public class SearchServiceImpl implements SearchService {
         }
 
         item.setImageRes(0);
+        item.setFriendshipStatus("NONE");
+
+        if (currentUser != null && !currentUser.getId().equals(user.getId())) {
+            List<Friendship> friendships = friendshipRepository
+                    .findByRequesterAndReceiverOrRequesterAndReceiver(currentUser, user, user, currentUser);
+            
+            if (!friendships.isEmpty()) {
+                Friendship f = friendships.get(friendships.size() - 1); // Get the latest one
+                if (f.getStatus() == FriendshipStatus.ACCEPTED) {
+                    item.setFriendshipStatus("ACCEPTED");
+                } else if (f.getStatus() == FriendshipStatus.PENDING) {
+                    if (f.getRequester().getId().equals(currentUser.getId())) {
+                        item.setFriendshipStatus("PENDING_SENT");
+                    } else {
+                        item.setFriendshipStatus("PENDING_RECEIVED");
+                    }
+                }
+            }
+        }
+
         return item;
     }
 
@@ -126,5 +166,29 @@ public class SearchServiceImpl implements SearchService {
 
     private String categoryLabel(LocationList location) {
         return location.getCategory() != null ? location.getCategory().name() : null;
+    }
+
+    private SearchItem toOfferSearchItem(Offer offer) {
+        SearchItem item = new SearchItem();
+        item.setId(offer.getId());
+        item.setType(SearchType.OFFER);
+        item.setTitle(offer.getTitle());
+        item.setSubTitle(offer.getDescription());
+        item.setImageUrl(offer.getImageUrl());
+        item.setImageRes(0);
+        
+        if (offer.getLocation() != null) {
+            item.setLocationName(offer.getLocation().getName());
+        }
+
+        String sDate = offer.getStartDate();
+        String eDate = offer.getEndDate();
+        if (sDate != null && !sDate.isBlank()) {
+            item.setEventDate(sDate + (eDate != null && !eDate.isBlank() ? " - " + eDate : ""));
+        } else if (eDate != null && !eDate.isBlank()) {
+            item.setEventDate(eDate);
+        }
+
+        return item;
     }
 }

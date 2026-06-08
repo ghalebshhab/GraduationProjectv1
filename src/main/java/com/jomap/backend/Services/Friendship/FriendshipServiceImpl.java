@@ -45,8 +45,8 @@ public class FriendshipServiceImpl implements FriendshipService {
                         receiver, sender
                 );
 
-        if (existingFriendship.isPresent()) {
-            Friendship friendship = existingFriendship.get();
+        if (!existingFriendship.isEmpty()) {
+            Friendship friendship = existingFriendship.get(existingFriendship.size() - 1);
 
             if (friendship.getStatus() == FriendshipStatus.PENDING) {
                 return new ApiResponse<>(false, "Friend request already exists", mapToResponse(friendship));

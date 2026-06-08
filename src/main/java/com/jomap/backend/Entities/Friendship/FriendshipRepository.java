@@ -12,7 +12,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
     boolean existsByRequesterAndReceiver(User requester, User receiver);
 
-    Optional<Friendship> findByRequesterAndReceiverOrRequesterAndReceiver(
+    List<Friendship> findByRequesterAndReceiverOrRequesterAndReceiver(
             User requester1,
             User receiver1,
             User requester2,

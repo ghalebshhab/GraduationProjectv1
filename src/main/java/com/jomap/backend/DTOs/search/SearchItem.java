@@ -16,6 +16,7 @@ public class SearchItem {
     private Double distance;
     private String eventDate;
     private String locationName;
+    private String friendshipStatus;
 }
 
 

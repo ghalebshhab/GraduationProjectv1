@@ -36,5 +36,5 @@ public interface LocationRepo extends JpaRepository<LocationList, Long> {
 
     Optional<LocationList> findByOwnerIdAndStatusNot(Long ownerId, LocationStatus status);
 
-    List<LocationList> findTop10ByActiveTrueAndApprovedTrueOrderByIdDesc();
+    List<LocationList> findTop10ByActiveTrueOrderByIdDesc();
 }

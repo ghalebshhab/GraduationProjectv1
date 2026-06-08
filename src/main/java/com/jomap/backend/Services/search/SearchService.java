@@ -7,5 +7,5 @@ import com.jomap.backend.DTOs.search.SearchItem;
 
 public interface SearchService {
 
-    ApiResponse<List<SearchItem>> getAllItems();
+    ApiResponse<List<SearchItem>> getAllItems(String userEmail);
 }

@@ -19,8 +19,9 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping("/getall")
-    public ResponseEntity<?> getAllItems() {
-        return ResponseEntity.ok(searchService.getAllItems());
+    public ResponseEntity<?> getAllItems(org.springframework.security.core.Authentication authentication) {
+        String email = authentication != null ? authentication.getName() : null;
+        return ResponseEntity.ok(searchService.getAllItems(email));
     }
 
 }
