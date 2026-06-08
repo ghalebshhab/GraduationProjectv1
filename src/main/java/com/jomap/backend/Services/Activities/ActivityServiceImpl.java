@@ -326,7 +326,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
                 .price(activity.getPrice())
-                .attendeesCount(activity.getAttendeesCount())
+                .attendeesCount(activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0)
                 .longitude(activity.getLongitude())
                 .statusId((long) activity.getStatus().getId())
                 .createdById(activity.getCreatedBy().getId())
