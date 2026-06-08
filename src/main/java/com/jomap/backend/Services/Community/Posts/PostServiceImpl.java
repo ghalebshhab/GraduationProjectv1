@@ -40,9 +40,9 @@ public class PostServiceImpl implements PostsServices {
     private final UserRepository userRepository;
     private final PostLikeService likesService;
     private final PostCommentService commentsService;
-    private final LocationRepo locationRepo;
-    private final ActivityRepository activityRepository;
     private final SavedPostsRepository savedPostsRepository;
+    private final com.jomap.backend.Entities.Locations.LocationRepo locationRepo;
+    private final ActivityRepository activityRepository;
     private final OfferRepo offerRepo;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -562,6 +562,11 @@ public class PostServiceImpl implements PostsServices {
                     r.setAuthorUsername(post.getAuthor().getUsername());
                     r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
                 });
+            } else if ("OWNER".equalsIgnoreCase(post.getCategory())) {
+                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresent(loc -> {
+                    r.setAuthorUsername(loc.getName());
+                    r.setAuthorProfileImageUrl(loc.getLogoUrl());
+                });
             } else {
                 r.setAuthorUsername(post.getAuthor().getUsername());
                 r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
@@ -572,7 +577,6 @@ public class PostServiceImpl implements PostsServices {
     r.setCommentCount(commentsService.countByPostId(post.getId()).getData());
     return r;
 }
-
     // ─────────────────────────────────────────────────────────────────────────
     // INTERNAL RECORD
     // ─────────────────────────────────────────────────────────────────────────
