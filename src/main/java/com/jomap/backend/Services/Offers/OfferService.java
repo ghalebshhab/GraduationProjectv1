@@ -9,4 +9,5 @@ public interface OfferService {
     ApiResponse<OfferResponse> createOffer(OfferRequest request, String email);
     ApiResponse<List<OfferResponse>> getMyOffers(String email);
     ApiResponse<OfferResponse> getOfferById(Long offerId);
+    ApiResponse<List<OfferResponse>> getOffersByLocation(Long locationId);
 }

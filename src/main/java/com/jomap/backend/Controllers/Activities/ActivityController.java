@@ -57,6 +57,11 @@ public class ActivityController {
         return ActivityService.getActivityById(id);
     }
 
+    @GetMapping("/location/{locationId}")
+    public ApiResponse<List<ActivityResponse>> getActivitiesByLocation(@PathVariable Long locationId) {
+        return ActivityService.getActivitiesByLocation(locationId);
+    }
+
     @GetMapping("/upcoming")
     public ApiResponse<List<ActivityResponse>> getUpcomingActivities() {
         return ActivityService.getUpcomingApprovedActivities();

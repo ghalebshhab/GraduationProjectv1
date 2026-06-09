@@ -25,6 +25,10 @@ import com.jomap.backend.Entities.Users.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Locations.LocationList;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class ActivityServiceImpl implements ActivityService {
@@ -33,6 +37,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final UserRepository userRepository;
     private final GovernorateRepository governorateRepository;
     private final PostRepository postRepository;
+    private final LocationRepo locationRepo;
 
     @Override
     @Transactional
@@ -317,6 +322,19 @@ public class ActivityServiceImpl implements ActivityService {
             }
         }
 
+        String locationPhone = null;
+        String locationEmail = null;
+        if (activity.getCreatedBy() != null) {
+            Optional<LocationList> locationOpt = locationRepo.findByOwnerId(activity.getCreatedBy().getId());
+            if (locationOpt.isPresent()) {
+                locationPhone = locationOpt.get().getPhoneNumber();
+                locationEmail = locationOpt.get().getEmail();
+            } else {
+                locationPhone = activity.getCreatedBy().getPhoneNumber();
+                locationEmail = activity.getCreatedBy().getEmail();
+            }
+        }
+
         return ActivityResponse.builder()
                 .id(activity.getId())
                 .title(activity.getTitle())
@@ -335,6 +353,27 @@ public class ActivityServiceImpl implements ActivityService {
                 .scheduleType(activity.getScheduleType())
                 .totalActualDays(activity.getTotalActualDays())
                 .schedules(scheduleDtos)
+                .locationPhone(locationPhone)
+                .locationEmail(locationEmail)
                 .build();
+    }
+    
+    @Override
+    public ApiResponse<List<ActivityResponse>> getActivitiesByLocation(Long locationId) {
+        Optional<LocationList> locationOptional = locationRepo.findById(locationId);
+        if (locationOptional.isEmpty() || locationOptional.get().getOwner() == null) {
+            return ApiResponse.error("المنشأة غير موجودة");
+        }
+        Long ownerId = locationOptional.get().getOwner().getId();
+        
+        List<ActivityResponse> activities = activityRepository.findByCreatedById(ownerId)
+                .stream()
+                .filter(a -> a.getStatus() == ActivityStatus.APPROVED ||
+                             a.getStatus() == ActivityStatus.COMPLETED ||
+                             a.getStatus() == ActivityStatus.POSTPONED)
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+                
+        return ApiResponse.success("تم جلب الأنشطة بنجاح", activities);
     }
 }

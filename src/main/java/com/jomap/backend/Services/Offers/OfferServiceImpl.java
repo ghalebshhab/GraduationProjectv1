@@ -188,7 +188,18 @@ public class OfferServiceImpl implements OfferService {
                 .createdById(offer.getCreatedBy().getId())
                 .createdByUsername(offer.getCreatedBy().getUsername())
                 .phoneNumber(phone)
+                .locationPhone(phone)
                 .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
                 .build();
+    }
+    
+    @Override
+    public ApiResponse<List<OfferResponse>> getOffersByLocation(Long locationId) {
+        List<OfferResponse> offers = offerRepo.findByLocationId(locationId)
+                .stream()
+                .filter(o -> o.getStatus() == OfferStatus.APPROVED)
+                .map(this::mapToResponse)
+                .toList();
+        return ApiResponse.success("تم جلب العروض بنجاح", offers);
     }
 }
