@@ -258,4 +258,36 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return response;
     }
+    @Override
+    @Transactional
+    public ApiResponse<FriendshipResponse> checkFriendshipStatus(String currentUserEmail, Long targetUserId) {
+        User currentUser = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (currentUser == null) {
+            return new ApiResponse<>(false, "Current user not found", null);
+        }
+
+        User targetUser = userRepository.findById(targetUserId).orElse(null);
+        if (targetUser == null) {
+            return new ApiResponse<>(false, "Target user not found", null);
+        }
+
+        if (currentUser.getId().equals(targetUserId)) {
+            FriendshipResponse none = new FriendshipResponse();
+            none.setStatus("NONE");
+            return ApiResponse.success("Status checked", none);
+        }
+
+        List<Friendship> friendships = friendshipRepository.findByRequesterAndReceiverOrRequesterAndReceiver(
+                currentUser, targetUser, targetUser, currentUser);
+
+        if (friendships.isEmpty()) {
+            FriendshipResponse none = new FriendshipResponse();
+            none.setStatus("NONE");
+            return ApiResponse.success("Status checked", none);
+        }
+
+        // Return the latest interaction
+        Friendship friendship = friendships.get(friendships.size() - 1);
+        return ApiResponse.success("Status checked", mapToResponse(friendship));
+    }
 }

@@ -118,4 +118,15 @@ public class FriendshipController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/status/{targetUserId}")
+    public ResponseEntity<ApiResponse<FriendshipResponse>> checkFriendshipStatus(
+            @PathVariable Long targetUserId,
+            Authentication authentication
+    ) {
+        String userEmail = authentication.getName();
+        ApiResponse<FriendshipResponse> response =
+                friendshipService.checkFriendshipStatus(userEmail, targetUserId);
+        return ResponseEntity.ok(response);
+    }
 }
