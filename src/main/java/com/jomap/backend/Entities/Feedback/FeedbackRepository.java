@@ -7,5 +7,5 @@ import java.util.List;
 
 @Repository
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
-    List<Feedback> findByTargetTypeAndTargetIdOrderByCreatedAtDesc(TargetType targetType, Long targetId);
+    List<Feedback> findByTargetTypeAndTargetIdAndIsDeletedFalseOrderByCreatedAtDesc(TargetType targetType, Long targetId);
 }

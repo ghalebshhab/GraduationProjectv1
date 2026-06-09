@@ -37,7 +37,7 @@ public class FeedbackServiceImpl implements FeedbackService {
 
     @Override
     public ApiResponse<List<FeedbackResponse>> getFeedbacks(TargetType targetType, Long targetId) {
-        List<Feedback> feedbacks = feedbackRepository.findByTargetTypeAndTargetIdOrderByCreatedAtDesc(targetType, targetId);
+        List<Feedback> feedbacks = feedbackRepository.findByTargetTypeAndTargetIdAndIsDeletedFalseOrderByCreatedAtDesc(targetType, targetId);
         List<FeedbackResponse> responseList = feedbacks.stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Fetched successfully", responseList);
     }
@@ -186,7 +186,9 @@ public class FeedbackServiceImpl implements FeedbackService {
             return ApiResponse.error("ليس لديك صلاحية لحذف هذا التقييم");
         }
 
-        feedbackRepository.delete(feedback);
+        feedback.setIsDeleted(true);
+        feedback.setDeletedAt(LocalDateTime.now());
+        feedbackRepository.save(feedback);
         return ApiResponse.success("تم حذف التقييم بنجاح", null);
     }
 
