@@ -44,11 +44,13 @@ public class PostController {
     }
 
     @GetMapping("/feed/summary")
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getFeedSummary(
+    public ResponseEntity<ApiResponse<com.jomap.backend.DTOs.Posts.FeedSummaryResponse>> getFeedSummary(
+            Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size
     ) {
-        return ResponseEntity.ok(postService.getFeedSummary(page, size));
+        String email = authentication != null ? authentication.getName() : null;
+        return ResponseEntity.ok(postService.getFeedSummary(email, page, size));
     }
 
     @GetMapping("/feed/personalized")

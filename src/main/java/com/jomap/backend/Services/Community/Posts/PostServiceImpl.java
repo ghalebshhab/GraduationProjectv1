@@ -99,8 +99,14 @@ public class PostServiceImpl implements PostsServices {
 
     @Override
     @Transactional
-    public ApiResponse<List<PostResponse>> getFeedSummary(int page, int size) {
+    public ApiResponse<com.jomap.backend.DTOs.Posts.FeedSummaryResponse> getFeedSummary(String emailFromToken, int page, int size) {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        User user = null;
+        if (emailFromToken != null && !emailFromToken.isBlank()) {
+            user = userRepository.findByEmail(emailFromToken).orElse(null);
+        }
+        final User currentUser = user;
 
         List<PostResponse> responses = postRepository.findAll(pageable)
                 .getContent()
@@ -109,7 +115,24 @@ public class PostServiceImpl implements PostsServices {
                 .map(p -> toResponse(p, null, null))
                 .toList();
 
-        return ApiResponse.success("Feed fetched successfully", responses);
+        if (currentUser != null) {
+            List<Long> likedPostIds = likesService.getPostIdsLikedByUser(currentUser.getId());
+            List<Long> savedPostIds = savedPostsRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
+                    .stream().map(sp -> sp.getPost().getId()).toList();
+
+            responses.forEach(r -> {
+                r.setLikedByCurrentUser(likedPostIds.contains(r.getId()));
+                r.setSavedByCurrentUser(savedPostIds.contains(r.getId()));
+            });
+        }
+
+        com.jomap.backend.DTOs.Posts.FeedSummaryResponse summary = new com.jomap.backend.DTOs.Posts.FeedSummaryResponse();
+        summary.setUSER(responses.stream().filter(p -> "USER".equalsIgnoreCase(p.getCategory())).toList());
+        summary.setACTIVITY(responses.stream().filter(p -> "ACTIVITY".equalsIgnoreCase(p.getCategory())).toList());
+        summary.setOWNER(responses.stream().filter(p -> "OWNER".equalsIgnoreCase(p.getCategory())).toList());
+        summary.setOFFER(responses.stream().filter(p -> "OFFER".equalsIgnoreCase(p.getCategory())).toList());
+
+        return ApiResponse.success("Feed fetched successfully", summary);
     }
 
     @Override
@@ -506,77 +529,85 @@ public class PostServiceImpl implements PostsServices {
     // ─────────────────────────────────────────────────────────────────────────
 
     private PostResponse toResponse(Post post, Double distanceKm, String scoreReason) {
-    PostResponse r = new PostResponse();
-    r.setId(post.getId());
-    r.setContent(post.getContent());
-    r.setMediaUrl(post.getMediaUrl());
-    r.setType(post.getType() != null ? post.getType().name() : null);
-    r.setCreatedAt(post.getCreatedAt());
-    r.setUpdatedAt(post.getUpdatedAt());
-    r.setCategory(post.getCategory());
-    r.setLatitude(post.getLatitude());
-    r.setLongitude(post.getLongitude());
-    r.setDistanceKm(distanceKm);
-    r.setScoreReason(scoreReason);
-    
-    // شحن المعرفات للفرونت إند
-    r.setActivityId(post.getActivityId()); 
-    r.setOfferId(post.getOfferId());       
+        PostResponse r = new PostResponse();
+        r.setId(post.getId());
+        r.setContent(post.getContent());
+        r.setMediaUrl(post.getMediaUrl());
+        r.setType(post.getType() != null ? post.getType().name() : null);
+        r.setCreatedAt(post.getCreatedAt());
+        r.setUpdatedAt(post.getUpdatedAt());
+        r.setCategory(post.getCategory());
+        r.setLatitude(post.getLatitude());
+        r.setLongitude(post.getLongitude());
+        r.setDistanceKm(distanceKm);
+        r.setScoreReason(scoreReason);
+        
+        r.setActivityId(post.getActivityId()); 
+        r.setOfferId(post.getOfferId());       
 
         if (post.getAuthor() != null) {
             r.setAuthorId(post.getAuthor().getId());
             r.setAuthorEmail(post.getAuthor().getEmail());
 
+            r.setAuthorUsername(post.getAuthor().getUsername());
+            r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+
             String typeStr = post.getType() != null ? post.getType().name() : "";
             String categoryStr = post.getCategory() != null ? post.getCategory().toUpperCase() : "";
 
-            // 🎯 اللوجيك الذكي المزدوج للعروض بفيد الكومينتي
-            if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
-                
-                // 🌟 الحالة أ: عرض رسمي تفاعلي (له offerId)
-                if (post.getOfferId() != null) {
-                    offerRepo.findById(post.getOfferId()).ifPresentOrElse(offer -> {
-                        r.setAuthorUsername(offer.getTitle());
-                        r.setAuthorProfileImageUrl(offer.getImageUrl());
-                    }, () -> {
-                        r.setAuthorUsername(post.getAuthor().getUsername());
-                        r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
-                    });
-                } 
-                // 🌟 الحالة ب: منشور عادي من صفحة المنشأة (ما إله offerId)
-                else {
-                    locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresentOrElse(location -> {
-                        r.setAuthorUsername(location.getName());
-                        r.setAuthorProfileImageUrl(location.getLogoUrl());
-                    }, () -> {
-                        r.setAuthorUsername(post.getAuthor().getUsername());
-                        r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
-                    });
+            // 1. Populate all possible category-specific fields
+            if (post.getOfferId() != null) {
+                offerRepo.findById(post.getOfferId()).ifPresent(offer -> {
+                    if (offer.getLocation() != null) {
+                        r.setLocationId(offer.getLocation().getId());
+                        r.setLocationName(offer.getLocation().getName());
+                        r.setLocationImageUrl(offer.getLocation().getLogoUrl());
+                    }
+                });
+            } else if ("OFFER".equals(typeStr) || "OFFER".equals(categoryStr)) {
+                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresent(location -> {
+                    r.setLocationId(location.getId());
+                    r.setLocationName(location.getName());
+                    r.setLocationImageUrl(location.getLogoUrl());
+                });
+            }
+
+            if (post.getActivityId() != null) {
+                activityRepository.findById(post.getActivityId()).ifPresent(activity -> {
+                    r.setActivityName(activity.getTitle());
+                    r.setActivityImageUrl(activity.getImageUrl());
+                });
+            }
+
+            locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresent(loc -> {
+                r.setOwnerId(post.getAuthor().getId());
+                r.setOwnerName(loc.getName());
+                r.setOwnerImageUrl(loc.getLogoUrl());
+            });
+
+            // 2. Override author fields based on the specific CATEGORY requested
+            if ("OFFER".equals(categoryStr)) {
+                if (r.getLocationName() != null) {
+                    r.setAuthorUsername(r.getLocationName());
+                    r.setAuthorProfileImageUrl(r.getLocationImageUrl());
                 }
-                
-            } else if (("ACTIVITY".equals(typeStr) || "ACTIVITY".equals(categoryStr)) && post.getActivityId() != null) {
-                activityRepository.findById(post.getActivityId()).ifPresentOrElse(activity -> {
-                    r.setAuthorUsername(activity.getTitle());
-                    r.setAuthorProfileImageUrl(activity.getImageUrl());
-                }, () -> {
-                    r.setAuthorUsername(post.getAuthor().getUsername());
-                    r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
-                });
-            } else if ("OWNER".equalsIgnoreCase(post.getCategory())) {
-                locationRepo.findByOwnerId(post.getAuthor().getId()).ifPresent(loc -> {
-                    r.setAuthorUsername(loc.getName());
-                    r.setAuthorProfileImageUrl(loc.getLogoUrl());
-                });
-            } else {
-                r.setAuthorUsername(post.getAuthor().getUsername());
-                r.setAuthorProfileImageUrl(post.getAuthor().getProfileImageUrl());
+            } else if ("ACTIVITY".equals(categoryStr)) {
+                if (r.getActivityName() != null) {
+                    r.setAuthorUsername(r.getActivityName());
+                    r.setAuthorProfileImageUrl(r.getActivityImageUrl());
+                }
+            } else if ("OWNER".equals(categoryStr)) {
+                if (r.getOwnerName() != null) {
+                    r.setAuthorUsername(r.getOwnerName());
+                    r.setAuthorProfileImageUrl(r.getOwnerImageUrl());
+                }
             }
         }
 
-    r.setLikeCount(likesService.countByPostId(post.getId()).getData());
-    r.setCommentCount(commentsService.countByPostId(post.getId()).getData());
-    return r;
-}
+        r.setLikeCount(likesService.countByPostId(post.getId()).getData());
+        r.setCommentCount(commentsService.countByPostId(post.getId()).getData());
+        return r;
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // INTERNAL RECORD
     // ─────────────────────────────────────────────────────────────────────────

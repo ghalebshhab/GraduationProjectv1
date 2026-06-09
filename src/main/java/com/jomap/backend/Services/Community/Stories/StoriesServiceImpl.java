@@ -7,6 +7,9 @@ import com.jomap.backend.Entities.Stories.Story;
 import com.jomap.backend.Entities.Stories.Storyrepo;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Friendship.Friendship;
+import com.jomap.backend.Entities.Friendship.FriendshipRepository;
+import com.jomap.backend.Entities.Friendship.FriendshipStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -26,6 +29,7 @@ public class StoriesServiceImpl implements StoryService {
 
     private final Storyrepo storyRepository;
     private final UserRepository userRepository;
+    private final FriendshipRepository friendshipRepository;
 
     @PersistenceContext
     private EntityManager entity;
@@ -105,6 +109,52 @@ public class StoriesServiceImpl implements StoryService {
 
         return ApiResponse.success("User active stories fetched successfully", res);
     }
+
+    @Override
+    public ApiResponse<List<StoryResponse>> getFriendsStories(int page, int size) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ApiResponse.error("Authenticated user not found");
+        }
+
+        List<Friendship> friendships = friendshipRepository.findByRequesterAndStatusOrReceiverAndStatus(
+                currentUser, FriendshipStatus.ACCEPTED,
+                currentUser, FriendshipStatus.ACCEPTED
+        );
+
+        List<Long> friendIds = new ArrayList<>();
+        for (Friendship f : friendships) {
+            if (f.getRequester().getId().equals(currentUser.getId())) {
+                friendIds.add(f.getReceiver().getId());
+            } else {
+                friendIds.add(f.getRequester().getId());
+            }
+        }
+
+        if (friendIds.isEmpty()) {
+            return ApiResponse.success("No friends found", new ArrayList<>());
+        }
+
+        Instant now = Instant.now();
+        TypedQuery<Story> q = entity.createQuery(
+                "FROM Story s " +
+                        "WHERE s.isDeleted = false AND s.expiresAt > :now AND s.author.id IN :friendIds " +
+                        "ORDER BY s.createdAt DESC",
+                Story.class
+        );
+        q.setParameter("now", now);
+        q.setParameter("friendIds", friendIds);
+        q.setFirstResult(page * size);
+        q.setMaxResults(size);
+
+        List<StoryResponse> res = new ArrayList<>();
+        for (Story s : q.getResultList()) {
+            res.add(toResponse(s));
+        }
+
+        return ApiResponse.success("Friends active stories fetched successfully", res);
+    }
+
     @Override
     @Transactional
     public ApiResponse<String> deleteStory(Long storyId) {
@@ -137,6 +187,8 @@ public class StoriesServiceImpl implements StoryService {
 
         if (s.getAuthor() != null) {
             r.setAuthorId(s.getAuthor().getId());
+            r.setAuthorName(s.getAuthor().getUsername());
+            r.setAuthorImageUrl(s.getAuthor().getProfileImageUrl());
         }
 
         return r;

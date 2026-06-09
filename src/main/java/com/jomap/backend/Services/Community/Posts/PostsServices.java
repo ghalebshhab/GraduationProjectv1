@@ -14,7 +14,7 @@ public interface PostsServices {
 
         ApiResponse<PostResponse> getPostById(Long postId);
 
-        ApiResponse<List<PostResponse>> getFeedSummary(int page, int size);
+        ApiResponse<com.jomap.backend.DTOs.Posts.FeedSummaryResponse> getFeedSummary(String emailFromToken, int page, int size);
 
         ApiResponse<PostResponse> createPost(String emailFromToken, CreatePostRequest request);
 

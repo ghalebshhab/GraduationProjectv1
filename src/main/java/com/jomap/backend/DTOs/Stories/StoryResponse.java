@@ -15,6 +15,6 @@ public class StoryResponse {
     private String caption;
     private Instant createdAt;
     private Instant expiresAt;
-
-
+    private String authorName;
+    private String authorImageUrl;
 }

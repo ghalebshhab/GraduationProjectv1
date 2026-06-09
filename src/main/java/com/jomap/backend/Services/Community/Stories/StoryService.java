@@ -14,5 +14,7 @@ public interface StoryService {
 
     ApiResponse<List<StoryResponse>> getActiveStoriesByUser(Long userId, int page, int size);
 
+    ApiResponse<List<StoryResponse>> getFriendsStories(int page, int size);
+
     ApiResponse<String> deleteStory(Long storyId);
 }

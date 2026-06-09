@@ -41,6 +41,14 @@ public class StoryController {
         return ResponseEntity.ok(storiesService.getActiveStoriesByUser(userId, page, size));
     }
 
+    @GetMapping("/friends")
+    public ResponseEntity<ApiResponse<List<StoryResponse>>> activeFriendsStories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(storiesService.getFriendsStories(page, size));
+    }
+
     @DeleteMapping("/{storyId}")
     public ResponseEntity<ApiResponse<String>> delete(@PathVariable Long storyId) {
         return ResponseEntity.ok(storiesService.deleteStory(storyId));

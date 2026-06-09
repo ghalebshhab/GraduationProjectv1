@@ -34,6 +34,21 @@ public class PostResponse {
     private String category;
     private Double distanceKm;
     private String scoreReason;
-    private Long ActivityId;
-    private Long OfferId;
+    
+    // Additional fields for specific categories
+    // ACTIVITY
+    private Long activityId; // unified naming (lowercase 'a')
+    private String activityName;
+    private String activityImageUrl;
+    
+    // OWNER
+    private Long ownerId;
+    private String ownerName;
+    private String ownerImageUrl;
+    
+    // OFFER
+    private Long offerId; // unified naming (lowercase 'o')
+    private Long locationId;
+    private String locationName;
+    private String locationImageUrl;
 }
