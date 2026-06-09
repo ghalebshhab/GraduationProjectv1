@@ -43,4 +43,8 @@ public class ActivityResponse {
     private Long createdById;
 
     private String createdByUsername;
+
+    private String locationPhone;
+
+    private String locationEmail;
 }

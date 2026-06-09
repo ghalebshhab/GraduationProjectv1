@@ -56,6 +56,16 @@ public class OfferController {
         }
     }
 
+    @GetMapping("/location/{locationId}")
+    public ResponseEntity<ApiResponse<java.util.List<OfferResponse>>> getOffersByLocation(@PathVariable Long locationId) {
+        ApiResponse<java.util.List<OfferResponse>> response = offerService.getOffersByLocation(locationId);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OfferResponse>> getOfferById(@PathVariable Long id) {
         ApiResponse<OfferResponse> response = offerService.getOfferById(id);

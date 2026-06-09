@@ -33,4 +33,6 @@ public interface ActivityService {
     ApiResponse<List<ActivityResponse>> getCompletedActivities();
 
     ApiResponse<ActivityResponse> updateActivity(Long activityId, com.jomap.backend.DTOs.Activities.UpdateActivityRequest request, String ownerEmail);
+
+    ApiResponse<List<ActivityResponse>> getActivitiesByLocation(Long locationId);
 }

@@ -32,5 +32,6 @@ public class OfferResponse {
     private Long createdById;
     private String createdByUsername;
     private String phoneNumber;
+    private String locationPhone;
     private Integer viewsCount;
 }
