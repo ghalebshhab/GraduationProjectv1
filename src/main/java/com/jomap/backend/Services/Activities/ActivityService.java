@@ -35,4 +35,12 @@ public interface ActivityService {
     ApiResponse<ActivityResponse> updateActivity(Long activityId, com.jomap.backend.DTOs.Activities.UpdateActivityRequest request, String ownerEmail);
 
     ApiResponse<List<ActivityResponse>> getActivitiesByLocation(Long locationId);
+
+    ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> registerForActivity(Long activityId, String email);
+
+    ApiResponse<List<com.jomap.backend.DTOs.Activities.RegistrationResponse>> getActivityRegistrations(Long activityId);
+
+    ApiResponse<String> updateRegistrationStatus(Long registrationId, String status);
+
+    ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> getMyRegistration(Long activityId, String email);
 }

@@ -123,4 +123,39 @@ public class ActivityController {
 
         return ActivityService.cancelActivity(id);
     }
+
+    @PostMapping("/{id}/register")
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> registerForActivity(
+            @PathVariable Long id,
+            Principal principal) {
+        
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+        
+        return ActivityService.registerForActivity(id, principal.getName());
+    }
+
+    @GetMapping("/{id}/registrations")
+    public ApiResponse<List<com.jomap.backend.DTOs.Activities.RegistrationResponse>> getActivityRegistrations(
+            @PathVariable Long id) {
+        return ActivityService.getActivityRegistrations(id);
+    }
+
+    @PostMapping("/registrations/{regId}/status")
+    public ApiResponse<String> updateRegistrationStatus(
+            @PathVariable Long regId,
+            @RequestParam String status) {
+        return ActivityService.updateRegistrationStatus(regId, status);
+    }
+
+    @GetMapping("/{id}/my-registration")
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> getMyRegistration(
+            @PathVariable Long id,
+            Principal principal) {
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+        return ActivityService.getMyRegistration(id, principal.getName());
+    }
 }

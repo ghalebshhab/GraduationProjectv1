@@ -38,6 +38,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final GovernorateRepository governorateRepository;
     private final PostRepository postRepository;
     private final LocationRepo locationRepo;
+    private final com.jomap.backend.Entities.Activities.RegistrationRepository registrationRepository;
 
     @Override
     @Transactional
@@ -375,5 +376,119 @@ public class ActivityServiceImpl implements ActivityService {
                 .collect(Collectors.toList());
                 
         return ApiResponse.success("تم جلب الأنشطة بنجاح", activities);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> registerForActivity(Long activityId, String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ApiResponse.error("المستخدم غير موجود");
+        }
+        User user = userOptional.get();
+
+        Optional<Activity> activityOptional = activityRepository.findById(activityId);
+        if (activityOptional.isEmpty()) {
+            return ApiResponse.error("الفعالية غير موجودة");
+        }
+        Activity activity = activityOptional.get();
+
+        if (registrationRepository.existsByActivityIdAndUserId(activityId, user.getId())) {
+            return ApiResponse.error("لقد قمت بالتسجيل في هذه الفعالية مسبقاً");
+        }
+
+        com.jomap.backend.Entities.Activities.Registration registration = new com.jomap.backend.Entities.Activities.Registration();
+        registration.setActivity(activity);
+        registration.setUser(user);
+        registration.setStatus(com.jomap.backend.Entities.Activities.RegistrationStatus.PENDING);
+        
+        com.jomap.backend.Entities.Activities.Registration savedRegistration = registrationRepository.save(registration);
+
+        return ApiResponse.success("تم إرسال طلب التسجيل بنجاح", mapToRegistrationResponse(savedRegistration));
+    }
+
+    @Override
+    public ApiResponse<List<com.jomap.backend.DTOs.Activities.RegistrationResponse>> getActivityRegistrations(Long activityId) {
+        List<com.jomap.backend.DTOs.Activities.RegistrationResponse> registrations = registrationRepository.findByActivityId(activityId)
+                .stream()
+                .map(this::mapToRegistrationResponse)
+                .collect(Collectors.toList());
+        return ApiResponse.success("تم جلب المسجلين بنجاح", registrations);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> updateRegistrationStatus(Long registrationId, String statusStr) {
+        Optional<com.jomap.backend.Entities.Activities.Registration> registrationOptional = registrationRepository.findById(registrationId);
+        if (registrationOptional.isEmpty()) {
+            return ApiResponse.error("طلب التسجيل غير موجود");
+        }
+        com.jomap.backend.Entities.Activities.Registration registration = registrationOptional.get();
+
+        com.jomap.backend.Entities.Activities.RegistrationStatus status;
+        try {
+            status = com.jomap.backend.Entities.Activities.RegistrationStatus.valueOf(statusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error("حالة غير صالحة");
+        }
+
+        com.jomap.backend.Entities.Activities.RegistrationStatus oldStatus = registration.getStatus();
+        registration.setStatus(status);
+        registrationRepository.save(registration);
+
+        Activity activity = registration.getActivity();
+        if (oldStatus != com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED && status == com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED) {
+            activity.setAttendeesCount((activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0) + 1);
+            activityRepository.save(activity);
+        } else if (oldStatus == com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED && 
+                  (status == com.jomap.backend.Entities.Activities.RegistrationStatus.CANCELLED || 
+                   status == com.jomap.backend.Entities.Activities.RegistrationStatus.WITHDRAWN || 
+                   status == com.jomap.backend.Entities.Activities.RegistrationStatus.REJECTED)) {
+            activity.setAttendeesCount(Math.max(0, (activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0) - 1));
+            activityRepository.save(activity);
+        }
+
+        return ApiResponse.success("تم تحديث حالة التسجيل بنجاح", "تم التحديث إلى " + status.name());
+    }
+
+    private com.jomap.backend.DTOs.Activities.RegistrationResponse mapToRegistrationResponse(com.jomap.backend.Entities.Activities.Registration registration) {
+        User user = registration.getUser();
+        String fullName = user.getUsername(); 
+        if (user.getProfile() != null) {
+            fullName = user.getProfile().getFirstName() + " " + user.getProfile().getLastName();
+        }
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
+        String formattedTime = registration.getRegistrationTime() != null ? registration.getRegistrationTime().format(timeFormatter) : null;
+        String formattedDate = registration.getRegistrationDate() != null ? registration.getRegistrationDate().toString() : null;
+
+        return com.jomap.backend.DTOs.Activities.RegistrationResponse.builder()
+                .id(registration.getId())
+                .userId(user.getId())
+                .fullName(fullName)
+                .userEmail(user.getEmail())
+                .username(user.getUsername())
+                .userPhone(user.getPhoneNumber())
+                .status(registration.getStatus())
+                .registrationDate(formattedDate)
+                .registrationTime(formattedTime)
+                .userImageUrl(user.getProfileImageUrl() != null ? user.getProfileImageUrl() : (user.getProfile() != null ? user.getProfile().getProfileImageUrl() : null))
+                .build();
+    }
+
+    @Override
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> getMyRegistration(Long activityId, String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ApiResponse.error("المستخدم غير موجود");
+        }
+        User user = userOptional.get();
+
+        Optional<com.jomap.backend.Entities.Activities.Registration> regOpt = registrationRepository.findByActivityIdAndUserId(activityId, user.getId());
+        if (regOpt.isEmpty()) {
+            return ApiResponse.success("لا يوجد تسجيل", null);
+        }
+
+        return ApiResponse.success("تم جلب التسجيل بنجاح", mapToRegistrationResponse(regOpt.get()));
     }
 }
