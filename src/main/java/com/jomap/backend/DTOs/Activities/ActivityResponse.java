@@ -40,6 +40,8 @@ public class ActivityResponse {
 
     private Integer attendeesCount; 
 
+    private Double oldPrice;
+
     private Long statusId;
 
     private Long createdById;

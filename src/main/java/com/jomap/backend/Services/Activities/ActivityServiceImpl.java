@@ -39,6 +39,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final PostRepository postRepository;
     private final LocationRepo locationRepo;
     private final com.jomap.backend.Entities.Activities.RegistrationRepository registrationRepository;
+    private final com.jomap.backend.Services.Notefications.EmailService emailService;
 
     @Override
     @Transactional
@@ -209,6 +210,17 @@ public class ActivityServiceImpl implements ActivityService {
             return ApiResponse.error("النشاط غير موجود");
         Activity activity = activityOptional.get();
         activity.setStatus(ActivityStatus.CANCELLED);
+        
+        // Notify users
+        List<com.jomap.backend.Entities.Activities.Registration> registrations = registrationRepository.findByActivityId(activityId);
+        if (registrations != null && !registrations.isEmpty()) {
+            for (com.jomap.backend.Entities.Activities.Registration reg : registrations) {
+                if (reg.getUser() != null && reg.getUser().getEmail() != null) {
+                    emailService.sendActivityStatusNotification(reg.getUser().getEmail(), activity.getTitle(), "ملغية", "نأسف لإعلامكم بأنه تم إلغاء هذه الفعالية.");
+                }
+            }
+        }
+        
         return ApiResponse.success("تم إلغاء النشاط بنجاح", mapToResponse(activityRepository.save(activity)));
     }
 
@@ -220,6 +232,17 @@ public class ActivityServiceImpl implements ActivityService {
             return ApiResponse.error("النشاط غير موجود");
         Activity activity = activityOptional.get();
         activity.setStatus(ActivityStatus.POSTPONED);
+        
+        // Notify users
+        List<com.jomap.backend.Entities.Activities.Registration> registrations = registrationRepository.findByActivityId(activityId);
+        if (registrations != null && !registrations.isEmpty()) {
+            for (com.jomap.backend.Entities.Activities.Registration reg : registrations) {
+                if (reg.getUser() != null && reg.getUser().getEmail() != null) {
+                    emailService.sendActivityStatusNotification(reg.getUser().getEmail(), activity.getTitle(), "مؤجلة", "نود إعلامكم بأنه تم تأجيل هذه الفعالية وتعديل مواعيدها، يرجى التحقق من المواعيد الجديدة من خلال التطبيق.");
+                }
+            }
+        }
+        
         return ApiResponse.success("تم تأجيل النشاط", mapToResponse(activityRepository.save(activity)));
     }
 
@@ -270,18 +293,43 @@ public class ActivityServiceImpl implements ActivityService {
             activity.setStatus(ActivityStatus.POSTPONED);
         }
 
+        java.util.List<String> changes = new java.util.ArrayList<>();
+        if (!java.util.Objects.equals(activity.getTitle(), request.getTitle())) changes.add("عنوان الفعالية");
+        if (!java.util.Objects.equals(activity.getDescription(), request.getDescription())) changes.add("وصف الفعالية");
+        if (!java.util.Objects.equals(activity.getActivityLocation(), request.getActivityLocation())) changes.add("موقع الفعالية");
+        if (!activity.getGovernorate().getId().equals(request.getGovernorateId())) changes.add("المحافظة");
+
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
         activity.setActivityLocation(request.getActivityLocation());
         activity.setGovernorate(optionalGov.get());
-        activity.setPrice(request.getPrice());
+        
+        Double oldPrice = activity.getPrice();
+        Double newPrice = request.getPrice();
+        if ((oldPrice == null && newPrice != null) || 
+            (oldPrice != null && newPrice == null) || 
+            (oldPrice != null && newPrice != null && !oldPrice.equals(newPrice))) {
+            activity.setOldPrice(oldPrice == null ? 0.0 : oldPrice);
+            changes.add("سعر الفعالية");
+        }
+        activity.setPrice(newPrice);
+        
+        if (!java.util.Objects.equals(activity.getMaxCapacity(), request.getMaxCapacity())) changes.add("سعة الفعالية");
         activity.setMaxCapacity(request.getMaxCapacity());
         activity.setScheduleType(request.getScheduleType());
         activity.setTotalActualDays(request.getTotalActualDays());
         
-        if (request.getImageUrl() != null) activity.setImageUrl(request.getImageUrl());
+        if (request.getImageUrl() != null && !request.getImageUrl().equals(activity.getImageUrl())) {
+            activity.setImageUrl(request.getImageUrl());
+            changes.add("بوستر أو صورة الفعالية");
+        } else if (request.getImageUrl() != null) {
+            activity.setImageUrl(request.getImageUrl());
+        }
+        
         if (request.getLatitude() != null) activity.setLatitude(request.getLatitude());
         if (request.getLongitude() != null) activity.setLongitude(request.getLongitude());
+
+        if (isScheduleChanged) changes.add("المواعيد والتواريخ");
 
         // إعادة بناء لستة المواعيد الجديدة
         activity.getSchedules().clear();
@@ -298,6 +346,17 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         Activity updatedActivity = activityRepository.save(activity);
+        
+        if (!changes.isEmpty()) {
+            List<com.jomap.backend.Entities.Activities.Registration> registrations = registrationRepository.findByActivityId(activityId);
+            if (registrations != null && !registrations.isEmpty()) {
+                for (com.jomap.backend.Entities.Activities.Registration reg : registrations) {
+                    if (reg.getUser() != null && reg.getUser().getEmail() != null) {
+                        emailService.sendActivityDetailedUpdateNotification(reg.getUser().getEmail(), activity.getTitle(), changes);
+                    }
+                }
+            }
+        }
         
         String successMessage = (activity.getStatus() == ActivityStatus.POSTPONED) ? 
             "تم تأجيل الفعالية تلقائياً لتغيير المواعيد، وبانتظار بت المسؤول مجدداً" : 
@@ -350,6 +409,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
                 .price(activity.getPrice())
+                .oldPrice(activity.getOldPrice())
                 .maxCapacity(activity.getMaxCapacity())
                 .attendeesCount(actualAttendeesCount)
                 .longitude(activity.getLongitude())

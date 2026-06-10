@@ -154,6 +154,79 @@ public class EmailService {
         }
     }
 
+    public void sendActivityStatusNotification(String toEmail, String activityName, String status, String customMessage) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail);
+            helper.setSubject("تحديث حالة الفعالية: " + activityName);
+            helper.setFrom("jomap.noreply@gmail.com", "JoMap");
+
+            String htmlContent = """
+                <!DOCTYPE html>
+                <html dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="font-family: Arial, sans-serif; text-align: right;">
+                    <h2>تحديث هام بخصوص فعالية: %s</h2>
+                    <p>عزيزي المشترك،</p>
+                    <p>حالة الفعالية أصبحت الآن: <strong>%s</strong></p>
+                    <p>%s</p>
+                    <p>مع تحيات فريق JoMap</p>
+                </body>
+                </html>
+                """.formatted(activityName, status, customMessage);
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendActivityDetailedUpdateNotification(String toEmail, String activityName, java.util.List<String> changes) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail);
+            helper.setSubject("تعديل على تفاصيل الفعالية: " + activityName);
+            helper.setFrom("jomap.noreply@gmail.com", "JoMap");
+
+            StringBuilder changesList = new StringBuilder("<ul>");
+            for(String change : changes) {
+                changesList.append("<li>").append(change).append("</li>");
+            }
+            changesList.append("</ul>");
+
+            String htmlContent = """
+                <!DOCTYPE html>
+                <html dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="font-family: Arial, sans-serif; text-align: right;">
+                    <h2>تحديث هام بخصوص فعالية: %s</h2>
+                    <p>عزيزي المشترك،</p>
+                    <p>تم تعديل بعض المعلومات الخاصة بالفعالية المذكورة أعلاه. التعديلات شملت:</p>
+                    %s
+                    <p>نرجو التحقق من التفاصيل الجديدة للفعالية من خلال التطبيق.</p>
+                    <p>مع تحيات فريق JoMap</p>
+                </body>
+                </html>
+                """.formatted(activityName, changesList.toString());
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private String buildWelcomeEmailTemplate(String username) {
         return """
                 <!DOCTYPE html>

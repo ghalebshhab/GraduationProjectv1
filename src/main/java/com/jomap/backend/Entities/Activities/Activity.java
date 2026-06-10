@@ -54,6 +54,9 @@ public class Activity {
     @Column(nullable = true)
     private Integer attendeesCount ; 
 
+    @Column(name = "old_price")
+    private Double oldPrice;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "governorate_id", nullable = false)
     private Governorate governorate;
