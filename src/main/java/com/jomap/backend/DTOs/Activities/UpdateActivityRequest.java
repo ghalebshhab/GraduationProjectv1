@@ -33,6 +33,8 @@ public class UpdateActivityRequest {
     @NotNull(message = "معرف المحافظة مطلوب")
     private Long governorateId;
 
+    private Long locationId;
+
     @Min(value = 0, message = "السعر لا يمكن أن يكون أقل من صفر")
     private Double price;
 

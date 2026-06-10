@@ -44,6 +44,9 @@ public class Activity {
 
     @Column(name = "activity_location")
     private String activityLocation; 
+
+    @Column(name = "location_id")
+    private Long locationId;
     
     @Column(nullable = true)
     private Double price ;

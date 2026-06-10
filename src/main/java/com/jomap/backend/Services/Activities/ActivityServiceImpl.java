@@ -59,6 +59,7 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
         activity.setActivityLocation(request.getActivityLocation());
+        activity.setLocationId(request.getLocationId());
         activity.setGovernorate(optionalGov.get());
         activity.setImageUrl(request.getImageUrl());
         activity.setLatitude(request.getLatitude());
@@ -297,11 +298,13 @@ public class ActivityServiceImpl implements ActivityService {
         if (!java.util.Objects.equals(activity.getTitle(), request.getTitle())) changes.add("عنوان الفعالية");
         if (!java.util.Objects.equals(activity.getDescription(), request.getDescription())) changes.add("وصف الفعالية");
         if (!java.util.Objects.equals(activity.getActivityLocation(), request.getActivityLocation())) changes.add("موقع الفعالية");
+        if (!java.util.Objects.equals(activity.getLocationId(), request.getLocationId())) changes.add("معرف المنشأة");
         if (!activity.getGovernorate().getId().equals(request.getGovernorateId())) changes.add("المحافظة");
 
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
         activity.setActivityLocation(request.getActivityLocation());
+        activity.setLocationId(request.getLocationId());
         activity.setGovernorate(optionalGov.get());
         
         Double oldPrice = activity.getPrice();
@@ -404,13 +407,14 @@ public class ActivityServiceImpl implements ActivityService {
                 .title(activity.getTitle())
                 .description(activity.getDescription())
                 .activityLocation(activity.getActivityLocation())
+                .locationId(activity.getLocationId())
                 .governorateId(activity.getGovernorate().getId())
                 .governorateName(activity.getGovernorate().getName())
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
                 .price(activity.getPrice())
                 .oldPrice(activity.getOldPrice())
-                .maxCapacity(activity.getMaxCapacity())
+                .maxCapacity(activity.getMaxCapacity() != null ? activity.getMaxCapacity() : 0)
                 .attendeesCount(actualAttendeesCount)
                 .longitude(activity.getLongitude())
                 .statusId((long) activity.getStatus().getId())

@@ -25,6 +25,8 @@ public class ActivityResponse {
 
     private String activityLocation;
 
+    private Long locationId;
+
     private Long governorateId;
     private String governorateName;
 
