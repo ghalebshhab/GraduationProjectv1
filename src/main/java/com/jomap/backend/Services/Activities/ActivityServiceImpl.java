@@ -424,27 +424,39 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
-    public ApiResponse<String> updateRegistrationStatus(Long registrationId, String statusStr) {
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(Long registrationId, String statusStr) {
         Optional<com.jomap.backend.Entities.Activities.Registration> registrationOptional = registrationRepository.findById(registrationId);
         if (registrationOptional.isEmpty()) {
             return ApiResponse.error("طلب التسجيل غير موجود");
         }
         com.jomap.backend.Entities.Activities.Registration registration = registrationOptional.get();
 
-        com.jomap.backend.Entities.Activities.RegistrationStatus status;
+        com.jomap.backend.Entities.Activities.RegistrationStatus status = null;
         try {
-            status = com.jomap.backend.Entities.Activities.RegistrationStatus.valueOf(statusStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("حالة غير صالحة");
+            // First check if it's a numeric ID
+            int statusId = Integer.parseInt(statusStr);
+            for (com.jomap.backend.Entities.Activities.RegistrationStatus s : com.jomap.backend.Entities.Activities.RegistrationStatus.values()) {
+                if (s.getId() == statusId) {
+                    status = s;
+                    break;
+                }
+            }
+            if (status == null) {
+                return ApiResponse.error("معرف الحالة غير صالح");
+            }
+        } catch (NumberFormatException e) {
+            // Not a number, try parsing as String Enum
+            try {
+                status = com.jomap.backend.Entities.Activities.RegistrationStatus.valueOf(statusStr.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                return ApiResponse.error("حالة غير صالحة");
+            }
         }
 
-        com.jomap.backend.Entities.Activities.RegistrationStatus oldStatus = registration.getStatus();
         registration.setStatus(status);
-        registrationRepository.save(registration);
+        com.jomap.backend.Entities.Activities.Registration savedRegistration = registrationRepository.save(registration);
 
-
-
-        return ApiResponse.success("تم تحديث حالة التسجيل بنجاح", "تم التحديث إلى " + status.name());
+        return ApiResponse.success("تم تحديث حالة التسجيل بنجاح", mapToRegistrationResponse(savedRegistration));
     }
 
     private com.jomap.backend.DTOs.Activities.RegistrationResponse mapToRegistrationResponse(com.jomap.backend.Entities.Activities.Registration registration) {
@@ -465,7 +477,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .userEmail(user.getEmail() != null ? user.getEmail() : "")
                 .username(user.getUsername() != null ? user.getUsername() : "")
                 .phoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
-                .status(registration.getStatus().name())
+                .statusId((long) registration.getStatus().getId())
                 .registrationDate(formattedDate)
                 .registrationTime(formattedTime)
                 .userImageUrl(user.getProfileImageUrl() != null ? user.getProfileImageUrl() : (user.getProfile() != null ? user.getProfile().getProfileImageUrl() : null))

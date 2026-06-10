@@ -40,7 +40,7 @@ public interface ActivityService {
 
     ApiResponse<List<com.jomap.backend.DTOs.Activities.RegistrationResponse>> getActivityRegistrations(Long activityId);
 
-    ApiResponse<String> updateRegistrationStatus(Long registrationId, String status);
+    ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(Long registrationId, String status);
 
     ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> getMyRegistration(Long activityId, String email);
 }

@@ -20,7 +20,7 @@ public class RegistrationResponse {
     private String userEmail;
     private String username;
     private String phoneNumber;
-    private String status;
+    private Long statusId;
     private String registrationDate;
     private String registrationTime;
     private String userImageUrl;

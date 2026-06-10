@@ -143,10 +143,21 @@ public class ActivityController {
     }
 
     @PostMapping("/registrations/{regId}/status")
-    public ApiResponse<String> updateRegistrationStatus(
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(
             @PathVariable Long regId,
-            @RequestParam String status) {
-        return ActivityService.updateRegistrationStatus(regId, status);
+            @RequestParam(required = false) String status,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+            
+        String finalStatus = status;
+        if (finalStatus == null && body != null && body.containsKey("status")) {
+            finalStatus = body.get("status");
+        }
+        
+        if (finalStatus == null) {
+            return ApiResponse.error("الحالة مطلوبة");
+        }
+        
+        return ActivityService.updateRegistrationStatus(regId, finalStatus);
     }
 
     @GetMapping("/{id}/my-registration")
