@@ -167,7 +167,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setUserId(user.getId());
         response.setUsername(user.getUsername());
         response.setPhoneNumber(user.getPhoneNumber()); 
-        response.setEmail(user.getEmail());
+        response.setEmail(user.getEmail() != null ? user.getEmail() : "");
         response.setProfileImageUrl(profile.getProfileImageUrl());
         response.setBio(profile.getBio());
         response.setLocation(profile.getLocation());

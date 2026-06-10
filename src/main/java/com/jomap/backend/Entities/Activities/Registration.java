@@ -48,6 +48,12 @@ public class Registration {
     @Column(name = "registration_time", nullable = false)
     private LocalTime registrationTime;
 
+    @Column(name = "governorate_id")
+    private Long governorateId;
+
+    @Column(name = "detailed_address")
+    private String detailedAddress;
+
     @PrePersist
     public void prePersist() {
         if (this.registrationDate == null) {

@@ -336,6 +336,8 @@ public class ActivityServiceImpl implements ActivityService {
             }
         }
 
+        int actualAttendeesCount = registrationRepository.countByActivityIdAndStatus(activity.getId(), com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED);
+
         return ActivityResponse.builder()
                 .id(activity.getId())
                 .title(activity.getTitle())
@@ -346,7 +348,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
                 .price(activity.getPrice())
-                .attendeesCount(activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0)
+                .attendeesCount(actualAttendeesCount)
                 .longitude(activity.getLongitude())
                 .statusId((long) activity.getStatus().getId())
                 .createdById(activity.getCreatedBy().getId())
@@ -380,7 +382,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
-    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> registerForActivity(Long activityId, String email) {
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> registerForActivity(Long activityId, String email, com.jomap.backend.DTOs.Activities.RegisterActivityRequest request) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             return ApiResponse.error("المستخدم غير موجود");
@@ -401,6 +403,10 @@ public class ActivityServiceImpl implements ActivityService {
         registration.setActivity(activity);
         registration.setUser(user);
         registration.setStatus(com.jomap.backend.Entities.Activities.RegistrationStatus.PENDING);
+        if (request != null) {
+            registration.setGovernorateId(request.getGovernorateId());
+            registration.setDetailedAddress(request.getDetailedAddress());
+        }
         
         com.jomap.backend.Entities.Activities.Registration savedRegistration = registrationRepository.save(registration);
 
@@ -436,17 +442,7 @@ public class ActivityServiceImpl implements ActivityService {
         registration.setStatus(status);
         registrationRepository.save(registration);
 
-        Activity activity = registration.getActivity();
-        if (oldStatus != com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED && status == com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED) {
-            activity.setAttendeesCount((activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0) + 1);
-            activityRepository.save(activity);
-        } else if (oldStatus == com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED && 
-                  (status == com.jomap.backend.Entities.Activities.RegistrationStatus.CANCELLED || 
-                   status == com.jomap.backend.Entities.Activities.RegistrationStatus.WITHDRAWN || 
-                   status == com.jomap.backend.Entities.Activities.RegistrationStatus.REJECTED)) {
-            activity.setAttendeesCount(Math.max(0, (activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0) - 1));
-            activityRepository.save(activity);
-        }
+
 
         return ApiResponse.success("تم تحديث حالة التسجيل بنجاح", "تم التحديث إلى " + status.name());
     }
@@ -465,11 +461,11 @@ public class ActivityServiceImpl implements ActivityService {
         return com.jomap.backend.DTOs.Activities.RegistrationResponse.builder()
                 .id(registration.getId())
                 .userId(user.getId())
-                .fullName(fullName)
-                .userEmail(user.getEmail())
-                .username(user.getUsername())
-                .userPhone(user.getPhoneNumber())
-                .status(registration.getStatus())
+                .fullName(fullName != null ? fullName : "")
+                .userEmail(user.getEmail() != null ? user.getEmail() : "")
+                .username(user.getUsername() != null ? user.getUsername() : "")
+                .phoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+                .status(registration.getStatus().name())
                 .registrationDate(formattedDate)
                 .registrationTime(formattedTime)
                 .userImageUrl(user.getProfileImageUrl() != null ? user.getProfileImageUrl() : (user.getProfile() != null ? user.getProfile().getProfileImageUrl() : null))

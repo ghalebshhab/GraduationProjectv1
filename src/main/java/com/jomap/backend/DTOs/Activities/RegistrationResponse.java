@@ -19,8 +19,8 @@ public class RegistrationResponse {
     private String fullName;
     private String userEmail;
     private String username;
-    private String userPhone;
-    private RegistrationStatus status;
+    private String phoneNumber;
+    private String status;
     private String registrationDate;
     private String registrationTime;
     private String userImageUrl;

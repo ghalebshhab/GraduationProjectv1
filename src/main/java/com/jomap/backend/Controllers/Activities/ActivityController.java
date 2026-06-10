@@ -127,13 +127,13 @@ public class ActivityController {
     @PostMapping("/{id}/register")
     public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> registerForActivity(
             @PathVariable Long id,
+            @RequestBody(required = false) com.jomap.backend.DTOs.Activities.RegisterActivityRequest request,
             Principal principal) {
-        
         if (principal == null) {
             return ApiResponse.error("المستخدم غير موثق بالأنظمة");
         }
         
-        return ActivityService.registerForActivity(id, principal.getName());
+        return ActivityService.registerForActivity(id, principal.getName(), request);
     }
 
     @GetMapping("/{id}/registrations")

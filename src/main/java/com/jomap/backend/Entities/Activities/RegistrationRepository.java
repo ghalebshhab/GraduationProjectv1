@@ -10,4 +10,5 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByActivityId(Long activityId);
     boolean existsByActivityIdAndUserId(Long activityId, Long userId);
     java.util.Optional<Registration> findByActivityIdAndUserId(Long activityId, Long userId);
+    int countByActivityIdAndStatus(Long activityId, RegistrationStatus status);
 }
