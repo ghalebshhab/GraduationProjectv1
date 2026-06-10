@@ -38,6 +38,9 @@ public class CreateActivityRequest {
     @Min(value = 0, message = "عدد الحضور لا يمكن أن يكون أقل من صفر")
     private Integer attendeesCount = 0;
 
+    @Min(value = 1, message = "سعة المقاعد يجب أن تكون على الأقل 1")
+    private Integer maxCapacity;
+
     private String imageUrl;
 
     private Double latitude;

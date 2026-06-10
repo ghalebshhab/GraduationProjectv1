@@ -36,6 +36,9 @@ public class UpdateActivityRequest {
     @Min(value = 0, message = "السعر لا يمكن أن يكون أقل من صفر")
     private Double price;
 
+    @Min(value = 1, message = "سعة المقاعد يجب أن تكون على الأقل 1")
+    private Integer maxCapacity;
+
     private String imageUrl;
     private Double latitude;
     private Double longitude;

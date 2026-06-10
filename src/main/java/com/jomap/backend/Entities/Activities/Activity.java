@@ -49,6 +49,9 @@ public class Activity {
     private Double price ;
 
     @Column(nullable = true)
+    private Integer maxCapacity;
+
+    @Column(nullable = true)
     private Integer attendeesCount ; 
 
     @ManyToOne(fetch = FetchType.LAZY)

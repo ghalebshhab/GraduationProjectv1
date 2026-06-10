@@ -36,6 +36,8 @@ public class ActivityResponse {
 
     private Double price;
 
+    private Integer maxCapacity;
+
     private Integer attendeesCount; 
 
     private Long statusId;

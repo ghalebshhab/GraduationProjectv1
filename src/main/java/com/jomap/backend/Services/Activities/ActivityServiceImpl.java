@@ -65,6 +65,7 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setStatus(ActivityStatus.PENDING);
         activity.setCreatedBy(user);
         activity.setPrice(request.getPrice());
+        activity.setMaxCapacity(request.getMaxCapacity());
         activity.setAttendeesCount(request.getAttendeesCount());
 
         activity.setScheduleType(request.getScheduleType());
@@ -274,6 +275,7 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setActivityLocation(request.getActivityLocation());
         activity.setGovernorate(optionalGov.get());
         activity.setPrice(request.getPrice());
+        activity.setMaxCapacity(request.getMaxCapacity());
         activity.setScheduleType(request.getScheduleType());
         activity.setTotalActualDays(request.getTotalActualDays());
         
@@ -348,6 +350,7 @@ public class ActivityServiceImpl implements ActivityService {
                 .imageUrl(activity.getImageUrl())
                 .latitude(activity.getLatitude())
                 .price(activity.getPrice())
+                .maxCapacity(activity.getMaxCapacity())
                 .attendeesCount(actualAttendeesCount)
                 .longitude(activity.getLongitude())
                 .statusId((long) activity.getStatus().getId())
