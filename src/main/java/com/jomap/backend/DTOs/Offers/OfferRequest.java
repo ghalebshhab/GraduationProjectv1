@@ -50,4 +50,6 @@ public class OfferRequest {
     @NotNull(message = "قائمة المنتجات المشمولة بالعرض مطلوبة")
     @Size(min = 1, message = "يجب إضافة منتج واحد على الأقل للعرض")
     private List<OfferProductRequest> products;
+
+    private Integer clicksCount = 0;
 }

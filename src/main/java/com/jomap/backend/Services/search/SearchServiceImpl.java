@@ -69,7 +69,7 @@ public class SearchServiceImpl implements SearchService {
                 .map(this::toLocationSearchItem)
                 .forEach(items::add);
 
-        offerRepository.findTop10ByStatusOrderByIdDesc(OfferStatus.APPROVED)
+        offerRepository.findTop10ByStatusOrderByIdDesc(OfferStatus.ACTIVE)
                 .stream()
                 .map(this::toOfferSearchItem)
                 .forEach(items::add);

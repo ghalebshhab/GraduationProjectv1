@@ -49,8 +49,7 @@ public class OfferServiceImpl implements OfferService {
     @Override
     @Transactional
     public ApiResponse<OfferResponse> createOffer(OfferRequest request, String email) {
-        try {
-            Optional<User> userOptional = userRepository.findByEmail(email);
+        Optional<User> userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) {
                 return ApiResponse.error("فشل الإنشاء: المستخدم غير موجود في النظام");
             }
@@ -80,8 +79,9 @@ public class OfferServiceImpl implements OfferService {
             offer.setLongitude(request.getLongitude());
             offer.setLocation(location);
             offer.setGovernorate(optionalGov.get());
-            offer.setStatus(OfferStatus.PENDING);
+            offer.setStatus(OfferStatus.ACTIVE);
             offer.setCreatedBy(user);
+            offer.setClicksCount(request.getClicksCount() != null ? request.getClicksCount() : 0);
 
             List<OfferProduct> products = new ArrayList<>();
             if (request.getProducts() != null && !request.getProducts().isEmpty()) {
@@ -121,12 +121,8 @@ public class OfferServiceImpl implements OfferService {
 
             postRepository.save(offerPost);
 
-            return ApiResponse.success("تم تقديم طلب العرض بنجاح وهو بانتظار موافقة المسؤول", mapToResponse(savedOffer));
+            return ApiResponse.success("تم إضافة العرض بنجاح", mapToResponse(savedOffer));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ApiResponse.error("حدث خطأ غير متوقع أثناء إنشاء العرض: " + e.getMessage());
-        }
     }
 
     @Override
@@ -190,6 +186,7 @@ public class OfferServiceImpl implements OfferService {
                 .phoneNumber(phone)
                 .locationPhone(phone)
                 .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
+                .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
                 .build();
     }
     
@@ -197,7 +194,7 @@ public class OfferServiceImpl implements OfferService {
     public ApiResponse<List<OfferResponse>> getOffersByLocation(Long locationId) {
         List<OfferResponse> offers = offerRepo.findByLocationId(locationId)
                 .stream()
-                .filter(o -> o.getStatus() == OfferStatus.APPROVED)
+                .filter(o -> o.getStatus() == OfferStatus.ACTIVE)
                 .map(this::mapToResponse)
                 .toList();
         return ApiResponse.success("تم جلب العروض بنجاح", offers);

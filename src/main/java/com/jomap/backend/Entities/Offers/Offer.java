@@ -56,7 +56,7 @@ public class Offer {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OfferStatus status = OfferStatus.PENDING; // الممشى الموحد والنظيف للحالة
+    private OfferStatus status = OfferStatus.ACTIVE; // الممشى الموحد والنظيف للحالة
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id", nullable = false)
@@ -78,6 +78,9 @@ public class Offer {
 
     @Column(name = "views_count")
     private Integer viewsCount = 0;
+
+    @Column(name = "clicks_count")
+    private Integer clicksCount = 0;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

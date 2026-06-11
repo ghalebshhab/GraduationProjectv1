@@ -153,7 +153,7 @@ public class GovernorateService {
 
         // 🎯 هندسة العروض (Offers)
         List<OfferResponse> approvedOffers = offerRepository
-                .findByStatusAndGovernorateId(OfferStatus.APPROVED, id).stream()
+                .findByStatusAndGovernorateId(OfferStatus.ACTIVE, id).stream()
                 .limit(5)
                 .map(offer -> OfferResponse.builder()
                         .id(offer.getId())
@@ -174,6 +174,7 @@ public class GovernorateService {
                         .createdById(offer.getCreatedBy().getId())
                         .createdByUsername(offer.getCreatedBy().getUsername())
                         .viewsCount(offer.getViewsCount())
+                        .clicksCount(offer.getClicksCount())
                         .build())
                 .collect(Collectors.toList());
 

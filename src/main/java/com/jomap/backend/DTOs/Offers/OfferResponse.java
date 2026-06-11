@@ -34,4 +34,5 @@ public class OfferResponse {
     private String phoneNumber;
     private String locationPhone;
     private Integer viewsCount;
+    private Integer clicksCount;
 }

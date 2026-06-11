@@ -1,11 +1,10 @@
 package com.jomap.backend.Entities.Offers;
 
 public enum OfferStatus {
-    PENDING(1, "بانتظار الموافقة"),
-    APPROVED(2, "مقبولة"),
-    REJECTED(3, "مرفوضة"),
-    CANCELLED(4, "ملغاة"),
-    COMPLETED(5, "منتهية");
+    ACTIVE(1, "نشط"),
+    CANCELLED(2, "ملغى"),
+    EXPIRED(3, "منتهي الصلاحية"),
+    SCHEDULED(4, "مجدول");
 
     private final int id;
     private final String label;
