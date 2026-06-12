@@ -8,6 +8,7 @@ import com.jomap.backend.DTOs.Dashboard.AdminUserResponse;
 import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Locations.LocationStatus;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
@@ -140,7 +141,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     @Override
-    public ApiResponse<LocationResponse> rejectLocation(Long locationId) {
+    public ApiResponse<LocationResponse> rejectLocation(Long locationId, String reason) {
 
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
 
@@ -151,8 +152,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         LocationList location = locationOptional.get();
         location.setApproved(false);
         location.setActive(false);
+        location.setStatus(LocationStatus.REJECTED);
+        location.setRejectionReason(reason);
 
         LocationList savedLocation = locationRepository.save(location);
+
+        // TODO: Send push notification to the owner about rejection
 
         return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
     }
@@ -287,6 +292,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
             response.setOwnerId(location.getOwner().getId());
             response.setOwnerName(location.getOwner().getUsername());
         }
+
+        response.setStatus(location.getStatus());
+        response.setIsActive(location.getActive());
+        response.setIsApproved(location.getApproved());
+        response.setRejectionReason(location.getRejectionReason());
 
         return response;
     }

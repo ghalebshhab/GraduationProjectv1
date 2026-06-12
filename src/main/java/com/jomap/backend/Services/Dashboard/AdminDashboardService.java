@@ -24,7 +24,7 @@ public interface AdminDashboardService {
 
     ApiResponse<LocationResponse> approveLocation(Long locationId);
 
-    ApiResponse<LocationResponse> rejectLocation(Long locationId);
+    ApiResponse<LocationResponse> rejectLocation(Long locationId, String reason);
 
     ApiResponse<LocationResponse> deactivateLocation(Long locationId);
 

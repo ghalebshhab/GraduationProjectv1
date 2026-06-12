@@ -64,8 +64,10 @@ public class AdminDashboardController {
 
     @PutMapping("/locations/{locationId}/reject")
     public ResponseEntity<ApiResponse<LocationResponse>> rejectLocation(
-            @PathVariable Long locationId) {
-        return ResponseEntity.ok(adminDashboardService.rejectLocation(locationId));
+            @PathVariable Long locationId,
+            @RequestBody(required = false) java.util.Map<String, String> payload) {
+        String reason = payload != null ? payload.get("rejectionReason") : null;
+        return ResponseEntity.ok(adminDashboardService.rejectLocation(locationId, reason));
     }
 
     @PutMapping("/locations/{locationId}/deactivate")

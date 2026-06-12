@@ -108,8 +108,14 @@ public class LocationServiceImpl implements LocationService {
 
         updateEntityFields(location, request);
 
-        location.setStatus(LocationStatus.PENDING);
-        location.setApproved(false);
+        if (location.getStatus() == LocationStatus.REJECTED) {
+            location.setStatus(LocationStatus.PENDING);
+            location.setApproved(false);
+            location.setRejectionReason(null);
+        } else if (location.getStatus() != LocationStatus.PUBLISHED && location.getStatus() != LocationStatus.APPROVED) {
+            location.setStatus(LocationStatus.PENDING);
+            location.setApproved(false);
+        }
 
         return ApiResponse.success("تم تحديث البيانات، بانتظار مراجعة المسؤول واعتمادها مجدداً.",
                 mapToResponse(locationRepository.save(location)));
@@ -148,6 +154,18 @@ public class LocationServiceImpl implements LocationService {
             }
 
             LocationStatus newStatus = LocationStatus.valueOf(status.toUpperCase());
+            LocationStatus currentStatus = location.getStatus();
+
+            if (newStatus == LocationStatus.PUBLISHED) {
+                if (currentStatus != LocationStatus.APPROVED && currentStatus != LocationStatus.DEACTIVATED) {
+                    return ApiResponse.error("لا يمكن نشر المنشأة إلا إذا كانت حالتها مقبولة أو معطلة مؤقتاً");
+                }
+            } else if (newStatus == LocationStatus.DEACTIVATED) {
+                if (currentStatus != LocationStatus.PUBLISHED) {
+                    return ApiResponse.error("لا يمكن تعطيل المنشأة إلا إذا كانت منشورة");
+                }
+            }
+
             location.setStatus(newStatus);
 
             // ⏱️ لوجيك جدولة الحذف وإلغائه بناءً على الحالة الجديدة
@@ -320,6 +338,7 @@ public class LocationServiceImpl implements LocationService {
         response.setInstagramUrl(location.getInstagramUrl());
         response.setLinkedInUrl(location.getLinkedInUrl());
         response.setWorkingHours(location.getWorkingHours());
+        response.setRejectionReason(location.getRejectionReason());
         return response;
     }
 

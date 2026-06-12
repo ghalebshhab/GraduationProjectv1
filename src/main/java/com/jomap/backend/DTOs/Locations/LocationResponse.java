@@ -38,6 +38,7 @@ public class LocationResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+    private String rejectionReason;
 
     private String newToken;
 }
