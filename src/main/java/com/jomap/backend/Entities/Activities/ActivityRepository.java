@@ -15,6 +15,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     List<Activity> findByCreatedById(Long userId);
 
+    List<Activity> findByLocationId(Long locationId);
+
     List<Activity> findByStatusAndActivityLocationContainingIgnoreCase(ActivityStatus status, String location);
 
     @Query(value = "SELECT DISTINCT a.* FROM activities a " +

@@ -339,6 +339,15 @@ public class LocationServiceImpl implements LocationService {
         response.setLinkedInUrl(location.getLinkedInUrl());
         response.setWorkingHours(location.getWorkingHours());
         response.setRejectionReason(location.getRejectionReason());
+        
+        if (location.getDeletedAt() != null) {
+            java.time.LocalDateTime targetTime = location.getDeletedAt().plusHours(24);
+            long seconds = java.time.Duration.between(java.time.LocalDateTime.now(), targetTime).getSeconds();
+            response.setTimeLeftInSeconds(Math.max(0, seconds));
+        } else {
+            response.setTimeLeftInSeconds(0L);
+        }
+        
         return response;
     }
 

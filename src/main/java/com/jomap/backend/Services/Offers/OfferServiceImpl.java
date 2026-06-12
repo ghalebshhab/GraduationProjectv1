@@ -78,6 +78,10 @@ public class OfferServiceImpl implements OfferService {
             }
             LocationList location = locationOptional.get();
 
+            if (location.getStatus() != com.jomap.backend.Entities.Locations.LocationStatus.PUBLISHED) {
+                return ApiResponse.error("عذراً، يجب أن تكون حالة المنشأة منشورة (PUBLISHED) لتتمكن من إضافة عرض");
+            }
+
             Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
             if (optionalGov.isEmpty()) {
                 return ApiResponse.error("العملية مرفوضة: المحافظة المحددة غير مدعومة حالياً");

@@ -79,8 +79,11 @@ public class LocationList {
     @Column(length = 3000)
     private String ownerUpdate;
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     private String rejectionReason;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isDeleted = false;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", unique = true, nullable = false)

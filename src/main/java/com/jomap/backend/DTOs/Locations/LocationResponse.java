@@ -39,6 +39,7 @@ public class LocationResponse {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
     private String rejectionReason;
+    private Long timeLeftInSeconds;
 
     private String newToken;
 }

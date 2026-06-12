@@ -165,7 +165,17 @@ public class PostServiceImpl implements PostsServices {
 
         // Category & coordinates — now properly wired from the DTO
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
-            post.setCategory(request.getCategory().trim().toUpperCase());
+            String category = request.getCategory().trim().toUpperCase();
+            if ("OWNER".equals(category)) {
+                com.jomap.backend.Entities.Locations.LocationList location = locationRepo.findByOwnerId(author.getId()).orElse(null);
+                if (location == null) {
+                    return ApiResponse.error("عذراً، يجب أن تمتلك منشأة لتتمكن من النشر كمالك");
+                }
+                if (location.getStatus() != com.jomap.backend.Entities.Locations.LocationStatus.PUBLISHED) {
+                    return ApiResponse.error("عذراً، يجب أن تكون حالة المنشأة منشورة (PUBLISHED) لتتمكن من نشر مشاركة");
+                }
+            }
+            post.setCategory(category);
         }
         post.setLatitude(request.getLatitude());
         post.setLongitude(request.getLongitude());

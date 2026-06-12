@@ -69,6 +69,16 @@ public class ActivityServiceImpl implements ActivityService {
             return ApiResponse.error("العملية مرفوضة: المحافظة المحددة غير مدعومة حالياً");
         }
 
+        if (request.getLocationId() != null) {
+            Optional<com.jomap.backend.Entities.Locations.LocationList> locOpt = locationRepo.findById(request.getLocationId());
+            if (locOpt.isEmpty()) {
+                return ApiResponse.error("المنشأة غير موجودة");
+            }
+            if (locOpt.get().getStatus() != com.jomap.backend.Entities.Locations.LocationStatus.PUBLISHED) {
+                return ApiResponse.error("عذراً، يجب أن تكون حالة المنشأة منشورة (PUBLISHED) لتتمكن من إضافة فعالية");
+            }
+        }
+
         Activity activity = new Activity();
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());

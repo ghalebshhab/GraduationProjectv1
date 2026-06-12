@@ -72,6 +72,9 @@ public class Offer {
     @JoinColumn(name = "created_by_id", nullable = false) // الحقل السحري اللي كان ناقص!
     private User createdBy;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isDeleted = false;
+
     @OneToMany(mappedBy = "offer", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("offer-products")
     private List<OfferProduct> products = new ArrayList<>();
