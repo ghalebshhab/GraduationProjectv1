@@ -187,6 +187,7 @@ public class OfferServiceImpl implements OfferService {
                 .locationPhone(phone)
                 .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
                 .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
+                .cancelledAt(offer.getCancelledAt())
                 .build();
     }
     
@@ -198,5 +199,41 @@ public class OfferServiceImpl implements OfferService {
                 .map(this::mapToResponse)
                 .toList();
         return ApiResponse.success("تم جلب العروض بنجاح", offers);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<OfferResponse> cancelOffer(Long offerId, String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ApiResponse.error("المستخدم غير موجود");
+        }
+        User user = userOptional.get();
+
+        Optional<Offer> offerOptional = offerRepo.findById(offerId);
+        if (offerOptional.isEmpty()) {
+            return ApiResponse.error("العرض غير موجود");
+        }
+
+        Offer offer = offerOptional.get();
+        
+        // التحقق من أن المستخدم هو من أنشأ العرض
+        if (!offer.getCreatedBy().getId().equals(user.getId())) {
+            return ApiResponse.error("غير مصرح لك بإلغاء هذا العرض");
+        }
+
+        if (offer.getStatus() == OfferStatus.CANCELLED) {
+            return ApiResponse.error("العرض ملغى مسبقاً");
+        }
+
+        offer.setStatus(OfferStatus.CANCELLED);
+        
+        // Format the date properly for UI (e.g. "yyyy-MM-dd HH:mm:ss")
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        offer.setCancelledAt(java.time.LocalDateTime.now().format(formatter));
+
+        Offer savedOffer = offerRepo.save(offer);
+        
+        return ApiResponse.success("تم إلغاء العرض بنجاح", mapToResponse(savedOffer));
     }
 }

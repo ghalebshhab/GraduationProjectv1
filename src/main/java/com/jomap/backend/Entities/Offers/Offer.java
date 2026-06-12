@@ -84,6 +84,9 @@ public class Offer {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    @Column(name = "cancelled_at")
+    private String cancelledAt;
 
     @PrePersist
     public void beforeCreate() {

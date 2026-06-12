@@ -35,4 +35,5 @@ public class OfferResponse {
     private String locationPhone;
     private Integer viewsCount;
     private Integer clicksCount;
+    private String cancelledAt;
 }

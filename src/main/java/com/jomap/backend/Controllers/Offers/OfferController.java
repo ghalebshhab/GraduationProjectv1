@@ -75,4 +75,19 @@ public class OfferController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<OfferResponse>> cancelOffer(@PathVariable Long id, Principal principal) {
+        try {
+            ApiResponse<OfferResponse> response = offerService.cancelOffer(id, principal.getName());
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء إلغاء العرض: " + e.getMessage()));
+        }
+    }
 }
