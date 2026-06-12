@@ -90,4 +90,19 @@ public class OfferController {
             return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء إلغاء العرض: " + e.getMessage()));
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<OfferResponse>> deleteOffer(@PathVariable Long id, Principal principal) {
+        try {
+            ApiResponse<OfferResponse> response = offerService.deleteOffer(id, principal.getName());
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء حذف العرض: " + e.getMessage()));
+        }
+    }
 }

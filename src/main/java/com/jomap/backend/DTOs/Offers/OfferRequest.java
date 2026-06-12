@@ -52,4 +52,6 @@ public class OfferRequest {
     private List<OfferProductRequest> products;
 
     private Integer clicksCount = 0;
+    
+    private Long renewedFromOfferId;
 }

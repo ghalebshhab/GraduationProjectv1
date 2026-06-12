@@ -88,6 +88,9 @@ public class Offer {
     @Column(name = "cancelled_at")
     private String cancelledAt;
 
+    @Column(name = "renewed_from_offer_id")
+    private Long renewedFromOfferId;
+
     @PrePersist
     public void beforeCreate() {
         createdAt = LocalDateTime.now();

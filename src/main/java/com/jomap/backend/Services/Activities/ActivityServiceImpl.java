@@ -50,6 +50,20 @@ public class ActivityServiceImpl implements ActivityService {
         }
         User user = userOptional.get();
 
+        if (request.getSchedules() != null) {
+            for (ActivitySchedule schedule : request.getSchedules()) {
+                try {
+                    LocalTime sTime = parseTime(schedule.getStartTime());
+                    LocalTime eTime = parseTime(schedule.getEndTime());
+                    if (!eTime.isAfter(sTime)) {
+                        return ApiResponse.error("في نفس اليوم، يجب أن يكون وقت النهاية بعد وقت البداية");
+                    }
+                } catch (Exception e) {
+                    return ApiResponse.error("صيغة الوقت غير صحيحة، الرجاء التأكد من الإدخال");
+                }
+            }
+        }
+
         Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
         if (optionalGov.isEmpty()) {
             return ApiResponse.error("العملية مرفوضة: المحافظة المحددة غير مدعومة حالياً");
@@ -251,6 +265,20 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public ApiResponse<ActivityResponse> updateActivity(Long activityId, com.jomap.backend.DTOs.Activities.UpdateActivityRequest request, String ownerEmail) {
+        if (request.getSchedules() != null) {
+            for (com.jomap.backend.DTOs.Activities.ActivitySchedule schedule : request.getSchedules()) {
+                try {
+                    LocalTime sTime = parseTime(schedule.getStartTime());
+                    LocalTime eTime = parseTime(schedule.getEndTime());
+                    if (!eTime.isAfter(sTime)) {
+                        return ApiResponse.error("في نفس اليوم، يجب أن يكون وقت النهاية بعد وقت البداية");
+                    }
+                } catch (Exception e) {
+                    return ApiResponse.error("صيغة الوقت غير صحيحة، الرجاء التأكد من الإدخال");
+                }
+            }
+        }
+
         Optional<Activity> activityOptional = activityRepository.findById(activityId);
         if (activityOptional.isEmpty()) {
             return ApiResponse.error("فشل التحديث: الفعالية غير موجودة");

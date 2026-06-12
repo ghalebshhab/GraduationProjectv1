@@ -49,11 +49,28 @@ public class OfferServiceImpl implements OfferService {
     @Override
     @Transactional
     public ApiResponse<OfferResponse> createOffer(OfferRequest request, String email) {
-        Optional<User> userOptional = userRepository.findByEmail(email);
-            if (userOptional.isEmpty()) {
-                return ApiResponse.error("فشل الإنشاء: المستخدم غير موجود في النظام");
+        
+        try {
+            java.time.LocalDate startDate = java.time.LocalDate.parse(request.getStartDate());
+            java.time.LocalDate endDate = java.time.LocalDate.parse(request.getEndDate());
+            java.time.LocalTime startTime = java.time.LocalTime.parse(request.getStartTime());
+            java.time.LocalTime endTime = java.time.LocalTime.parse(request.getEndTime());
+
+            if (endDate.isBefore(startDate)) {
+                return ApiResponse.error("لا يمكن أن يكون تاريخ النهاية أقدم من تاريخ البداية");
             }
-            User user = userOptional.get();
+            if (startDate.equals(endDate) && !endTime.isAfter(startTime)) {
+                return ApiResponse.error("في نفس اليوم، يجب أن يكون وقت النهاية بعد وقت البداية");
+            }
+        } catch (java.time.format.DateTimeParseException e) {
+            return ApiResponse.error("صيغة التاريخ أو الوقت غير صحيحة، الرجاء التأكد من الإدخال");
+        }
+
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ApiResponse.error("فشل الإنشاء: المستخدم غير موجود في النظام");
+        }
+        User user = userOptional.get();
 
             Optional<LocationList> locationOptional = locationRepo.findById(request.getLocationId());
             if (locationOptional.isEmpty()) {
@@ -82,6 +99,7 @@ public class OfferServiceImpl implements OfferService {
             offer.setStatus(OfferStatus.ACTIVE);
             offer.setCreatedBy(user);
             offer.setClicksCount(request.getClicksCount() != null ? request.getClicksCount() : 0);
+            offer.setRenewedFromOfferId(request.getRenewedFromOfferId());
 
             List<OfferProduct> products = new ArrayList<>();
             if (request.getProducts() != null && !request.getProducts().isEmpty()) {
@@ -188,6 +206,7 @@ public class OfferServiceImpl implements OfferService {
                 .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
                 .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
                 .cancelledAt(offer.getCancelledAt())
+                .isRenewed(offer.getRenewedFromOfferId() != null)
                 .build();
     }
     
@@ -235,5 +254,37 @@ public class OfferServiceImpl implements OfferService {
         Offer savedOffer = offerRepo.save(offer);
         
         return ApiResponse.success("تم إلغاء العرض بنجاح", mapToResponse(savedOffer));
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<OfferResponse> deleteOffer(Long offerId, String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ApiResponse.error("المستخدم غير موجود");
+        }
+        User user = userOptional.get();
+
+        Optional<Offer> offerOptional = offerRepo.findById(offerId);
+        if (offerOptional.isEmpty()) {
+            return ApiResponse.error("العرض غير موجود");
+        }
+
+        Offer offer = offerOptional.get();
+        
+        // التحقق من أن المستخدم هو من أنشأ العرض
+        if (!offer.getCreatedBy().getId().equals(user.getId())) {
+            return ApiResponse.error("غير مصرح لك بحذف هذا العرض");
+        }
+
+        if (offer.getStatus() == OfferStatus.DELETED) {
+            return ApiResponse.error("العرض محذوف مسبقاً");
+        }
+
+        offer.setStatus(OfferStatus.DELETED);
+
+        Offer savedOffer = offerRepo.save(offer);
+        
+        return ApiResponse.success("تم حذف العرض بنجاح", mapToResponse(savedOffer));
     }
 }
