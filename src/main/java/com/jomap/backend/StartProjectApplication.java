@@ -5,10 +5,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 @EnableJpaRepositories("com.jomap.backend")
 @SpringBootApplication(scanBasePackages = "com.jomap.backend")
 @EntityScan(basePackages = "com.jomap.backend.Entities")
 @RestController
+@EnableScheduling
 public class StartProjectApplication {
 
 	public static void main(String[] args) {
