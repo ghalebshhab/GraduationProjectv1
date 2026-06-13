@@ -153,8 +153,17 @@ public class LocationServiceImpl implements LocationService {
                 return ApiResponse.error("ليس لديك صلاحية لتعديل حالة هذا الموقع");
             }
 
-            LocationStatus newStatus = LocationStatus.valueOf(status.toUpperCase());
             LocationStatus currentStatus = location.getStatus();
+            LocationStatus newStatus;
+
+            if ("RESTORE".equalsIgnoreCase(status)) {
+                if (currentStatus != LocationStatus.DELETED) {
+                    return ApiResponse.error("لا يمكن استرجاع المنشأة لأنها ليست في حالة الحذف");
+                }
+                newStatus = location.getPreviousStatus() != null ? location.getPreviousStatus() : LocationStatus.PUBLISHED;
+            } else {
+                newStatus = LocationStatus.valueOf(status.toUpperCase());
+            }
 
             if (newStatus == LocationStatus.PUBLISHED) {
                 if (currentStatus != LocationStatus.APPROVED && currentStatus != LocationStatus.DEACTIVATED && currentStatus != LocationStatus.DELETED) {
@@ -163,6 +172,10 @@ public class LocationServiceImpl implements LocationService {
             } else if (newStatus == LocationStatus.DEACTIVATED) {
                 if (currentStatus != LocationStatus.PUBLISHED) {
                     return ApiResponse.error("لا يمكن تعطيل المنشأة إلا إذا كانت منشورة");
+                }
+            } else if (newStatus == LocationStatus.DELETED) {
+                if (currentStatus != LocationStatus.DELETED) {
+                    location.setPreviousStatus(currentStatus); // حفظ الحالة القديمة أولاً
                 }
             }
 
@@ -175,19 +188,29 @@ public class LocationServiceImpl implements LocationService {
                 location.setActive(false); // سحبه من العرض العام والخريطة فوراً
             } else if (newStatus == LocationStatus.PUBLISHED) {
                 location.setDeletedAt(null); // 🔄 تراجع وإعادة تفعيل: تصفير حقل الحذف لإنقاذ المنشأة
+                location.setPreviousStatus(null);
                 location.setApproved(true);
                 location.setActive(true);
+            } else if (newStatus == LocationStatus.APPROVED) {
+                location.setDeletedAt(null);
+                location.setPreviousStatus(null);
+                location.setApproved(true);
+                location.setActive(false);
             } else {
-                location.setDeletedAt(null); // أي حالة أخرى (مثل التعطيل المؤقت) تصفر الحقل أيضاً لحماية الداتا
+                location.setDeletedAt(null); // أي حالة أخرى (مثل التعطيل المؤقت أو الانتظار أو الرفض)
+                location.setPreviousStatus(null);
                 location.setApproved(false);
                 location.setActive(false);
             }
 
             String successMsg = "تم تحديث حالة الموقع بنجاح.";
-            if (newStatus == LocationStatus.DEACTIVATED)
+            if ("RESTORE".equalsIgnoreCase(status)) {
+                successMsg = "تم استرجاع المنشأة للحالة السابقة بنجاح.";
+            } else if (newStatus == LocationStatus.DEACTIVATED) {
                 successMsg = "تم إيقاف نشاط الموقع مؤقتاً بنجاح.";
-            if (newStatus == LocationStatus.DELETED)
+            } else if (newStatus == LocationStatus.DELETED) {
                 successMsg = "تم جدولة حذف المنشأة نهائياً من الأنظمة، لديك 24 ساعة للتراجع عن القرار.";
+            }
 
             return ApiResponse.success(successMsg, mapToResponse(locationRepository.save(location)));
 

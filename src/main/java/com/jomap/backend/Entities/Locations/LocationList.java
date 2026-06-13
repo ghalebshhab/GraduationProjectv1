@@ -62,6 +62,10 @@ public class LocationList {
     @Enumerated(EnumType.STRING)
     private LocationStatus status; 
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "previous_status")
+    private LocationStatus previousStatus; 
+
     private String facebookUrl;
     private String instagramUrl;
     private String linkedInUrl;
