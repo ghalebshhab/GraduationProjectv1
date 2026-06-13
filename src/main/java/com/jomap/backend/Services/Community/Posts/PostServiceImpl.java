@@ -646,6 +646,18 @@ public class PostServiceImpl implements PostsServices {
         r.setCommentCount(commentsService.countByPostId(post.getId()).getData());
         return r;
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<List<PostResponse>> getPostsByActivityId(Long activityId) {
+        List<PostResponse> responses = postRepository
+                .findActivePostsByActivityId(activityId)
+                .stream()
+                .map(p -> toResponse(p, null, null))
+                .toList();
+
+        return ApiResponse.success("Activity posts fetched successfully", responses);
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // INTERNAL RECORD
     // ─────────────────────────────────────────────────────────────────────────

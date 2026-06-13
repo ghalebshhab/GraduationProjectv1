@@ -22,6 +22,10 @@ public interface PostRepository extends JpaRepository<Post,Long> {
 
     @Query("SELECT p FROM Post p WHERE p.author.id = :author_id AND p.isDeleted = false AND p.type = :type ORDER BY p.createdAt DESC")
     List<Post> findActivePostsByUserIdAndType(@Param("author_id") Long userId, @Param("type") Post.PostType type);
+
+    @Query("SELECT p FROM Post p WHERE p.activityId = :activity_id AND (p.isDeleted = false OR p.isDeleted IS NULL) ORDER BY p.createdAt DESC")
+    List<Post> findActivePostsByActivityId(@Param("activity_id") Long activityId);
+
     List<Post> findByAuthorId(Long authorId);
 
     long countByIsDeletedFalse();

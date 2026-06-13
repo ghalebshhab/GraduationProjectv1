@@ -106,4 +106,9 @@ public class PostController {
     public ResponseEntity<ApiResponse<List<PostResponse>>> getUserPosts(@PathVariable Long userId) {
         return ResponseEntity.ok(postService.getUserPosts(userId));
     }
+
+    @GetMapping("/activity/{activityId}")
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getPostsByActivityId(@PathVariable Long activityId) {
+        return ResponseEntity.ok(postService.getPostsByActivityId(activityId));
+    }
 }

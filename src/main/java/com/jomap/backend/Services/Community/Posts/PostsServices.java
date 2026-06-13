@@ -29,4 +29,6 @@ public interface PostsServices {
         ApiResponse<List<PostResponse>> getMyPosts(String emailFromToken);
 
         ApiResponse<List<PostResponse>> getUserPosts(Long userId);
+
+        ApiResponse<List<PostResponse>> getPostsByActivityId(Long activityId);
 }
