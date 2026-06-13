@@ -47,3 +47,5 @@ public class LocationSchedule {
     @Builder.Default
     private Boolean isClosed = false;
 }
+
+
