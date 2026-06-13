@@ -639,7 +639,7 @@ public class PostServiceImpl implements PostsServices {
                     r.setAuthorProfileImageUrl(r.getLocationImageUrl());
                 }
             } else if ("ACTIVITY".equals(categoryStr)) {
-                if (r.getActivityName() != null) {
+                if (r.getActivityName() != null && !"USER".equals(typeStr)) {
                     r.setAuthorUsername(r.getActivityName());
                     r.setAuthorProfileImageUrl(r.getActivityImageUrl());
                 }
