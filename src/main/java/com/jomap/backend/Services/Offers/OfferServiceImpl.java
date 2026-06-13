@@ -204,7 +204,7 @@ public class OfferServiceImpl implements OfferService {
                 .governorateName(offer.getGovernorate().getName())
                 .statusId((long) offer.getStatus().getId())
                 .createdById(offer.getCreatedBy().getId())
-                .createdByUsername(offer.getCreatedBy().getUsername())
+                .createdByUsername(offer.getLocation() != null ? offer.getLocation().getName() : offer.getCreatedBy().getUsername())
                 .phoneNumber(phone)
                 .locationPhone(phone)
                 .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
