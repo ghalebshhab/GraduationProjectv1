@@ -59,7 +59,7 @@ public class SearchServiceImpl implements SearchService {
                 .map(u -> toUserSearchItem(u, finalCurrentUser))
                 .forEach(items::add);
 
-        activityRepository.findTop10ByStatusOrderByIdDesc(ActivityStatus.APPROVED)
+        activityRepository.findTop10ByStatusInOrderByIdDesc(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED))
                 .stream()
                 .map(this::toEventSearchItem)
                 .forEach(items::add);
@@ -147,6 +147,7 @@ public class SearchServiceImpl implements SearchService {
         item.setRating(location.getRating());
         item.setImageUrl(location.getCoverUrl() != null ? location.getCoverUrl() : location.getLogoUrl());
         item.setImageRes(0);
+        item.setCategory(categoryLabel(location));
         return item;
     }
 

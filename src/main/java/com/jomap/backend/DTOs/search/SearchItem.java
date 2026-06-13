@@ -17,6 +17,7 @@ public class SearchItem {
     private String eventDate;
     private String locationName;
     private String friendshipStatus;
+    private String category;
 }
 
 

@@ -26,4 +26,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     List<Activity> findTop5Activities(@Param("govId") Long govId);
 
     List<Activity> findTop10ByStatusOrderByIdDesc(ActivityStatus status);
+
+    List<Activity> findTop10ByStatusInOrderByIdDesc(List<ActivityStatus> statuses);
 }
