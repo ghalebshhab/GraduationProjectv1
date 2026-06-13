@@ -186,6 +186,34 @@ public class PostServiceImpl implements PostsServices {
 
     @Override
     @Transactional
+    public ApiResponse<PostResponse> createActivityPost(String emailFromToken, com.jomap.backend.DTOs.Posts.CreateActivityPostRequest request) {
+        User author = userRepository.findByEmail(emailFromToken).orElse(null);
+        if (author == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        if (request.getContent() == null || request.getContent().isBlank()) {
+            return ApiResponse.error("Content is required");
+        }
+
+        Post post = new Post();
+        post.setAuthor(author);
+        post.setContent(request.getContent().trim());
+        post.setMediaUrl(request.getMediaUrl());
+
+        post.setType(Post.PostType.OWNER); // Set type as OWNER based on user request
+        post.setCategory("ACTIVITY"); // Set category as ACTIVITY based on user request
+        
+        post.setLatitude(request.getLatitude());
+        post.setLongitude(request.getLongitude());
+        post.setActivityId(request.getActivityId());
+
+        Post saved = postRepository.save(post);
+        return ApiResponse.success("Activity Post created successfully", toResponse(saved, null, null));
+    }
+
+    @Override
+    @Transactional
     public ApiResponse<PostResponse> updatePost(String emailFromToken,
             Long postId,
             UpdatePostRequest request) {

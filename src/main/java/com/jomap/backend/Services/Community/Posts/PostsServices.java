@@ -18,6 +18,8 @@ public interface PostsServices {
 
         ApiResponse<PostResponse> createPost(String emailFromToken, CreatePostRequest request);
 
+        ApiResponse<PostResponse> createActivityPost(String emailFromToken, com.jomap.backend.DTOs.Posts.CreateActivityPostRequest request);
+
         ApiResponse<PostResponse> updatePost(String emailFromToken, Long postId, UpdatePostRequest request);
 
         ApiResponse<String> deletePost(String emailFromToken, Long postId);

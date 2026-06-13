@@ -72,6 +72,14 @@ public class PostController {
         return ResponseEntity.ok(postService.createPost(authentication.getName(), request));
     }
 
+    @PostMapping("/activity")
+    public ResponseEntity<ApiResponse<PostResponse>> createActivityPost(
+            Authentication authentication,
+            @Valid @RequestBody com.jomap.backend.DTOs.Posts.CreateActivityPostRequest request
+    ) {
+        return ResponseEntity.ok(postService.createActivityPost(authentication.getName(), request));
+    }
+
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponse>> updatePost(
             Authentication authentication,
