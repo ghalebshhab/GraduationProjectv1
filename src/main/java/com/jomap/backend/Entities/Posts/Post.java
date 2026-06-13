@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
 public class Post {
 
     public enum PostType {
-        COMMUNITY, ACTIVITY, OFFER, USER, OWNER, LIVE_COVERAGE, ADS_ACTIVITY
+        COMMUNITY, ACTIVITY, OFFER, USER, OWNER, LIVE_COVERAGE, ADS_ACTIVITY, POST
     }
 
     @Id

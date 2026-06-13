@@ -208,7 +208,7 @@ public class PostServiceImpl implements PostsServices {
                 String typeStr = request.getType().trim().toUpperCase().replace(" ", "_");
                 post.setType(Post.PostType.valueOf(typeStr));
             } catch (IllegalArgumentException ex) {
-                return ApiResponse.error("Invalid type for activity post: must be OWNER, LIVE_COVERAGE, or ADS_ACTIVITY");
+                return ApiResponse.error("Invalid type for activity post: must be OWNER, LIVE_COVERAGE, ADS_ACTIVITY, or POST");
             }
         } else {
             post.setType(Post.PostType.OWNER); // fallback

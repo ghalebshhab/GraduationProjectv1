@@ -123,7 +123,7 @@ public class ActivityServiceImpl implements ActivityService {
                 user,
                 postContent,
                 savedActivity.getImageUrl(),
-                Post.PostType.COMMUNITY
+                Post.PostType.ACTIVITY
         );
         activityPost.setLatitude(savedActivity.getLatitude());
         activityPost.setLongitude(savedActivity.getLongitude());
