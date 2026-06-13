@@ -160,10 +160,15 @@ public class LocationServiceImpl implements LocationService {
             LocationStatus newStatus;
 
             if ("RESTORE".equalsIgnoreCase(status)) {
-                if (currentStatus != LocationStatus.DELETED) {
-                    return ApiResponse.error("لا يمكن استرجاع المنشأة لأنها ليست في حالة الحذف");
+                if (currentStatus != LocationStatus.DELETED && currentStatus != LocationStatus.DEACTIVATED) {
+                    return ApiResponse.error("لا يمكن استرجاع المنشأة لأنها ليست في حالة الحذف أو التعطيل");
                 }
-                newStatus = location.getPreviousStatus() != null ? location.getPreviousStatus() : LocationStatus.PUBLISHED;
+                
+                if (currentStatus == LocationStatus.DEACTIVATED) {
+                    newStatus = LocationStatus.PUBLISHED; // التعطيل لا يحدث إلا للمنشآت المنشورة
+                } else {
+                    newStatus = location.getPreviousStatus() != null ? location.getPreviousStatus() : LocationStatus.PUBLISHED;
+                }
             } else {
                 newStatus = LocationStatus.valueOf(status.toUpperCase());
             }
