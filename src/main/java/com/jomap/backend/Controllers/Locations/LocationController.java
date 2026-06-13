@@ -42,6 +42,25 @@ public class LocationController {
         return ResponseEntity.ok(postsServices.getAllPosts(ownerId.intValue(), "OWNER"));
     } 
 
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<ApiResponse<String>> toggleFavorite(
+            @PathVariable("id") Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.toggleFavoriteLocation(id, principal.getName()));
+    }
+
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponse<List<LocationResponse>>> getFavorites(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.getFavoriteLocations(principal.getName()));
+    }
+
     // 1. إنشاء موقع جديد
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<LocationResponse>> createLocation(

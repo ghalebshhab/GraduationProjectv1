@@ -255,6 +255,40 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     @Transactional
+    public ApiResponse<String> toggleFavoriteLocation(Long locationId, String userEmail) {
+        ApiResponse<User> userResponse = getUserByEmail(userEmail);
+        if (!userResponse.isSuccess()) return ApiResponse.error("User not found");
+
+        User user = userResponse.getData();
+        LocationList location = locationRepository.findById(locationId).orElse(null);
+        if (location == null) return ApiResponse.error("Location not found");
+
+        boolean isFavorited = user.getFavoriteLocations().stream().anyMatch(l -> l.getId().equals(locationId));
+        if (isFavorited) {
+            user.getFavoriteLocations().removeIf(l -> l.getId().equals(locationId));
+            userRepository.save(user);
+            return ApiResponse.success("Removed from favorites", null);
+        } else {
+            user.getFavoriteLocations().add(location);
+            userRepository.save(user);
+            return ApiResponse.success("Added to favorites", null);
+        }
+    }
+
+    @Override
+    public ApiResponse<List<LocationResponse>> getFavoriteLocations(String userEmail) {
+        ApiResponse<User> userResponse = getUserByEmail(userEmail);
+        if (!userResponse.isSuccess()) return ApiResponse.error("User not found");
+
+        User user = userResponse.getData();
+        List<LocationResponse> responses = user.getFavoriteLocations().stream()
+                .map(this::mapToResponse)
+                .toList();
+        return ApiResponse.success("Favorite locations fetched", responses);
+    }
+
+    @Override
+    @Transactional
     public ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request,
             String currentUserEmail) {
         return updateImage(locationId, request, currentUserEmail, true);
@@ -358,6 +392,18 @@ public class LocationServiceImpl implements LocationService {
         LocationResponse response = new LocationResponse();
         response.setLocationId(location.getId());
         response.setName(location.getName());
+        
+        response.setIsFavorite(false);
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                userRepository.findByEmail(email).ifPresent(user -> {
+                    boolean isFav = user.getFavoriteLocations().stream().anyMatch(l -> l.getId().equals(location.getId()));
+                    response.setIsFavorite(isFav);
+                });
+            }
+        } catch (Exception ignored) { }
         response.setDescription(location.getDescription());
         response.setEmail(location.getEmail());
         response.setPhoneNumber(location.getPhoneNumber());

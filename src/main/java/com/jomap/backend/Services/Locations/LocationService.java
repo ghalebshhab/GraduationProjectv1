@@ -16,6 +16,10 @@ public interface LocationService {
 
     ApiResponse<List<LocationResponse>> getLocations(Long governorateId, LocationCategory category);
 
+    ApiResponse<String> toggleFavoriteLocation(Long locationId, String userEmail);
+
+    ApiResponse<List<LocationResponse>> getFavoriteLocations(String userEmail);
+
     ApiResponse<LocationResponse> getMyLocation(String currentUserEmail);
 
     ApiResponse<LocationResponse> approveLocation(Long locationId);
