@@ -256,11 +256,11 @@ public class OfferServiceImpl implements OfferService {
         if (isFavorited) {
             user.getFavoriteOffers().removeIf(o -> o.getId().equals(offerId));
             userRepository.save(user);
-            return ApiResponse.success("Removed from favorites", null);
+            return ApiResponse.success("تم الإزالة من المحفوظات", null);
         } else {
             user.getFavoriteOffers().add(offer);
             userRepository.save(user);
-            return ApiResponse.success("Added to favorites", null);
+            return ApiResponse.success("تم الإضافة إلى المحفوظات بنجاح", null);
         }
     }
 

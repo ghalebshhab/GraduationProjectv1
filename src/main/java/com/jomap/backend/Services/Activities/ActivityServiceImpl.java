@@ -635,11 +635,11 @@ public class ActivityServiceImpl implements ActivityService {
         if (isFavorited) {
             user.getFavoriteEvents().removeIf(a -> a.getId().equals(activityId));
             userRepository.save(user);
-            return ApiResponse.success("Removed from favorites", null);
+            return ApiResponse.success("تم الإزالة من المحفوظات", null);
         } else {
             user.getFavoriteEvents().add(activity);
             userRepository.save(user);
-            return ApiResponse.success("Added to favorites", null);
+            return ApiResponse.success("تم الإضافة إلى المحفوظات بنجاح", null);
         }
     }
 

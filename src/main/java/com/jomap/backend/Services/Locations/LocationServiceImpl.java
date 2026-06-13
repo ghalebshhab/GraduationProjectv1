@@ -267,11 +267,11 @@ public class LocationServiceImpl implements LocationService {
         if (isFavorited) {
             user.getFavoriteLocations().removeIf(l -> l.getId().equals(locationId));
             userRepository.save(user);
-            return ApiResponse.success("Removed from favorites", null);
+            return ApiResponse.success("تم الإزالة من المحفوظات", null);
         } else {
             user.getFavoriteLocations().add(location);
             userRepository.save(user);
-            return ApiResponse.success("Added to favorites", null);
+            return ApiResponse.success("تم الإضافة إلى المحفوظات بنجاح", null);
         }
     }
 
