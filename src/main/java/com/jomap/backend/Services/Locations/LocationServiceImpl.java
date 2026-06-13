@@ -146,8 +146,11 @@ public class LocationServiceImpl implements LocationService {
             if (!userResponse.isSuccess())
                 return ApiResponse.error(userResponse.getMessage());
 
-            LocationList location = locationRepository.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("الموقع غير موجود"));
+            java.util.Optional<LocationList> locationOpt = locationRepository.findById(id);
+            if (locationOpt.isEmpty()) {
+                return ApiResponse.error("الموقع غير موجود");
+            }
+            LocationList location = locationOpt.get();
 
             if (!location.getOwner().getId().equals(userResponse.getData().getId())) {
                 return ApiResponse.error("ليس لديك صلاحية لتعديل حالة هذا الموقع");
