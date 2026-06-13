@@ -105,4 +105,23 @@ public class OfferController {
             return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء حذف العرض: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<ApiResponse<String>> toggleFavorite(
+            @PathVariable("id") Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(offerService.toggleFavoriteOffer(id, principal.getName()));
+    }
+
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponse<java.util.List<OfferResponse>>> getFavorites(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(offerService.getFavoriteOffers(principal.getName()));
+    }
 }

@@ -37,4 +37,5 @@ public class OfferResponse {
     private Integer clicksCount;
     private String cancelledAt;
     private Boolean isRenewed;
+    private Boolean isFavorite;
 }

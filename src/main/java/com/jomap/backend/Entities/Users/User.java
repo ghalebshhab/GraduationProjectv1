@@ -159,4 +159,12 @@ public class User {
     )
     private Set<Activity> favoriteEvents = new HashSet<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_favorite_offers",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "offer_id")
+    )
+    private Set<com.jomap.backend.Entities.Offers.Offer> favoriteOffers = new HashSet<>();
+
 }

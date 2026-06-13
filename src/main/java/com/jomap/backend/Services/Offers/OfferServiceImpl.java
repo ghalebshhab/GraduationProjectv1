@@ -191,6 +191,18 @@ public class OfferServiceImpl implements OfferService {
                         ? offer.getLocation().getPhoneNumber() 
                         : (offer.getCreatedBy() != null ? offer.getCreatedBy().getPhoneNumber() : null);
 
+        boolean isFavorite = false;
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    isFavorite = userOpt.get().getFavoriteOffers().stream().anyMatch(o -> o.getId().equals(offer.getId()));
+                }
+            }
+        } catch (Exception ignored) { }
+
         return OfferResponse.builder()
                 .id(offer.getId())
                 .title(offer.getTitle())
@@ -216,6 +228,7 @@ public class OfferServiceImpl implements OfferService {
                 .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
                 .cancelledAt(offer.getCancelledAt())
                 .isRenewed(offer.getRenewedFromOfferId() != null)
+                .isFavorite(isFavorite)
                 .build();
     }
     
@@ -227,6 +240,40 @@ public class OfferServiceImpl implements OfferService {
                 .map(this::mapToResponse)
                 .toList();
         return ApiResponse.success("تم جلب العروض بنجاح", offers);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> toggleFavoriteOffer(Long offerId, String userEmail) {
+        Optional<User> userOptional = userRepository.findByEmail(userEmail);
+        if (userOptional.isEmpty()) return ApiResponse.error("User not found");
+
+        User user = userOptional.get();
+        Offer offer = offerRepo.findById(offerId).orElse(null);
+        if (offer == null) return ApiResponse.error("Offer not found");
+
+        boolean isFavorited = user.getFavoriteOffers().stream().anyMatch(o -> o.getId().equals(offerId));
+        if (isFavorited) {
+            user.getFavoriteOffers().removeIf(o -> o.getId().equals(offerId));
+            userRepository.save(user);
+            return ApiResponse.success("Removed from favorites", null);
+        } else {
+            user.getFavoriteOffers().add(offer);
+            userRepository.save(user);
+            return ApiResponse.success("Added to favorites", null);
+        }
+    }
+
+    @Override
+    public ApiResponse<List<OfferResponse>> getFavoriteOffers(String userEmail) {
+        Optional<User> userOptional = userRepository.findByEmail(userEmail);
+        if (userOptional.isEmpty()) return ApiResponse.error("User not found");
+
+        User user = userOptional.get();
+        List<OfferResponse> responses = user.getFavoriteOffers().stream()
+                .map(this::mapToResponse)
+                .toList();
+        return ApiResponse.success("Favorite offers fetched", responses);
     }
 
     @Override

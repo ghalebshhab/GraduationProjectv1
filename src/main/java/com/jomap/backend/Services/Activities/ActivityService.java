@@ -43,4 +43,8 @@ public interface ActivityService {
     ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(Long registrationId, String status);
 
     ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> getMyRegistration(Long activityId, String email);
+
+    ApiResponse<String> toggleFavoriteActivity(Long activityId, String userEmail);
+
+    ApiResponse<List<ActivityResponse>> getFavoriteActivities(String userEmail);
 }

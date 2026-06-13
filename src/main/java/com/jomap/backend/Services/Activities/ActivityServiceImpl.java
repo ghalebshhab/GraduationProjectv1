@@ -444,6 +444,18 @@ public class ActivityServiceImpl implements ActivityService {
 
         int actualAttendeesCount = registrationRepository.countByActivityIdAndStatus(activity.getId(), com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED);
 
+        boolean isFavorite = false;
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    isFavorite = userOpt.get().getFavoriteEvents().stream().anyMatch(a -> a.getId().equals(activity.getId()));
+                }
+            }
+        } catch (Exception ignored) { }
+
         return ActivityResponse.builder()
                 .id(activity.getId())
                 .title(activity.getTitle())
@@ -460,13 +472,14 @@ public class ActivityServiceImpl implements ActivityService {
                 .attendeesCount(actualAttendeesCount)
                 .longitude(activity.getLongitude())
                 .statusId((long) activity.getStatus().getId())
-                .createdById(activity.getCreatedBy().getId())
-                .createdByUsername(activity.getCreatedBy().getUsername())
+                .createdById(activity.getCreatedBy() != null ? activity.getCreatedBy().getId() : null)
+                .createdByUsername(activity.getCreatedBy() != null ? activity.getCreatedBy().getUsername() : null)
                 .scheduleType(activity.getScheduleType())
                 .totalActualDays(activity.getTotalActualDays())
                 .schedules(scheduleDtos)
                 .locationPhone(locationPhone)
                 .locationEmail(locationEmail)
+                .isFavorite(isFavorite)
                 .build();
     }
     
@@ -599,13 +612,47 @@ public class ActivityServiceImpl implements ActivityService {
         if (userOptional.isEmpty()) {
             return ApiResponse.error("المستخدم غير موجود");
         }
-        User user = userOptional.get();
-
-        Optional<com.jomap.backend.Entities.Activities.Registration> regOpt = registrationRepository.findByActivityIdAndUserId(activityId, user.getId());
+        
+        Optional<com.jomap.backend.Entities.Activities.Registration> regOpt = registrationRepository.findByActivityIdAndUserId(activityId, userOptional.get().getId());
         if (regOpt.isEmpty()) {
-            return ApiResponse.success("لا يوجد تسجيل", null);
+            return ApiResponse.error("لم يتم العثور على تسجيل");
         }
-
-        return ApiResponse.success("تم جلب التسجيل بنجاح", mapToRegistrationResponse(regOpt.get()));
+        
+        return ApiResponse.success("تم جلب التسجيل", mapToRegistrationResponse(regOpt.get()));
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> toggleFavoriteActivity(Long activityId, String userEmail) {
+        Optional<User> userOptional = userRepository.findByEmail(userEmail);
+        if (userOptional.isEmpty()) return ApiResponse.error("User not found");
+
+        User user = userOptional.get();
+        Activity activity = activityRepository.findById(activityId).orElse(null);
+        if (activity == null) return ApiResponse.error("Activity not found");
+
+        boolean isFavorited = user.getFavoriteEvents().stream().anyMatch(a -> a.getId().equals(activityId));
+        if (isFavorited) {
+            user.getFavoriteEvents().removeIf(a -> a.getId().equals(activityId));
+            userRepository.save(user);
+            return ApiResponse.success("Removed from favorites", null);
+        } else {
+            user.getFavoriteEvents().add(activity);
+            userRepository.save(user);
+            return ApiResponse.success("Added to favorites", null);
+        }
+    }
+
+    @Override
+    public ApiResponse<List<ActivityResponse>> getFavoriteActivities(String userEmail) {
+        Optional<User> userOptional = userRepository.findByEmail(userEmail);
+        if (userOptional.isEmpty()) return ApiResponse.error("User not found");
+
+        User user = userOptional.get();
+        List<ActivityResponse> responses = user.getFavoriteEvents().stream()
+                .map(this::mapToResponse)
+                .toList();
+        return ApiResponse.success("Favorite activities fetched", responses);
+    }
+
 }

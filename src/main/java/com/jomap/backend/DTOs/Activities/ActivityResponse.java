@@ -53,4 +53,6 @@ public class ActivityResponse {
     private String locationPhone;
 
     private String locationEmail;
+
+    private Boolean isFavorite;
 }

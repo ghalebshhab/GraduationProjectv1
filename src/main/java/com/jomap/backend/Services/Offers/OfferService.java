@@ -12,4 +12,6 @@ public interface OfferService {
     ApiResponse<List<OfferResponse>> getOffersByLocation(Long locationId);
     ApiResponse<OfferResponse> cancelOffer(Long offerId, String email);
     ApiResponse<OfferResponse> deleteOffer(Long offerId, String email);
+    ApiResponse<String> toggleFavoriteOffer(Long offerId, String userEmail);
+    ApiResponse<List<OfferResponse>> getFavoriteOffers(String userEmail);
 }

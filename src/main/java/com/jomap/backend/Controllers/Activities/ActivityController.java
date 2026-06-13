@@ -57,6 +57,25 @@ public class ActivityController {
         return ActivityService.getActivityById(id);
     }
 
+    @PostMapping("/{id}/favorite")
+    public ApiResponse<String> toggleFavorite(
+            @PathVariable("id") Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ApiResponse.error("Unauthorized");
+        }
+        return ActivityService.toggleFavoriteActivity(id, principal.getName());
+    }
+
+    @GetMapping("/favorites")
+    public ApiResponse<List<ActivityResponse>> getFavorites(Principal principal) {
+        if (principal == null) {
+            return ApiResponse.error("Unauthorized");
+        }
+        return ActivityService.getFavoriteActivities(principal.getName());
+    }
+
     @GetMapping("/location/{locationId}")
     public ApiResponse<List<ActivityResponse>> getActivitiesByLocation(@PathVariable Long locationId) {
         return ActivityService.getActivitiesByLocation(locationId);
