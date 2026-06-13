@@ -82,6 +82,11 @@ public class OfferServiceImpl implements OfferService {
                 return ApiResponse.error("عذراً، يجب أن تكون حالة المنشأة منشورة (PUBLISHED) لتتمكن من إضافة عرض");
             }
 
+            if (location.getCategory() == com.jomap.backend.Entities.Locations.LocationCategory.VOLUNTEER_TEAM || 
+                location.getCategory() == com.jomap.backend.Entities.Locations.LocationCategory.ORGANIZATION) {
+                return ApiResponse.error("عذراً، الأفرقة التطوعية والمنظمات غير مصرح لها بإضافة عروض");
+            }
+
             Optional<Governorate> optionalGov = governorateRepository.findById(request.getGovernorateId());
             if (optionalGov.isEmpty()) {
                 return ApiResponse.error("العملية مرفوضة: المحافظة المحددة غير مدعومة حالياً");
