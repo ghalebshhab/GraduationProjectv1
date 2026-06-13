@@ -21,6 +21,7 @@ public enum LocationCategory {
     PUBLIC_SERVICES(15, "خدمات عامة"),
     VOLUNTEER_TEAM(16, "فريق تطوعي"), 
     ORGANIZATION(17, "منظمة/جمعية"), 
+    RESTAURANT(19, "مطعم"),
     OTHER(18, "أخرى");
 
     private final int id;

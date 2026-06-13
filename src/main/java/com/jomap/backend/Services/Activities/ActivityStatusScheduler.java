@@ -93,10 +93,10 @@ public class ActivityStatusScheduler {
     private LocalTime parseTime(String timeStr) {
         if (timeStr == null) return null;
         try {
-            return LocalTime.parse(timeStr.trim(), DateTimeFormatter.ofPattern("hh:mm a"));
+            return LocalTime.parse(timeStr.trim(), DateTimeFormatter.ofPattern("hh:mm a", java.util.Locale.ENGLISH));
         } catch (Exception e) {
             try {
-                return LocalTime.parse(timeStr.trim(), DateTimeFormatter.ofPattern("h:mm a"));
+                return LocalTime.parse(timeStr.trim(), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.ENGLISH));
             } catch (Exception e2) {
                 try {
                     return LocalTime.parse(timeStr.trim(), DateTimeFormatter.ofPattern("HH:mm"));

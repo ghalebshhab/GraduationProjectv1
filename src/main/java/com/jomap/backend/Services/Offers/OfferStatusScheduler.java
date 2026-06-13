@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 public class OfferStatusScheduler {
@@ -32,7 +34,7 @@ public class OfferStatusScheduler {
         for (Offer offer : scheduledOffers) {
             try {
                 LocalDate startDate = LocalDate.parse(offer.getStartDate());
-                LocalTime startTime = LocalTime.parse(offer.getStartTime());
+                LocalTime startTime = parseTimeSafely(offer.getStartTime());
                 LocalDateTime startDateTime = LocalDateTime.of(startDate, startTime);
 
                 if (!now.isBefore(startDateTime)) {
@@ -49,7 +51,7 @@ public class OfferStatusScheduler {
         for (Offer offer : activeOffers) {
             try {
                 LocalDate endDate = LocalDate.parse(offer.getEndDate());
-                LocalTime endTime = LocalTime.parse(offer.getEndTime());
+                LocalTime endTime = parseTimeSafely(offer.getEndTime());
                 LocalDateTime endDateTime = LocalDateTime.of(endDate, endTime);
 
                 if (now.isAfter(endDateTime)) {
@@ -59,6 +61,27 @@ public class OfferStatusScheduler {
             } catch (Exception e) {
                 System.err.println("Error parsing end date/time for offer " + offer.getId() + ": " + e.getMessage());
             }
+        }
+    }
+
+    private LocalTime parseTimeSafely(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) return LocalTime.MIDNIGHT;
+        timeStr = timeStr.trim().toUpperCase();
+        try {
+            if (timeStr.contains("AM") || timeStr.contains("PM")) {
+                // Try 12-hour format like 07:00 AM or 7:00 AM
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH);
+                try {
+                    return LocalTime.parse(timeStr, formatter);
+                } catch (Exception ex) {
+                    DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
+                    return LocalTime.parse(timeStr, formatter2);
+                }
+            } else {
+                return LocalTime.parse(timeStr);
+            }
+        } catch (Exception e) {
+            return LocalTime.MIDNIGHT; // Fallback so it doesn't crash the loop
         }
     }
 }
