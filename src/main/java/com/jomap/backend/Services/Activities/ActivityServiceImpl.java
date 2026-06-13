@@ -39,6 +39,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final PostRepository postRepository;
     private final LocationRepo locationRepo;
     private final com.jomap.backend.Entities.Activities.RegistrationRepository registrationRepository;
+    private final com.jomap.backend.Entities.Feedback.FeedbackRepository feedbackRepository;
     private final com.jomap.backend.Services.Notefications.EmailService emailService;
 
     @Override
@@ -431,11 +432,13 @@ public class ActivityServiceImpl implements ActivityService {
 
         String locationPhone = null;
         String locationEmail = null;
+        String locationName = null;
         if (activity.getCreatedBy() != null) {
             Optional<LocationList> locationOpt = locationRepo.findByOwnerId(activity.getCreatedBy().getId());
             if (locationOpt.isPresent()) {
                 locationPhone = locationOpt.get().getPhoneNumber();
                 locationEmail = locationOpt.get().getEmail();
+                locationName = locationOpt.get().getName();
             } else {
                 locationPhone = activity.getCreatedBy().getPhoneNumber();
                 locationEmail = activity.getCreatedBy().getEmail();
@@ -445,16 +448,29 @@ public class ActivityServiceImpl implements ActivityService {
         int actualAttendeesCount = registrationRepository.countByActivityIdAndStatus(activity.getId(), com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED);
 
         boolean isFavorite = false;
+        String registrationStatus = null;
         try {
             org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 String email = auth.getName();
                 Optional<User> userOpt = userRepository.findByEmail(email);
                 if (userOpt.isPresent()) {
-                    isFavorite = userOpt.get().getFavoriteEvents().stream().anyMatch(a -> a.getId().equals(activity.getId()));
+                    User user = userOpt.get();
+                    isFavorite = user.getFavoriteEvents().stream().anyMatch(a -> a.getId().equals(activity.getId()));
+                    Optional<com.jomap.backend.Entities.Activities.Registration> regOpt = registrationRepository.findByActivityIdAndUserId(activity.getId(), user.getId());
+                    if (regOpt.isPresent()) {
+                        registrationStatus = regOpt.get().getStatus().name();
+                    }
                 }
             }
         } catch (Exception ignored) { }
+
+        List<com.jomap.backend.Entities.Feedback.Feedback> feedbacks = feedbackRepository.findByTargetTypeAndTargetIdAndIsDeletedFalseOrderByCreatedAtDesc(
+                com.jomap.backend.Entities.Feedback.TargetType.ACTIVITY, activity.getId());
+        double averageRating = 0.0;
+        if (!feedbacks.isEmpty()) {
+            averageRating = feedbacks.stream().mapToInt(com.jomap.backend.Entities.Feedback.Feedback::getRating).average().orElse(0.0);
+        }
 
         return ActivityResponse.builder()
                 .id(activity.getId())
@@ -479,7 +495,11 @@ public class ActivityServiceImpl implements ActivityService {
                 .schedules(scheduleDtos)
                 .locationPhone(locationPhone)
                 .locationEmail(locationEmail)
+                .locationName(locationName)
                 .isFavorite(isFavorite)
+                .registrationStatus(registrationStatus)
+                .averageRating(averageRating)
+                .reviewCount(feedbacks.size())
                 .build();
     }
     

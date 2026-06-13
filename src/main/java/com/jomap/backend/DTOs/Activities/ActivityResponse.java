@@ -55,4 +55,12 @@ public class ActivityResponse {
     private String locationEmail;
 
     private Boolean isFavorite;
+
+    private String locationName;
+
+    private String registrationStatus;
+    
+    private Double averageRating;
+
+    private Integer reviewCount;
 }
