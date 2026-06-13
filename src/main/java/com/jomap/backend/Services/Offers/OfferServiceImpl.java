@@ -53,8 +53,8 @@ public class OfferServiceImpl implements OfferService {
         try {
             java.time.LocalDate startDate = java.time.LocalDate.parse(request.getStartDate());
             java.time.LocalDate endDate = java.time.LocalDate.parse(request.getEndDate());
-            java.time.LocalTime startTime = java.time.LocalTime.parse(request.getStartTime());
-            java.time.LocalTime endTime = java.time.LocalTime.parse(request.getEndTime());
+            java.time.LocalTime startTime = parseTime(request.getStartTime());
+            java.time.LocalTime endTime = parseTime(request.getEndTime());
 
             if (endDate.isBefore(startDate)) {
                 return ApiResponse.error("لا يمكن أن يكون تاريخ النهاية أقدم من تاريخ البداية");
@@ -62,7 +62,7 @@ public class OfferServiceImpl implements OfferService {
             if (startDate.equals(endDate) && !endTime.isAfter(startTime)) {
                 return ApiResponse.error("في نفس اليوم، يجب أن يكون وقت النهاية بعد وقت البداية");
             }
-        } catch (java.time.format.DateTimeParseException e) {
+        } catch (Exception e) {
             return ApiResponse.error("صيغة التاريخ أو الوقت غير صحيحة، الرجاء التأكد من الإدخال");
         }
 
@@ -290,5 +290,14 @@ public class OfferServiceImpl implements OfferService {
         Offer savedOffer = offerRepo.save(offer);
         
         return ApiResponse.success("تم حذف العرض بنجاح", mapToResponse(savedOffer));
+    }
+
+    private java.time.LocalTime parseTime(String time) {
+        try {
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("hh:mm a");
+            return java.time.LocalTime.parse(time.trim(), formatter);
+        } catch (Exception e) {
+            return java.time.LocalTime.parse(time.trim()); // standard HH:mm or HH:mm:ss
+        }
     }
 }

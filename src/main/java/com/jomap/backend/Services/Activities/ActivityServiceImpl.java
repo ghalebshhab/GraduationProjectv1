@@ -408,8 +408,12 @@ public class ActivityServiceImpl implements ActivityService {
 
 
     private LocalTime parseTime(String time) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
-        return LocalTime.parse(time, formatter);
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+            return LocalTime.parse(time.trim(), formatter);
+        } catch (Exception e) {
+            return LocalTime.parse(time.trim());
+        }
     }
 
     private ActivityResponse mapToResponse(Activity activity) {

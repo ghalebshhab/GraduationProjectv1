@@ -23,6 +23,7 @@ public class ActivityStatusScheduler {
     private final ActivityRepository activityRepository;
 
     @Scheduled(fixedRate = 300000) // Runs every 5 minutes
+    @org.springframework.transaction.annotation.Transactional
     public void updateCompletedActivities() {
         log.info("Running scheduled job to check for completed activities...");
         LocalDateTime now = LocalDateTime.now();

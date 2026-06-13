@@ -157,8 +157,8 @@ public class LocationServiceImpl implements LocationService {
             LocationStatus currentStatus = location.getStatus();
 
             if (newStatus == LocationStatus.PUBLISHED) {
-                if (currentStatus != LocationStatus.APPROVED && currentStatus != LocationStatus.DEACTIVATED) {
-                    return ApiResponse.error("لا يمكن نشر المنشأة إلا إذا كانت حالتها مقبولة أو معطلة مؤقتاً");
+                if (currentStatus != LocationStatus.APPROVED && currentStatus != LocationStatus.DEACTIVATED && currentStatus != LocationStatus.DELETED) {
+                    return ApiResponse.error("لا يمكن نشر المنشأة إلا إذا كانت حالتها مقبولة أو معطلة مؤقتاً أو محذوفة ومؤجلة الحذف");
                 }
             } else if (newStatus == LocationStatus.DEACTIVATED) {
                 if (currentStatus != LocationStatus.PUBLISHED) {
@@ -344,8 +344,13 @@ public class LocationServiceImpl implements LocationService {
             java.time.LocalDateTime targetTime = location.getDeletedAt().plusHours(24);
             long seconds = java.time.Duration.between(java.time.LocalDateTime.now(), targetTime).getSeconds();
             response.setTimeLeftInSeconds(Math.max(0, seconds));
+            System.out.println("[DEBUG-TIMER] locationId=" + location.getId() + " status=" + location.getStatus() + 
+                " deletedAt=" + location.getDeletedAt() + " now=" + java.time.LocalDateTime.now() + 
+                " targetTime=" + targetTime + " secondsLeft=" + seconds + " finalValue=" + Math.max(0, seconds));
         } else {
             response.setTimeLeftInSeconds(0L);
+            System.out.println("[DEBUG-TIMER] locationId=" + location.getId() + " status=" + location.getStatus() + 
+                " deletedAt is NULL. Setting timeLeftInSeconds to 0");
         }
         
         return response;
