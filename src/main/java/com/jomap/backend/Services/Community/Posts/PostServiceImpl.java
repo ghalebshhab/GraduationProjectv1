@@ -201,8 +201,18 @@ public class PostServiceImpl implements PostsServices {
         post.setContent(request.getContent().trim());
         post.setMediaUrl(request.getMediaUrl());
 
-        post.setType(Post.PostType.OWNER); // Set type as OWNER based on user request
         post.setCategory("ACTIVITY"); // Set category as ACTIVITY based on user request
+
+        if (request.getType() != null && !request.getType().isBlank()) {
+            try {
+                String typeStr = request.getType().trim().toUpperCase().replace(" ", "_");
+                post.setType(Post.PostType.valueOf(typeStr));
+            } catch (IllegalArgumentException ex) {
+                return ApiResponse.error("Invalid type for activity post: must be OWNER, LIVE_COVERAGE, or ADS_ACTIVITY");
+            }
+        } else {
+            post.setType(Post.PostType.OWNER); // fallback
+        }
         
         post.setLatitude(request.getLatitude());
         post.setLongitude(request.getLongitude());

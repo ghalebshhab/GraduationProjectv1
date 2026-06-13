@@ -19,6 +19,9 @@ public class CreateActivityPostRequest {
     @Size(max = 500)
     private String mediaUrl;
 
+    @NotBlank
+    private String type;
+
     @DecimalMin(value = "-90.0",  message = "Latitude must be >= -90")
     @DecimalMax(value = "90.0",   message = "Latitude must be <= 90")
     private Double latitude;
