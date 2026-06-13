@@ -69,7 +69,8 @@ public class LocationList {
     private String facebookUrl;
     private String instagramUrl;
     private String linkedInUrl;
-    private String workingHours;
+    @jakarta.persistence.OneToMany(mappedBy = "location", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<LocationSchedule> schedules = new java.util.ArrayList<>();
 
     private Double rating = 0.0;
     private Integer reviewCount = 0;

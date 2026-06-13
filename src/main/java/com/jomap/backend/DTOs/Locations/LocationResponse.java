@@ -26,7 +26,8 @@ public class LocationResponse {
     private String facebookUrl;
     private String instagramUrl;
     private String linkedInUrl;
-    private String workingHours;
+    private java.util.List<LocationSchedule> schedules;
+    private Boolean isOpenNow;
 
     private Double rating;
     private Integer reviewCount;

@@ -281,7 +281,18 @@ public class LocationServiceImpl implements LocationService {
         location.setFacebookUrl(request.getFacebookUrl());
         location.setInstagramUrl(request.getInstagramUrl());
         location.setLinkedInUrl(request.getLinkedInUrl());
-        location.setWorkingHours(request.getWorkingHours());
+        if (request.getSchedules() != null) {
+            location.getSchedules().clear();
+            for (com.jomap.backend.DTOs.Locations.LocationSchedule dto : request.getSchedules()) {
+                com.jomap.backend.Entities.Locations.LocationSchedule schedule = new com.jomap.backend.Entities.Locations.LocationSchedule();
+                schedule.setDayName(dto.getDayName());
+                schedule.setStartTime(dto.getStartTime());
+                schedule.setEndTime(dto.getEndTime());
+                schedule.setIsClosed(dto.getIsClosed() != null ? dto.getIsClosed() : false);
+                schedule.setLocation(location);
+                location.getSchedules().add(schedule);
+            }
+        }
         location.setOwnerUpdate(request.getOwnerUpdate());
     }
 
@@ -313,8 +324,19 @@ public class LocationServiceImpl implements LocationService {
             location.setInstagramUrl(request.getInstagramUrl());
         if (request.getLinkedInUrl() != null)
             location.setLinkedInUrl(request.getLinkedInUrl());
-        if (request.getWorkingHours() != null)
-            location.setWorkingHours(request.getWorkingHours());
+            
+        if (request.getSchedules() != null) {
+            location.getSchedules().clear();
+            for (com.jomap.backend.DTOs.Locations.LocationSchedule dto : request.getSchedules()) {
+                com.jomap.backend.Entities.Locations.LocationSchedule schedule = new com.jomap.backend.Entities.Locations.LocationSchedule();
+                schedule.setDayName(dto.getDayName());
+                schedule.setStartTime(dto.getStartTime());
+                schedule.setEndTime(dto.getEndTime());
+                schedule.setIsClosed(dto.getIsClosed() != null ? dto.getIsClosed() : false);
+                schedule.setLocation(location);
+                location.getSchedules().add(schedule);
+            }
+        }
     }
 
     private ApiResponse<User> getUserByEmail(String email) {
@@ -368,7 +390,40 @@ public class LocationServiceImpl implements LocationService {
         response.setFacebookUrl(location.getFacebookUrl());
         response.setInstagramUrl(location.getInstagramUrl());
         response.setLinkedInUrl(location.getLinkedInUrl());
-        response.setWorkingHours(location.getWorkingHours());
+        
+        java.util.List<com.jomap.backend.DTOs.Locations.LocationSchedule> scheduleDTOs = new java.util.ArrayList<>();
+        boolean isOpenNow = false;
+        String currentDayName = getCurrentArabicDayName();
+        java.time.LocalTime now = java.time.LocalTime.now();
+
+        if (location.getSchedules() != null) {
+            for (com.jomap.backend.Entities.Locations.LocationSchedule s : location.getSchedules()) {
+                scheduleDTOs.add(new com.jomap.backend.DTOs.Locations.LocationSchedule(
+                    s.getDayName(), s.getStartTime(), s.getEndTime(), s.getIsClosed()
+                ));
+
+                if (s.getDayName() != null && s.getDayName().equals(currentDayName)) {
+                    if (Boolean.TRUE.equals(s.getIsClosed())) {
+                        isOpenNow = false;
+                    } else if (s.getStartTime() != null && s.getEndTime() != null) {
+                        try {
+                            java.time.LocalTime start = java.time.LocalTime.parse(s.getStartTime());
+                            java.time.LocalTime end = java.time.LocalTime.parse(s.getEndTime());
+                            if (start.isBefore(end)) {
+                                isOpenNow = !now.isBefore(start) && !now.isAfter(end);
+                            } else {
+                                isOpenNow = !now.isBefore(start) || !now.isAfter(end);
+                            }
+                        } catch (Exception e) {
+                            isOpenNow = false;
+                        }
+                    }
+                }
+            }
+        }
+        response.setSchedules(scheduleDTOs);
+        response.setIsOpenNow(isOpenNow);
+
         response.setRejectionReason(location.getRejectionReason());
         
         if (location.getDeletedAt() != null) {
@@ -411,5 +466,19 @@ public class LocationServiceImpl implements LocationService {
 
         locationRepository.save(location);
         return ApiResponse.success("تم تحديث الصورة بنجاح", mapToResponse(location));
+    }
+
+    private String getCurrentArabicDayName() {
+        java.time.DayOfWeek day = java.time.LocalDate.now().getDayOfWeek();
+        switch (day) {
+            case MONDAY: return "الإثنين";
+            case TUESDAY: return "الثلاثاء";
+            case WEDNESDAY: return "الأربعاء";
+            case THURSDAY: return "الخميس";
+            case FRIDAY: return "الجمعة";
+            case SATURDAY: return "السبت";
+            case SUNDAY: return "الأحد";
+            default: return "";
+        }
     }
 }

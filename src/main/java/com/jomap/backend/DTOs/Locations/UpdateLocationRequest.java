@@ -43,5 +43,5 @@ public class UpdateLocationRequest {
     private String facebookUrl;
     private String instagramUrl;
     private String linkedInUrl;
-    private String workingHours;
+    private java.util.List<LocationSchedule> schedules;
 }
