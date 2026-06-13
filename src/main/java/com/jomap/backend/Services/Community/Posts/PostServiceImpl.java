@@ -250,16 +250,15 @@ public class PostServiceImpl implements PostsServices {
 
         if (request.getType() != null && !request.getType().isBlank()) {
             try {
-                post.setType(Post.PostType.valueOf(request.getType().trim().toUpperCase()));
+                String typeStr = request.getType().trim().toUpperCase().replace(" ", "_");
+                post.setType(Post.PostType.valueOf(typeStr));
             } catch (IllegalArgumentException ex) {
-                return ApiResponse.error("Invalid post type: must be COMMUNITY, Activity, or OFFER");
+                return ApiResponse.error("Invalid post type: must be COMMUNITY, ACTIVITY, OFFER, USER, OWNER, LIVE_COVERAGE, ADS_ACTIVITY, or POST");
             }
         }
 
         // Category & coordinates — now properly wired from the DTO
-        if (request.getCategory() != null && !request.getCategory().isBlank()) {
-            post.setCategory(request.getCategory().trim().toUpperCase());
-        }
+        // Note: category should never be changed after create
         if (request.getLatitude() != null)
             post.setLatitude(request.getLatitude());
         if (request.getLongitude() != null)
