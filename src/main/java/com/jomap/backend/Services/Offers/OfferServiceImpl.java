@@ -236,7 +236,7 @@ public class OfferServiceImpl implements OfferService {
     public ApiResponse<List<OfferResponse>> getOffersByLocation(Long locationId) {
         List<OfferResponse> offers = offerRepo.findByLocationId(locationId)
                 .stream()
-                .filter(o -> o.getStatus() == OfferStatus.ACTIVE)
+                .filter(o -> o.getStatus() == OfferStatus.ACTIVE || o.getStatus() == OfferStatus.EXPIRED)
                 .map(this::mapToResponse)
                 .toList();
         return ApiResponse.success("تم جلب العروض بنجاح", offers);
