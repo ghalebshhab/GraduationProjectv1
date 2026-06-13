@@ -91,8 +91,8 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
 
-        // Here we could also update the Location/Activity average rating and reviewCount
-        // For now we just add the feedback
+        // Update the Location/Activity average rating and reviewCount
+        updateTargetStats(type, request.getTargetId());
 
         return ApiResponse.success("تم إضافة التقييم بنجاح", mapToResponse(savedFeedback));
     }
@@ -166,6 +166,8 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedback.setUpdatedAt(LocalDateTime.now());
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
+        updateTargetStats(savedFeedback.getTargetType(), savedFeedback.getTargetId());
+        
         return ApiResponse.success("تم تعديل التقييم بنجاح", mapToResponse(savedFeedback));
     }
 
@@ -189,6 +191,9 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedback.setIsDeleted(true);
         feedback.setDeletedAt(LocalDateTime.now());
         feedbackRepository.save(feedback);
+        
+        updateTargetStats(feedback.getTargetType(), feedback.getTargetId());
+        
         return ApiResponse.success("تم حذف التقييم بنجاح", null);
     }
 
@@ -326,5 +331,37 @@ public class FeedbackServiceImpl implements FeedbackService {
         }
         
         return response;
+    }
+
+    private void updateTargetStats(TargetType type, Long targetId) {
+        List<Feedback> feedbacks = feedbackRepository.findByTargetTypeAndTargetIdAndIsDeletedFalseOrderByCreatedAtDesc(type, targetId);
+        
+        int reviewCount = feedbacks.size();
+        double rating = 0.0;
+        
+        if (reviewCount > 0) {
+            double sum = 0.0;
+            for (Feedback f : feedbacks) {
+                sum += f.getRating();
+            }
+            rating = Math.round((sum / reviewCount) * 10.0) / 10.0;
+        }
+        
+        final int finalReviewCount = reviewCount;
+        final double finalRating = rating;
+
+        if (type == TargetType.LOCATION) {
+            locationRepo.findById(targetId).ifPresent(loc -> {
+                loc.setReviewCount(finalReviewCount);
+                loc.setRating(finalRating);
+                locationRepo.save(loc);
+            });
+        } else if (type == TargetType.ACTIVITY) {
+            // activityRepository.findById(targetId).ifPresent(act -> {
+            //    act.setReviewCount(finalReviewCount);
+            //    act.setRating(finalRating);
+            //    activityRepository.save(act);
+            // });
+        }
     }
 }
