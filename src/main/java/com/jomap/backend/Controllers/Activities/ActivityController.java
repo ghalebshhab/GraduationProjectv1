@@ -165,18 +165,27 @@ public class ActivityController {
     public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(
             @PathVariable Long regId,
             @RequestParam(required = false) String status,
-            @RequestBody(required = false) java.util.Map<String, String> body) {
+            @RequestBody(required = false) java.util.Map<String, String> body,
+            Principal principal) {
             
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+
         String finalStatus = status;
-        if (finalStatus == null && body != null && body.containsKey("status")) {
-            finalStatus = body.get("status");
+        if (finalStatus == null && body != null) {
+            if (body.containsKey("status")) {
+                finalStatus = body.get("status");
+            } else if (body.containsKey("statusId")) {
+                finalStatus = String.valueOf(body.get("statusId"));
+            }
         }
         
         if (finalStatus == null) {
             return ApiResponse.error("الحالة مطلوبة");
         }
         
-        return ActivityService.updateRegistrationStatus(regId, finalStatus);
+        return ActivityService.updateRegistrationStatus(regId, finalStatus, principal.getName());
     }
 
     @GetMapping("/{id}/my-registration")

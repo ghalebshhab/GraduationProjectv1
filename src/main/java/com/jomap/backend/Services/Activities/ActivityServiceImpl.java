@@ -566,7 +566,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
-    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(Long registrationId, String statusStr) {
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatus(Long registrationId, String statusStr, String currentUserEmail) {
         Optional<com.jomap.backend.Entities.Activities.Registration> registrationOptional = registrationRepository.findById(registrationId);
         if (registrationOptional.isEmpty()) {
             return ApiResponse.error("طلب التسجيل غير موجود");
@@ -595,8 +595,46 @@ public class ActivityServiceImpl implements ActivityService {
             }
         }
 
+        User currentUser = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (currentUser == null) {
+            return ApiResponse.error("المستخدم غير موجود");
+        }
+
+        boolean isActivityOwner = registration.getActivity().getCreatedBy().getId().equals(currentUser.getId());
+        boolean isRegistrationOwner = registration.getUser().getId().equals(currentUser.getId());
+
+        if (!isActivityOwner && !isRegistrationOwner) {
+            return ApiResponse.error("لا تملك صلاحية لتعديل هذا الطلب");
+        }
+
+        if (isRegistrationOwner && !isActivityOwner) {
+            // User can only withdraw
+            if (status != com.jomap.backend.Entities.Activities.RegistrationStatus.WITHDRAWN) {
+                return ApiResponse.error("المستخدم يمكنه فقط الانسحاب من الفعالية");
+            }
+        }
+
+        if (isActivityOwner && !isRegistrationOwner) {
+            // Owner cannot withdraw
+            if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.WITHDRAWN) {
+                return ApiResponse.error("صاحب الفعالية لا يمكنه تعيين حالة انسحاب");
+            }
+        }
+
         registration.setStatus(status);
         com.jomap.backend.Entities.Activities.Registration savedRegistration = registrationRepository.save(registration);
+
+        // Send email based on status change
+        if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED) {
+            String customMessage = "تم قبول طلب تسجيلك بنجاح. شكراً لك.";
+            emailService.sendActivityStatusNotification(registration.getUser().getEmail(), registration.getActivity().getTitle(), status.getLabel(), customMessage);
+        } else if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.REJECTED) {
+            String customMessage = "نأسف، تم رفض طلب تسجيلك في هذه الفعالية.";
+            emailService.sendActivityStatusNotification(registration.getUser().getEmail(), registration.getActivity().getTitle(), status.getLabel(), customMessage);
+        } else if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.CANCELLED) {
+            String customMessage = "تم إلغاء طلب تسجيلك في هذه الفعالية من قبل المنظم.";
+            emailService.sendActivityStatusNotification(registration.getUser().getEmail(), registration.getActivity().getTitle(), status.getLabel(), customMessage);
+        }
 
         return ApiResponse.success("تم تحديث حالة التسجيل بنجاح", mapToRegistrationResponse(savedRegistration));
     }
