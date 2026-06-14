@@ -353,6 +353,78 @@ public class PostServiceImpl implements PostsServices {
         return ApiResponse.success("Personalized feed fetched successfully", responses);
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<PostResponse>> getUnifiedFeed(
+            String emailFromToken,
+            Double userLat,
+            Double userLng,
+            int page,
+            int size) {
+        
+        User currentUser = null;
+        if (emailFromToken != null && !emailFromToken.isBlank()) {
+            currentUser = userRepository.findByEmail(emailFromToken).orElse(null);
+        }
+
+        List<Post> candidates = postRepository
+                .findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .toList();
+
+        if (candidates.isEmpty()) {
+            return ApiResponse.success("Feed fetched successfully", 
+                new com.jomap.backend.DTOs.PaginatedResponse<>(List.of(), page, size, 0, 0, true));
+        }
+
+        Map<String, Double> interestProfile = currentUser != null ? buildUserInterestProfile(currentUser.getId()) : Collections.emptyMap();
+        boolean isColdStart = interestProfile.isEmpty();
+
+        List<Long> postIds = candidates.stream().map(Post::getId).toList();
+        Map<Long, Long> likeCounts = likesService.countByPostIds(postIds);
+        Map<Long, Long> commentCounts = commentsService.countByPostIds(postIds);
+
+        List<ScoredPost> scoredPosts = candidates.stream()
+                .map(post -> scorePost(post, interestProfile, isColdStart,
+                        userLat, userLng, likeCounts, commentCounts))
+                .sorted(Comparator.comparingDouble(ScoredPost::score).reversed())
+                .toList();
+
+        int totalElements = scoredPosts.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        int fromIndex = page * size;
+        
+        List<PostResponse> responses;
+        if (fromIndex >= totalElements) {
+            responses = List.of();
+        } else {
+            int toIndex = Math.min(fromIndex + size, totalElements);
+            responses = scoredPosts.subList(fromIndex, toIndex)
+                    .stream()
+                    .map(sp -> toResponse(sp.post(), sp.distanceKm(), sp.scoreReason()))
+                    .toList();
+        }
+
+        if (currentUser != null && !responses.isEmpty()) {
+            List<Long> likedPostIds = likesService.getPostIdsLikedByUser(currentUser.getId());
+            List<Long> savedPostIds = savedPostsRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
+                    .stream().map(sp -> sp.getPost().getId()).toList();
+
+            responses.forEach(r -> {
+                r.setLikedByCurrentUser(likedPostIds.contains(r.getId()));
+                r.setSavedByCurrentUser(savedPostIds.contains(r.getId()));
+            });
+        }
+
+        boolean last = (page + 1) >= totalPages;
+        
+        com.jomap.backend.DTOs.PaginatedResponse<PostResponse> paginated = 
+            new com.jomap.backend.DTOs.PaginatedResponse<>(responses, page, size, totalElements, totalPages, last);
+
+        return ApiResponse.success("Feed fetched successfully", paginated);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // INTEREST PROFILE BUILDER
     //
@@ -403,7 +475,7 @@ public class PostServiceImpl implements PostsServices {
             Post post,
             Map<String, Double> interestProfile,
             boolean isColdStart,
-            double userLat, double userLng,
+            Double userLat, Double userLng,
             Map<Long, Long> likeCounts,
             Map<Long, Long> commentCounts) {
         double interestScore = computeInterestScore(post, interestProfile);
@@ -442,15 +514,15 @@ public class PostServiceImpl implements PostsServices {
     // Posts with no coordinates score 0 but can still surface via
     // interest/engagement.
 
-    private double computeLocationScore(Post post, double userLat, double userLng) {
-        if (post.getLatitude() == null || post.getLongitude() == null)
+    private double computeLocationScore(Post post, Double userLat, Double userLng) {
+        if (post.getLatitude() == null || post.getLongitude() == null || userLat == null || userLng == null)
             return 0.0;
         double distKm = haversineKm(userLat, userLng, post.getLatitude(), post.getLongitude());
         return Math.exp(-distKm / NEAR_RADIUS_KM);
     }
 
-    private Double computeDistanceKm(Post post, double userLat, double userLng) {
-        if (post.getLatitude() == null || post.getLongitude() == null)
+    private Double computeDistanceKm(Post post, Double userLat, Double userLng) {
+        if (post.getLatitude() == null || post.getLongitude() == null || userLat == null || userLng == null)
             return null;
         return haversineKm(userLat, userLng, post.getLatitude(), post.getLongitude());
     }

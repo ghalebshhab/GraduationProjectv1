@@ -26,6 +26,8 @@ public interface PostsServices {
 
         ApiResponse<List<PostResponse>> getPersonalizedFeed(String emailFromToken, double userLat, double userLng, int page, int size);
 
+        ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<PostResponse>> getUnifiedFeed(String emailFromToken, Double userLat, Double userLng, int page, int size);
+
         ApiResponse<List<PostResponse>> getMyPosts(String emailFromToken);
 
         ApiResponse<List<PostResponse>> getUserPosts(Long userId);

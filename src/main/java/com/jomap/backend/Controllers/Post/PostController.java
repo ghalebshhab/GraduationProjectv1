@@ -64,6 +64,18 @@ public class PostController {
         return ResponseEntity.ok(postService.getPersonalizedFeed(authentication.getName(), lat, lng, page, size));
     }
 
+    @GetMapping("/feed/all")
+    public ResponseEntity<ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<PostResponse>>> getUnifiedFeed(
+            Authentication authentication,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size
+    ) {
+        String email = authentication != null ? authentication.getName() : null;
+        return ResponseEntity.ok(postService.getUnifiedFeed(email, lat, lng, page, size));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<PostResponse>> createPost(
             Authentication authentication,
