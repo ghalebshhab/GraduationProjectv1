@@ -116,15 +116,22 @@ public class AuthServiceImpl implements AuthService {
     public ApiResponse<LoginResponse> login(LoginRequest request) {
 
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            return ApiResponse.error("Email is required");
+            return ApiResponse.error("Email or username is required");
         }
 
-        String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String loginInput = request.getEmail().trim();
 
-        Optional<User> optionalUser = userRepository.findByEmail(normalizedEmail);
+        Optional<User> optionalUser;
+
+        if (loginInput.contains("@")) {
+            String normalizedEmail = loginInput.toLowerCase(Locale.ROOT);
+            optionalUser = userRepository.findByEmail(normalizedEmail);
+        } else {
+            optionalUser = userRepository.findByUsername(loginInput);
+        }
 
         if (optionalUser.isEmpty()) {
-            return ApiResponse.error("User with this email does not exist");
+            return ApiResponse.error("User with this email or username does not exist");
         }
 
         User user = optionalUser.get();
