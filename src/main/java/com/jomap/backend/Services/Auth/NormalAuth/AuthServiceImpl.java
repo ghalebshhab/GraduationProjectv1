@@ -22,6 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Slf4j
@@ -41,27 +42,32 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public ApiResponse<RegisterResponse> register(RegisterRequest request) {
 
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return ApiResponse.error("Email is required");
+        }
+
+        String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+
         if (request.getPhoneNumber() == null ||
                 (!request.getPhoneNumber().matches("^\\+9627\\d{8}$")
                         && !request.getPhoneNumber().matches("^07\\d{8}$"))) {
-            //return ApiResponse.error("Phone number must be like +9627XXXXXXXX or 07XXXXXXXX");
-            return ApiResponse.error("يجب أن يكون رقم الهاتف بالصيغة الصحيحة مثل +9627XXXXXXXX أو 07XXXXXXXX");
+            return ApiResponse.error("Phone number must be like +9627XXXXXXXX or 07XXXXXXXX");
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            return ApiResponse.error("البريد الإلكتروني مستخدم بالفعل");
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            return ApiResponse.error("Email already exists");
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            return ApiResponse.error("اسم المستخدم مستخدم بالفعل");
+            return ApiResponse.error("UserName is already used");
         }
 
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            return ApiResponse.error("رقم الهاتف مستخدم بالفعل");
+            return ApiResponse.error("Phone number is already used");
         }
 
         User user = new User();
-        user.setEmail(request.getEmail().trim());
+        user.setEmail(normalizedEmail);
         user.setUsername(request.getUsername().trim());
         user.setPhoneNumber(request.getPhoneNumber().trim());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -70,26 +76,15 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // 🎯 التعديل الصحيح والمطابق للـ Constructor تبعك بالملي:
-UserProfile profile = new UserProfile(
-        savedUser,
-        request.getFirstName().trim(),
-        request.getLastName().trim(),
-        request.getGender(),
-        request.getDateOfBirth(), // هاد الـ birthDate (LocalDate)
-        ""                   
-);
+        UserProfile profile = new UserProfile();
+        profile.setUser(savedUser);
+        userProfileRepository.save(profile);
 
-userProfileRepository.save(profile);
-
-        //////////////////////////////////////////////////////////////////////////////////
         try {
             emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //////////////////////////////////////////////////////////////////////////////////
-
 
         RegisterResponse response = new RegisterResponse(
                 savedUser.getId(),
@@ -102,8 +97,8 @@ userProfileRepository.save(profile);
                 profile.getBirthDate(),
                 savedUser.getRole().name());
 
-return ApiResponse.success("تم تسجيل الحساب بنجاح", response);    }
-    // new edits
+        return ApiResponse.success("Registered successfully", response);
+    }
 
     @Override
     @Transactional
