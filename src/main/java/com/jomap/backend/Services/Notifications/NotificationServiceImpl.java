@@ -76,6 +76,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ApiResponse<List<NotificationResponse>> getUserNotifications(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -91,6 +92,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ApiResponse<List<NotificationResponse>> getUserNotificationsByCategory(String email, String categoryParam) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -177,14 +179,20 @@ public class NotificationServiceImpl implements NotificationService {
         String fromUserProfileImage = null;
 
         if (notification.getFromUser() != null) {
-            fromUsername = notification.getFromUser().getUsername();
-            if (notification.getFromUser().getProfile() != null && notification.getFromUser().getProfile().getFirstName() != null) {
-                fromUsername = notification.getFromUser().getProfile().getFirstName() + " " + notification.getFromUser().getProfile().getLastName();
-            }
-            if (notification.getFromUser().getProfileImageUrl() != null) {
-                fromUserProfileImage = notification.getFromUser().getProfileImageUrl();
-            } else if (notification.getFromUser().getProfile() != null && notification.getFromUser().getProfile().getProfileImageUrl() != null) {
-                fromUserProfileImage = notification.getFromUser().getProfile().getProfileImageUrl();
+            try {
+                User fromUser = notification.getFromUser();
+                fromUsername = fromUser.getUsername();
+                if (fromUser.getProfile() != null && fromUser.getProfile().getFirstName() != null) {
+                    fromUsername = fromUser.getProfile().getFirstName() + " " + fromUser.getProfile().getLastName();
+                }
+                
+                if (fromUser.getProfileImageUrl() != null) {
+                    fromUserProfileImage = fromUser.getProfileImageUrl();
+                } else if (fromUser.getProfile() != null && fromUser.getProfile().getProfileImageUrl() != null) {
+                    fromUserProfileImage = fromUser.getProfile().getProfileImageUrl();
+                }
+            } catch (Exception e) {
+                System.out.println("Error fetching profile info for notification: " + e.getMessage());
             }
         }
 
