@@ -104,35 +104,39 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public ApiResponse<LoginResponse> login(LoginRequest request) {
 
-        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return ApiResponse.error("Email is required");
+        }
+
+        String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        Optional<User> optionalUser = userRepository.findByEmail(normalizedEmail);
 
         if (optionalUser.isEmpty()) {
-            //return ApiResponse.error("User with this email does not exist");
-            return ApiResponse.error("عذراً، هذا البريد الإلكتروني غير مسجل بالنظام");
+            return ApiResponse.error("User with this email does not exist");
         }
 
         User user = optionalUser.get();
 
         boolean passwordMatches = passwordEncoder.matches(
                 request.getPassword(),
-                user.getPasswordHash());
+                user.getPasswordHash()
+        );
 
         if (!passwordMatches) {
-            //return ApiResponse.error("Incorrect password");
-            return ApiResponse.error("كلمة المرور التي أدخلتها غير صحيحة");
+            return ApiResponse.error("Incorrect password");
         }
 
-        
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            return ApiResponse.error("This user account is not active");
+        }
+
         if (!userProfileRepository.existsByUserId(user.getId())) {
             UserProfile profile = new UserProfile();
             profile.setUser(user);
             userProfileRepository.save(profile);
         }
-         try {
-         emailService.sendLoginSuccessEmail(user.getEmail(), user.getUsername());
-         } catch (Exception e) {
-         e.printStackTrace();
-         }
+
         String token = jwtService.generateToken(user.getEmail());
 
         LoginResponse response = new LoginResponse(
@@ -141,13 +145,11 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getUsername(),
-                user.getRole().name());
+                user.getRole().name()
+        );
 
-        //return ApiResponse.success("Logged in successfully", response);
-        return ApiResponse.success("تم تسجيل الدخول بنجاح", response);
+        return ApiResponse.success("Logged in successfully", response);
     }
-
-
 
 
 
