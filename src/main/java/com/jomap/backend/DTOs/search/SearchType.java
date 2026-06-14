@@ -5,5 +5,6 @@ public enum SearchType {
     ACTIVITY,
     EVENT,
     LOCATION,
+    ORGANIZATION,
     OFFER
 }

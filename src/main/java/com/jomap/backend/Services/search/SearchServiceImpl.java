@@ -151,7 +151,12 @@ public class SearchServiceImpl implements SearchService {
     private SearchItem toLocationSearchItem(LocationList location, User currentUser) {
         SearchItem item = new SearchItem();
         item.setId(location.getId());
-        item.setType(SearchType.LOCATION);
+        if (location.getCategory() == com.jomap.backend.Entities.Locations.LocationCategory.ORGANIZATION || 
+            location.getCategory() == com.jomap.backend.Entities.Locations.LocationCategory.VOLUNTEER_TEAM) {
+            item.setType(SearchType.ORGANIZATION);
+        } else {
+            item.setType(SearchType.LOCATION);
+        }
         item.setTitle(location.getName());
         item.setSubTitle(firstNonBlank(location.getDescription(), categoryLabel(location)));
         item.setLocationName(location.getName());
