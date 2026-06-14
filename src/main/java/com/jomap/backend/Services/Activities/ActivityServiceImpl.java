@@ -418,6 +418,21 @@ public class ActivityServiceImpl implements ActivityService {
         }
     }
 
+    private java.time.LocalDateTime parseScheduleDateTime(String dateStr, String timeStr) {
+        java.time.LocalDate date;
+        try {
+            date = java.time.LocalDate.parse(dateStr.trim(), DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (Exception e) {
+            try {
+                date = java.time.LocalDate.parse(dateStr.trim(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            } catch (Exception e2) {
+                return java.time.LocalDateTime.MAX;
+            }
+        }
+        LocalTime time = parseTime(timeStr);
+        return java.time.LocalDateTime.of(date, time);
+    }
+
     private ActivityResponse mapToResponse(Activity activity) {
         List<ActivitySchedule> scheduleDtos = new ArrayList<>();
         if (activity.getSchedules() != null) {
@@ -537,6 +552,18 @@ public class ActivityServiceImpl implements ActivityService {
             return ApiResponse.error("الفعالية غير موجودة");
         }
         Activity activity = activityOptional.get();
+
+        if (activity.getSchedules() != null && !activity.getSchedules().isEmpty()) {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            java.time.LocalDateTime earliestSchedule = activity.getSchedules().stream()
+                .map(s -> parseScheduleDateTime(s.getDate(), s.getStartTime()))
+                .min(java.time.LocalDateTime::compareTo)
+                .orElse(java.time.LocalDateTime.MAX);
+
+            if (now.isAfter(earliestSchedule)) {
+                return ApiResponse.error("عذراً، لا يمكن التسجيل لأن الفعالية قد بدأت بالفعل");
+            }
+        }
 
         if (registrationRepository.existsByActivityIdAndUserId(activityId, user.getId())) {
             return ApiResponse.error("لقد قمت بالتسجيل في هذه الفعالية مسبقاً");
