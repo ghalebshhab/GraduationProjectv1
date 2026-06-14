@@ -14,7 +14,8 @@ public class SearchItem {
     private Double rating;
     private Double distanceKm;
     private Double distance;
-    private String eventDate;
+    @com.fasterxml.jackson.annotation.JsonProperty("activityDate")
+    private String activityDate;
     private String locationName;
     private String friendshipStatus;
     private String category;
@@ -32,4 +33,22 @@ public class SearchItem {
 
     @com.fasterxml.jackson.annotation.JsonProperty("governorateName")
     private String governorateName;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("startDate")
+    private String startDate;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("endDate")
+    private String endDate;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("price")
+    private Double price;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("activityLocation")
+    private String activityLocation;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("itemsCount")
+    private Integer itemsCount;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("status")
+    private String status;
 }

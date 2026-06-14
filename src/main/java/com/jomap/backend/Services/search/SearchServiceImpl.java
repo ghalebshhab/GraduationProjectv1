@@ -136,7 +136,7 @@ public class SearchServiceImpl implements SearchService {
     private SearchItem toEventSearchItem(Activity activity, User currentUser) {
         SearchItem item = new SearchItem();
         item.setId(activity.getId());
-        item.setType(SearchType.EVENT);
+        item.setType(SearchType.ACTIVITY);
         item.setTitle(activity.getTitle());
         item.setSubTitle(firstNonBlank(activity.getActivityLocation(), activity.getDescription()));
         item.setLocationName(activity.getActivityLocation());
@@ -156,7 +156,15 @@ public class SearchServiceImpl implements SearchService {
 
         if (activity.getSchedules() != null && !activity.getSchedules().isEmpty()) {
             ActivitySchedule firstSchedule = activity.getSchedules().get(0);
-            item.setEventDate(firstSchedule.getDate());
+            item.setActivityDate(firstSchedule.getDate());
+            item.setStartDate(firstSchedule.getDate());
+            item.setEndDate(activity.getSchedules().get(activity.getSchedules().size() - 1).getDate());
+        }
+
+        item.setPrice(activity.getPrice());
+        item.setActivityLocation(activity.getActivityLocation());
+        if (activity.getStatus() != null) {
+            item.setStatus(activity.getStatus().getLabel());
         }
 
         return item;
@@ -220,6 +228,10 @@ public class SearchServiceImpl implements SearchService {
         }
         item.setIsOpenNow(isOpenNow);
 
+        if (location.getStatus() != null) {
+            item.setStatus(location.getStatus().getLabel());
+        }
+
         return item;
     }
 
@@ -267,10 +279,17 @@ public class SearchServiceImpl implements SearchService {
 
         String sDate = offer.getStartDate();
         String eDate = offer.getEndDate();
+        item.setStartDate(sDate);
+        item.setEndDate(eDate);
+        item.setItemsCount(offer.getProducts() != null ? offer.getProducts().size() : 0);
+        if (offer.getStatus() != null) {
+            item.setStatus(offer.getStatus().getLabel());
+        }
+
         if (sDate != null && !sDate.isBlank()) {
-            item.setEventDate(sDate + (eDate != null && !eDate.isBlank() ? " - " + eDate : ""));
+            item.setActivityDate(sDate + (eDate != null && !eDate.isBlank() ? " - " + eDate : ""));
         } else if (eDate != null && !eDate.isBlank()) {
-            item.setEventDate(eDate);
+            item.setActivityDate(eDate);
         }
 
         return item;
