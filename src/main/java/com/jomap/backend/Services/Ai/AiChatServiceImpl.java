@@ -11,9 +11,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.Map;
 
+import com.jomap.backend.Entities.Ai.AiSuggestedQuestionRepository;
+
 @Service
 @RequiredArgsConstructor
 public class AiChatServiceImpl implements AiChatService {
+
+    private final AiSuggestedQuestionRepository suggestedQuestionRepository;
 
     @Value("${gemini.api.key}")
     private String geminiApiKey;
@@ -112,5 +116,23 @@ public class AiChatServiceImpl implements AiChatService {
         }
 
         return firstPart.get("text").toString();
+    }
+
+    @Override
+    public ApiResponse<List<String>> getSuggestedQuestions(int count) {
+        if (count <= 0) {
+            count = 4;
+        }
+
+        List<String> allActive = suggestedQuestionRepository.findAllActiveQuestions();
+        if (allActive.isEmpty()) {
+            return ApiResponse.success("تم جلب الأسئلة المقترحة بنجاح", List.of());
+        }
+
+        List<String> shuffled = new java.util.ArrayList<>(allActive);
+        java.util.Collections.shuffle(shuffled);
+
+        List<String> selected = shuffled.subList(0, Math.min(count, shuffled.size()));
+        return ApiResponse.success("تم جلب الأسئلة المقترحة بنجاح", selected);
     }
 }

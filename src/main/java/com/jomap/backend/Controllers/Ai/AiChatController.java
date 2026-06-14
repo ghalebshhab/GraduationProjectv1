@@ -19,4 +19,10 @@ public class AiChatController {
     public ApiResponse<AiChatResponse> chat(@Valid @RequestBody AiChatRequest request) {
         return aiChatService.chat(request);
     }
+
+    @GetMapping("/suggested-questions")
+    public ApiResponse<java.util.List<String>> getSuggestedQuestions(
+            @RequestParam(defaultValue = "4") int count) {
+        return aiChatService.getSuggestedQuestions(count);
+    }
 }

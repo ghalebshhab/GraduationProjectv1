@@ -5,6 +5,8 @@ server:
     include-binding-errors: always
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://ep-hidden-dew-annaq7wt-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
     username: neondb_owner
@@ -48,12 +50,12 @@ spring:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 app:
-    google:
-      client-id: 819033309831-c9n98js1qev5o49nnovpo3f2vn8h8e6m.apps.googleusercontent.com
+  google:
+    client-id: 819033309831-c9n98js1qev5o49nnovpo3f2vn8h8e6m.apps.googleusercontent.com
 
-    facebook:
-      app-id: 26700675972951501
-      app-secret: 96312ae0d443ae022cd008afc12bc380
+  facebook:
+    app-id: 26700675972951501
+    app-secret: 96312ae0d443ae022cd008afc12bc380
 gemini:
   api:
     key: ${GEMINI_API_KEY}
