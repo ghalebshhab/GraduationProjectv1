@@ -61,17 +61,17 @@ public class SearchServiceImpl implements SearchService {
 
         activityRepository.findTop10ByStatusInOrderByIdDesc(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED))
                 .stream()
-                .map(this::toEventSearchItem)
+                .map(act -> toEventSearchItem(act, finalCurrentUser))
                 .forEach(items::add);
 
         locationRepository.findTop10ByActiveTrueOrderByIdDesc()
                 .stream()
-                .map(this::toLocationSearchItem)
+                .map(loc -> toLocationSearchItem(loc, finalCurrentUser))
                 .forEach(items::add);
 
         offerRepository.findTop10ByStatusOrderByIdDesc(OfferStatus.ACTIVE)
                 .stream()
-                .map(this::toOfferSearchItem)
+                .map(off -> toOfferSearchItem(off, finalCurrentUser))
                 .forEach(items::add);
 
         return ApiResponse.success("Items retrieved successfully", items);
@@ -119,7 +119,7 @@ public class SearchServiceImpl implements SearchService {
         return item;
     }
 
-    private SearchItem toEventSearchItem(Activity activity) {
+    private SearchItem toEventSearchItem(Activity activity, User currentUser) {
         SearchItem item = new SearchItem();
         item.setId(activity.getId());
         item.setType(SearchType.EVENT);
@@ -129,6 +129,17 @@ public class SearchServiceImpl implements SearchService {
         item.setImageUrl(activity.getImageUrl());
         item.setImageRes(0);
 
+        if (activity.getGovernorate() != null) {
+            item.setGovernorateName(activity.getGovernorate().getName());
+        }
+
+        boolean isFavorite = false;
+        if (currentUser != null && currentUser.getFavoriteEvents() != null) {
+            isFavorite = currentUser.getFavoriteEvents().stream()
+                    .anyMatch(a -> a.getId().equals(activity.getId()));
+        }
+        item.setIsFavorite(isFavorite);
+
         if (activity.getSchedules() != null && !activity.getSchedules().isEmpty()) {
             ActivitySchedule firstSchedule = activity.getSchedules().get(0);
             item.setEventDate(firstSchedule.getDate());
@@ -137,7 +148,7 @@ public class SearchServiceImpl implements SearchService {
         return item;
     }
 
-    private SearchItem toLocationSearchItem(LocationList location) {
+    private SearchItem toLocationSearchItem(LocationList location, User currentUser) {
         SearchItem item = new SearchItem();
         item.setId(location.getId());
         item.setType(SearchType.LOCATION);
@@ -145,9 +156,51 @@ public class SearchServiceImpl implements SearchService {
         item.setSubTitle(firstNonBlank(location.getDescription(), categoryLabel(location)));
         item.setLocationName(location.getName());
         item.setRating(location.getRating());
-        item.setImageUrl(location.getCoverUrl() != null ? location.getCoverUrl() : location.getLogoUrl());
+        item.setImageUrl(location.getLogoUrl());
         item.setImageRes(0);
         item.setCategory(categoryLabel(location));
+        
+        if (location.getGovernorate() != null) {
+            item.setGovernorateName(location.getGovernorate().getName());
+        }
+        
+        item.setCoverUrl(location.getCoverUrl());
+        item.setReviewCount(location.getReviewCount());
+
+        boolean isFavorite = false;
+        if (currentUser != null && currentUser.getFavoriteLocations() != null) {
+            isFavorite = currentUser.getFavoriteLocations().stream()
+                    .anyMatch(l -> l.getId().equals(location.getId()));
+        }
+        item.setIsFavorite(isFavorite);
+
+        boolean isOpenNow = false;
+        String currentDayName = getCurrentArabicDayName();
+        java.time.LocalTime now = java.time.LocalTime.now();
+
+        if (location.getSchedules() != null) {
+            for (com.jomap.backend.Entities.Locations.LocationSchedule s : location.getSchedules()) {
+                if (s.getDayName() != null && s.getDayName().equals(currentDayName)) {
+                    if (Boolean.TRUE.equals(s.getIsClosed())) {
+                        isOpenNow = false;
+                    } else if (s.getStartTime() != null && s.getEndTime() != null) {
+                        try {
+                            java.time.LocalTime start = java.time.LocalTime.parse(s.getStartTime());
+                            java.time.LocalTime end = java.time.LocalTime.parse(s.getEndTime());
+                            if (start.isBefore(end)) {
+                                isOpenNow = !now.isBefore(start) && !now.isAfter(end);
+                            } else {
+                                isOpenNow = !now.isBefore(start) || !now.isAfter(end);
+                            }
+                        } catch (Exception e) {
+                            isOpenNow = false;
+                        }
+                    }
+                }
+            }
+        }
+        item.setIsOpenNow(isOpenNow);
+
         return item;
     }
 
@@ -169,7 +222,7 @@ public class SearchServiceImpl implements SearchService {
         return location.getCategory() != null ? location.getCategory().name() : null;
     }
 
-    private SearchItem toOfferSearchItem(Offer offer) {
+    private SearchItem toOfferSearchItem(Offer offer, User currentUser) {
         SearchItem item = new SearchItem();
         item.setId(offer.getId());
         item.setType(SearchType.OFFER);
@@ -182,6 +235,17 @@ public class SearchServiceImpl implements SearchService {
             item.setLocationName(offer.getLocation().getName());
         }
 
+        if (offer.getGovernorate() != null) {
+            item.setGovernorateName(offer.getGovernorate().getName());
+        }
+
+        boolean isFavorite = false;
+        if (currentUser != null && currentUser.getFavoriteOffers() != null) {
+            isFavorite = currentUser.getFavoriteOffers().stream()
+                    .anyMatch(o -> o.getId().equals(offer.getId()));
+        }
+        item.setIsFavorite(isFavorite);
+
         String sDate = offer.getStartDate();
         String eDate = offer.getEndDate();
         if (sDate != null && !sDate.isBlank()) {
@@ -191,5 +255,19 @@ public class SearchServiceImpl implements SearchService {
         }
 
         return item;
+    }
+
+    private String getCurrentArabicDayName() {
+        java.time.DayOfWeek day = java.time.LocalDate.now().getDayOfWeek();
+        switch (day) {
+            case MONDAY: return "الإثنين";
+            case TUESDAY: return "الثلاثاء";
+            case WEDNESDAY: return "الأربعاء";
+            case THURSDAY: return "الخميس";
+            case FRIDAY: return "الجمعة";
+            case SATURDAY: return "السبت";
+            case SUNDAY: return "الأحد";
+            default: return "";
+        }
     }
 }
