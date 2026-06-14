@@ -278,12 +278,12 @@ public class OfferServiceImpl implements OfferService {
     }
 
     @Override
-    public ApiResponse<List<OfferResponse>> getAllOffers() {
-        List<OfferResponse> offers = offerRepo.findAllByOrderByIdDesc()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-        return ApiResponse.success("تم جلب جميع العروض بنجاح", offers);
+    public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<OfferResponse>> getAllOffers(int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Offer> offerPage = offerRepo.findAllByOrderByIdDesc(pageable);
+        
+        org.springframework.data.domain.Page<OfferResponse> responsePage = offerPage.map(this::mapToResponse);
+        return ApiResponse.success("تم جلب العروض بنجاح", com.jomap.backend.DTOs.PaginatedResponse.from(responsePage));
     }
 
     @Override

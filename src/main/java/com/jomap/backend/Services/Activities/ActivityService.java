@@ -16,7 +16,7 @@ public interface ActivityService {
 
     ApiResponse<List<ActivityResponse>> getMyActivities(String email);
 
-    ApiResponse<List<ActivityResponse>> getApprovedActivities();
+    ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<ActivityResponse>> getApprovedActivities(int page, int size);
 
     ApiResponse<List<ActivityResponse>> getUpcomingApprovedActivities();
 

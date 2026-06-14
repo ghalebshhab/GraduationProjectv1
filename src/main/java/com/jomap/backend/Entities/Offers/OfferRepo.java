@@ -25,4 +25,5 @@ public interface OfferRepo extends JpaRepository<Offer, Long> {
     List<Offer> findTop5OffersByGovernorate(@Param("govId") Long govId);
 
     List<Offer> findAllByOrderByIdDesc();
+    org.springframework.data.domain.Page<Offer> findAllByOrderByIdDesc(org.springframework.data.domain.Pageable pageable);
 }

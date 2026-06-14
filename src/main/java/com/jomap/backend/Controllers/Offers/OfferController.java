@@ -42,9 +42,11 @@ public class OfferController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<java.util.List<OfferResponse>>> getAllOffers() {
+    public ResponseEntity<ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<OfferResponse>>> getAllOffers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size) {
         try {
-            ApiResponse<java.util.List<OfferResponse>> response = offerService.getAllOffers();
+            ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<OfferResponse>> response = offerService.getAllOffers(page, size);
             if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {

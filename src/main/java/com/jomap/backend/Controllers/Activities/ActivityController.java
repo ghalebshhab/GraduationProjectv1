@@ -48,8 +48,10 @@ public class ActivityController {
     }
 
     @GetMapping
-    public ApiResponse<List<ActivityResponse>> getApprovedActivities() {
-        return ActivityService.getApprovedActivities();
+    public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<ActivityResponse>> getApprovedActivities(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        return ActivityService.getApprovedActivities(page, size);
     }
 
     @GetMapping("/{id}")

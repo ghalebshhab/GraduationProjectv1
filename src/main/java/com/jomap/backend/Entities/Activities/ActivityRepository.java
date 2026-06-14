@@ -30,4 +30,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     List<Activity> findTop10ByStatusInOrderByIdDesc(List<ActivityStatus> statuses);
 
     List<Activity> findByStatusInOrderByIdDesc(List<ActivityStatus> statuses);
+
+    org.springframework.data.domain.Page<Activity> findByStatusInOrderByIdDesc(List<ActivityStatus> statuses, org.springframework.data.domain.Pageable pageable);
 }

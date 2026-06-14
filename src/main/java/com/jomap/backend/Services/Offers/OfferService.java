@@ -14,5 +14,5 @@ public interface OfferService {
     ApiResponse<OfferResponse> deleteOffer(Long offerId, String email);
     ApiResponse<String> toggleFavoriteOffer(Long offerId, String userEmail);
     ApiResponse<List<OfferResponse>> getFavoriteOffers(String userEmail);
-    ApiResponse<List<OfferResponse>> getAllOffers();
+    ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<OfferResponse>> getAllOffers(int page, int size);
 }

@@ -159,13 +159,13 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    public ApiResponse<List<ActivityResponse>> getApprovedActivities() {
-        List<ActivityResponse> activities = activityRepository.findByStatusInOrderByIdDesc(
-                List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED))
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-        return ApiResponse.success("Approved Activities fetched successfully", activities);
+    public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<ActivityResponse>> getApprovedActivities(int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Activity> activityPage = activityRepository.findByStatusInOrderByIdDesc(
+                List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), pageable);
+        
+        org.springframework.data.domain.Page<ActivityResponse> responsePage = activityPage.map(this::mapToResponse);
+        return ApiResponse.success("Approved Activities fetched successfully", com.jomap.backend.DTOs.PaginatedResponse.from(responsePage));
     }
 
     @Override
