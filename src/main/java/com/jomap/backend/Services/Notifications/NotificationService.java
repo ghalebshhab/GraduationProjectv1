@@ -12,6 +12,8 @@ public interface NotificationService {
 
     ApiResponse<List<NotificationResponse>> getUserNotifications(String email);
 
+    ApiResponse<List<NotificationResponse>> getUserNotificationsByCategory(String email, String category);
+
     ApiResponse<Long> getUnreadCount(String email);
 
     ApiResponse<NotificationResponse> markAsRead(Long notificationId, String email);

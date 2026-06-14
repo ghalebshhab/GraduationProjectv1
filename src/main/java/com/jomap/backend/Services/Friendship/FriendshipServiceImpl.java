@@ -20,6 +20,7 @@ public class FriendshipServiceImpl implements FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
+    private final com.jomap.backend.Services.Notifications.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -65,6 +66,16 @@ public class FriendshipServiceImpl implements FriendshipService {
             friendship.setStatus(FriendshipStatus.PENDING);
 
             Friendship updated = friendshipRepository.save(friendship);
+
+            // Send Notification
+            com.jomap.backend.DTOs.Notifications.NotificationRequest notifReq = new com.jomap.backend.DTOs.Notifications.NotificationRequest();
+            notifReq.setText("أرسل لك " + sender.getUsername() + " طلب صداقة");
+            notifReq.setType("FRIEND_REQUEST");
+            notifReq.setCategory("USER");
+            notifReq.setToUserId(receiver.getId());
+            notifReq.setFromUserId(sender.getId());
+            notificationService.sendNotification(notifReq);
+
             return new ApiResponse<>(true, "Friend request sent again", mapToResponse(updated));
         }
 
@@ -74,6 +85,15 @@ public class FriendshipServiceImpl implements FriendshipService {
         friendship.setStatus(FriendshipStatus.PENDING);
 
         Friendship saved = friendshipRepository.save(friendship);
+
+        // Send Notification
+        com.jomap.backend.DTOs.Notifications.NotificationRequest notifReq = new com.jomap.backend.DTOs.Notifications.NotificationRequest();
+        notifReq.setText("أرسل لك " + sender.getUsername() + " طلب صداقة");
+        notifReq.setType("FRIEND_REQUEST");
+        notifReq.setCategory("USER");
+        notifReq.setToUserId(receiver.getId());
+        notifReq.setFromUserId(sender.getId());
+        notificationService.sendNotification(notifReq);
 
         return new ApiResponse<>(true, "Friend request sent successfully", mapToResponse(saved));
     }
@@ -101,6 +121,15 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
         Friendship saved = friendshipRepository.save(friendship);
+
+        // Send Notification to Requester
+        com.jomap.backend.DTOs.Notifications.NotificationRequest notifReq = new com.jomap.backend.DTOs.Notifications.NotificationRequest();
+        notifReq.setText("وافق " + receiver.getUsername() + " على طلب الصداقة");
+        notifReq.setType("SYSTEM");
+        notifReq.setCategory("USER");
+        notifReq.setToUserId(friendship.getRequester().getId());
+        notifReq.setFromUserId(receiver.getId());
+        notificationService.sendNotification(notifReq);
 
         return new ApiResponse<>(true, "Friend request accepted", mapToResponse(saved));
     }

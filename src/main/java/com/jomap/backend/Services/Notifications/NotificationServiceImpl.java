@@ -91,6 +91,28 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public ApiResponse<List<NotificationResponse>> getUserNotificationsByCategory(String email, String categoryParam) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ApiResponse.error("المستخدم غير موجود");
+        }
+
+        NotificationCategory category;
+        try {
+            category = NotificationCategory.valueOf(categoryParam.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error("تصنيف الإشعار غير صحيح");
+        }
+
+        List<NotificationResponse> responses = notificationRepository.findByToUserAndCategoryOrderByCreatedAtDesc(userOpt.get(), category)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("تم جلب الإشعارات بنجاح", responses);
+    }
+
+    @Override
     public ApiResponse<Long> getUnreadCount(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {

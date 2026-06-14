@@ -28,6 +28,15 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getUserNotifications(principal.getName()));
     }
 
+    @GetMapping("/category/{category}")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyNotificationsByCategory(
+            @PathVariable String category, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(notificationService.getUserNotificationsByCategory(principal.getName(), category));
+    }
+
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(Principal principal) {
         if (principal == null) {
