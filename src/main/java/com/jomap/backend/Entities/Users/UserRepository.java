@@ -31,4 +31,5 @@ public interface UserRepository extends JpaRepository<User,Long> {
     long countByIsActiveFalse();
 
     List<User> findTop10ByIsActiveTrueAndRoleNotOrderByIdDesc(Role role);
+    org.springframework.data.domain.Page<User> findByIsActiveTrueAndRoleNotOrderByIdDesc(Role role, org.springframework.data.domain.Pageable pageable);
 }

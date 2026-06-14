@@ -45,8 +45,9 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<SearchItem>> getAllItems(String userEmail) {
-        List<SearchItem> items = new ArrayList<>(SEARCH_LIMIT * 3);
+    public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<SearchItem>> getAllItems(String userEmail, int page, int size) {
+        List<SearchItem> items = new ArrayList<>();
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
 
         User currentUser = null;
         if (userEmail != null) {
@@ -54,27 +55,40 @@ public class SearchServiceImpl implements SearchService {
         }
         final User finalCurrentUser = currentUser;
 
-        userRepository.findTop10ByIsActiveTrueAndRoleNotOrderByIdDesc(Role.ADMIN)
-                .stream()
+        org.springframework.data.domain.Page<User> usersPage = userRepository.findByIsActiveTrueAndRoleNotOrderByIdDesc(Role.ADMIN, pageable);
+        usersPage.getContent().stream()
                 .map(u -> toUserSearchItem(u, finalCurrentUser))
                 .forEach(items::add);
 
-        activityRepository.findTop10ByStatusInOrderByIdDesc(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED))
-                .stream()
+        org.springframework.data.domain.Page<Activity> activitiesPage = activityRepository.findByStatusInOrderByIdDesc(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), pageable);
+        activitiesPage.getContent().stream()
                 .map(act -> toEventSearchItem(act, finalCurrentUser))
                 .forEach(items::add);
 
-        locationRepository.findTop10ByActiveTrueOrderByIdDesc()
-                .stream()
+        org.springframework.data.domain.Page<LocationList> locationsPage = locationRepository.findByActiveTrueAndStatusOrderByIdDesc(com.jomap.backend.Entities.Locations.LocationStatus.PUBLISHED, pageable);
+        locationsPage.getContent().stream()
                 .map(loc -> toLocationSearchItem(loc, finalCurrentUser))
                 .forEach(items::add);
 
-        offerRepository.findTop10ByStatusOrderByIdDesc(OfferStatus.ACTIVE)
-                .stream()
+        org.springframework.data.domain.Page<Offer> offersPage = offerRepository.findByStatusOrderByIdDesc(OfferStatus.ACTIVE, pageable);
+        offersPage.getContent().stream()
                 .map(off -> toOfferSearchItem(off, finalCurrentUser))
                 .forEach(items::add);
 
-        return ApiResponse.success("Items retrieved successfully", items);
+        long totalElements = usersPage.getTotalElements() + activitiesPage.getTotalElements() + locationsPage.getTotalElements() + offersPage.getTotalElements();
+        int totalPages = Math.max(Math.max(usersPage.getTotalPages(), activitiesPage.getTotalPages()), Math.max(locationsPage.getTotalPages(), offersPage.getTotalPages()));
+        boolean last = page >= totalPages - 1 || totalPages == 0;
+
+        com.jomap.backend.DTOs.PaginatedResponse<SearchItem> paginatedResponse = com.jomap.backend.DTOs.PaginatedResponse.<SearchItem>builder()
+                .content(items)
+                .pageNo(page)
+                .pageSize(size)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .last(last)
+                .build();
+
+        return ApiResponse.success("Items retrieved successfully", paginatedResponse);
     }
 
     private SearchItem toUserSearchItem(User user, User currentUser) {

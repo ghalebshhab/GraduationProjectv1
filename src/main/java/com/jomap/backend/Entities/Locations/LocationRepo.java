@@ -36,5 +36,6 @@ public interface LocationRepo extends JpaRepository<LocationList, Long> {
 
     Optional<LocationList> findByOwnerIdAndStatusNot(Long ownerId, LocationStatus status);
 
-    List<LocationList> findTop10ByActiveTrueOrderByIdDesc();
+    List<LocationList> findTop10ByActiveTrueAndStatusOrderByIdDesc(LocationStatus status);
+    org.springframework.data.domain.Page<LocationList> findByActiveTrueAndStatusOrderByIdDesc(LocationStatus status, org.springframework.data.domain.Pageable pageable);
 }

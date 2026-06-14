@@ -26,4 +26,5 @@ public interface OfferRepo extends JpaRepository<Offer, Long> {
 
     List<Offer> findAllByOrderByIdDesc();
     org.springframework.data.domain.Page<Offer> findAllByOrderByIdDesc(org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<Offer> findByStatusOrderByIdDesc(OfferStatus status, org.springframework.data.domain.Pageable pageable);
 }
