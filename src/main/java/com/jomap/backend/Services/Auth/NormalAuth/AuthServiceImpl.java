@@ -91,6 +91,10 @@ public class AuthServiceImpl implements AuthService {
 
         UserProfile profile = new UserProfile();
         profile.setUser(savedUser);
+        profile.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : null);
+        profile.setLastName(request.getLastName() != null ? request.getLastName().trim() : null);
+        profile.setGender(request.getGender() != null ? request.getGender().trim() : null);
+        profile.setBirthDate(request.getDateOfBirth());
         userProfileRepository.save(profile);
 
         try {
