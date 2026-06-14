@@ -22,6 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -37,6 +38,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserProfileRepository userProfileRepository;
     // @Value("${app.google.client-id}")
     // private String googleClientId;
+    private static final List<String> ALLOWED_EMAIL_DOMAINS = List.of(
+            "gmail.com",
+            "hotmail.com",
+            "outlook.com",
+            "yahoo.com",
+            "icloud.com"
+    );
 
     @Override
     @Transactional
@@ -47,6 +55,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        if (!isAllowedEmailDomain(normalizedEmail)) {
+            return ApiResponse.error("Email domain is not allowed");
+        }
 
         if (request.getPhoneNumber() == null ||
                 (!request.getPhoneNumber().matches("^\\+9627\\d{8}$")
@@ -99,7 +111,6 @@ public class AuthServiceImpl implements AuthService {
 
         return ApiResponse.success("Registered successfully", response);
     }
-
     @Override
     @Transactional
     public ApiResponse<LoginResponse> login(LoginRequest request) {
@@ -149,6 +160,18 @@ public class AuthServiceImpl implements AuthService {
         );
 
         return ApiResponse.success("Logged in successfully", response);
+    }
+    private boolean isAllowedEmailDomain(String email) {
+
+        int atIndex = email.lastIndexOf("@");
+
+        if (atIndex == -1 || atIndex == email.length() - 1) {
+            return false;
+        }
+
+        String domain = email.substring(atIndex + 1).toLowerCase(Locale.ROOT);
+
+        return ALLOWED_EMAIL_DOMAINS.contains(domain);
     }
 
 
