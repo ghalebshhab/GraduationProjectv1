@@ -233,7 +233,12 @@ public class PostCommentServiceImpl implements PostCommentService {
             r.setAuthorId(comment.getAuthor().getId());
             r.setAuthorUsername(comment.getAuthor().getUsername());
             r.setAuthorEmail(comment.getAuthor().getEmail());
-            r.setAuthorProfileImageUrl(comment.getAuthor().getProfileImageUrl());
+            
+            String profileImageUrl = comment.getAuthor().getProfileImageUrl();
+            if (profileImageUrl == null && comment.getAuthor().getProfile() != null) {
+                profileImageUrl = comment.getAuthor().getProfile().getProfileImageUrl();
+            }
+            r.setAuthorProfileImageUrl(profileImageUrl);
         }
 
         return r;
