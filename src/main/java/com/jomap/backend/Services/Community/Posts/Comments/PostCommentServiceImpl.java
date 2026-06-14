@@ -27,6 +27,7 @@ public class PostCommentServiceImpl implements PostCommentService {
     private final PostCommentRepository postCommentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final com.jomap.backend.Services.Notifications.NotificationService notificationService;
 
     @Override
     public ApiResponse<List<PostCommentResponse>> getCommentsByPostId(Long postId) {
@@ -104,6 +105,18 @@ public class PostCommentServiceImpl implements PostCommentService {
             System.out.println("Before saveAndFlush...");
             PostComment saved = postCommentRepository.saveAndFlush(comment);
             System.out.println("After saveAndFlush, saved id = " + saved.getId());
+
+            // Notification Logic
+            if ("USER".equalsIgnoreCase(post.getCategory()) && !post.getAuthor().getId().equals(user.getId())) {
+                com.jomap.backend.DTOs.Notifications.NotificationRequest notifReq = new com.jomap.backend.DTOs.Notifications.NotificationRequest();
+                notifReq.setText("علق " + user.getUsername() + " على منشورك");
+                notifReq.setType("COMMENT");
+                notifReq.setCategory("USER");
+                notifReq.setToUserId(post.getAuthor().getId());
+                notifReq.setFromUserId(user.getId());
+                notifReq.setPostId(post.getId());
+                notificationService.sendNotification(notifReq);
+            }
 
             return ApiResponse.success("Comment added successfully", toResponse(saved));
 
