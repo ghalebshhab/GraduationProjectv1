@@ -24,6 +24,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "اسم المستخدم مطلوب")
     @Size(min = 3, max = 120)
+    @jakarta.validation.constraints.Pattern(regexp = "^[a-z](?!(?:.*_){2})(?!(?:.*\\.){2})[a-z0-9_.]*$", message = "اسم المستخدم يجب أن يبدأ بحرف، ويحتوي فقط على أحرف صغيرة وأرقام، ويسمح بنقطة واحدة وشرطة سفلية واحدة فقط")
     private String username;
 
     @NotBlank(message = "البريد الإلكتروني مطلوب")

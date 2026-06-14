@@ -55,6 +55,10 @@ public class AuthServiceImpl implements AuthService {
             return ApiResponse.error("Email is required");
         }
 
+        if (request.getUsername() == null || !request.getUsername().matches("^[a-z](?!(?:.*_){2})(?!(?:.*\\.){2})[a-z0-9_.]*$")) {
+            return ApiResponse.error("Username must start with a letter, contain only lowercase letters/numbers, and use at most one dot and one underscore");
+        }
+
         String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
 
         if (!isAllowedEmailDomain(normalizedEmail)) {
