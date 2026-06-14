@@ -214,6 +214,7 @@ public class OfferServiceImpl implements OfferService {
                 .endTime(offer.getEndTime())
                 .products(productDtos)
                 .locationId(offer.getLocation().getId())
+                .locationName(offer.getLocation().getName())
                 .imageUrl(offer.getImageUrl())
                 .latitude(offer.getLatitude())
                 .longitude(offer.getLongitude())
@@ -274,6 +275,15 @@ public class OfferServiceImpl implements OfferService {
                 .map(this::mapToResponse)
                 .toList();
         return ApiResponse.success("Favorite offers fetched", responses);
+    }
+
+    @Override
+    public ApiResponse<List<OfferResponse>> getAllOffers() {
+        List<OfferResponse> offers = offerRepo.findAllByOrderByIdDesc()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+        return ApiResponse.success("تم جلب جميع العروض بنجاح", offers);
     }
 
     @Override

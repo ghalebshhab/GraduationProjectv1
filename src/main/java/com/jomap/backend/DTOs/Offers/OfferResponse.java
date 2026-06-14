@@ -23,6 +23,7 @@ public class OfferResponse {
     private String endTime;
     private List<OfferProductResponse> products;
     private Long locationId;
+    private String locationName;
     private String imageUrl;
     private Double latitude;
     private Double longitude;

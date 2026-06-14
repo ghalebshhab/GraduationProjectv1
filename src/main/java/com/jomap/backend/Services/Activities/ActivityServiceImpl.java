@@ -160,7 +160,8 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public ApiResponse<List<ActivityResponse>> getApprovedActivities() {
-        List<ActivityResponse> activities = activityRepository.findByStatus(ActivityStatus.APPROVED)
+        List<ActivityResponse> activities = activityRepository.findByStatusInOrderByIdDesc(
+                List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED))
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

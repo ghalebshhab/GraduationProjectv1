@@ -41,6 +41,21 @@ public class OfferController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<java.util.List<OfferResponse>>> getAllOffers() {
+        try {
+            ApiResponse<java.util.List<OfferResponse>> response = offerService.getAllOffers();
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("حدث خطأ أثناء جلب العروض: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<java.util.List<OfferResponse>>> getMyOffers(Principal principal) {
         try {

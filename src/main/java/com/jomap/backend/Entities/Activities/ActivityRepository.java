@@ -28,4 +28,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     List<Activity> findTop10ByStatusOrderByIdDesc(ActivityStatus status);
 
     List<Activity> findTop10ByStatusInOrderByIdDesc(List<ActivityStatus> statuses);
+
+    List<Activity> findByStatusInOrderByIdDesc(List<ActivityStatus> statuses);
 }

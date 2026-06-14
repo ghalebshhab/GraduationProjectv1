@@ -21,7 +21,8 @@ public interface OfferRepo extends JpaRepository<Offer, Long> {
     // جلب آخر 10 عروض مقبولة نزلت بالسيستم للـ Community Feed
     List<Offer> findTop10ByStatusOrderByIdDesc(OfferStatus status);
 
-    // استعلام فخم لجلب العروض النشطة داخل محافظة معينة مرتبة حسب الأحدث
     @Query("SELECT DISTINCT o FROM Offer o JOIN o.products p WHERE o.governorate.id = :govId AND o.status = 'APPROVED' ORDER BY o.id DESC")
     List<Offer> findTop5OffersByGovernorate(@Param("govId") Long govId);
+
+    List<Offer> findAllByOrderByIdDesc();
 }

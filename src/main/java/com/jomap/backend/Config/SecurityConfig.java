@@ -58,8 +58,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/search/**")
                                                 .permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/locations/**")
-                                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/offers").permitAll()
                                                 .anyRequest().authenticated())
                                 .userDetailsService(userDetailsService)
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
