@@ -43,7 +43,8 @@ public class AuthServiceImpl implements AuthService {
             "hotmail.com",
             "outlook.com",
             "yahoo.com",
-            "icloud.com"
+            "icloud.com",
+            "jomap.com"
     );
 
     @Override
