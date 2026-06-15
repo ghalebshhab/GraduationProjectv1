@@ -51,4 +51,13 @@ public class SearchItem {
 
     @com.fasterxml.jackson.annotation.JsonProperty("status")
     private String status;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("locationId")
+    private Long locationId;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("schedules")
+    private java.util.List<com.jomap.backend.DTOs.Activities.ActivitySchedule> schedules;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("offerProducts")
+    private java.util.List<com.jomap.backend.DTOs.Offers.OfferProductResponse> offerProducts;
 }

@@ -139,7 +139,11 @@ public class SearchServiceImpl implements SearchService {
         item.setType(SearchType.ACTIVITY);
         item.setTitle(activity.getTitle());
         item.setSubTitle(firstNonBlank(activity.getActivityLocation(), activity.getDescription()));
-        item.setLocationName(activity.getActivityLocation());
+        // locationName = اسم المنشأة المنظِّمة (للرابط الأزرق أعلى الكارد)
+        if (activity.getLocationId() != null) {
+            locationRepository.findById(activity.getLocationId())
+                .ifPresent(loc -> item.setLocationName(loc.getName()));
+        }
         item.setImageUrl(activity.getImageUrl());
         item.setImageRes(0);
 
@@ -159,10 +163,18 @@ public class SearchServiceImpl implements SearchService {
             item.setActivityDate(firstSchedule.getDate());
             item.setStartDate(firstSchedule.getDate());
             item.setEndDate(activity.getSchedules().get(activity.getSchedules().size() - 1).getDate());
+            
+            item.setSchedules(activity.getSchedules().stream()
+                .map(s -> new com.jomap.backend.DTOs.Activities.ActivitySchedule(s.getDate(), s.getDayName(), s.getStartTime(), s.getEndTime()))
+                .collect(java.util.stream.Collectors.toList()));
+        } else {
+            item.setSchedules(new java.util.ArrayList<>());
         }
 
         item.setPrice(activity.getPrice());
         item.setActivityLocation(activity.getActivityLocation());
+        item.setLocationId(activity.getLocationId());
+        
         if (activity.getStatus() != null) {
             item.setStatus(activity.getStatus().getLabel());
         }
@@ -264,6 +276,7 @@ public class SearchServiceImpl implements SearchService {
         
         if (offer.getLocation() != null) {
             item.setLocationName(offer.getLocation().getName());
+            item.setLocationId(offer.getLocation().getId());
         }
 
         if (offer.getGovernorate() != null) {
@@ -281,7 +294,17 @@ public class SearchServiceImpl implements SearchService {
         String eDate = offer.getEndDate();
         item.setStartDate(sDate);
         item.setEndDate(eDate);
-        item.setItemsCount(offer.getProducts() != null ? offer.getProducts().size() : 0);
+        
+        if (offer.getProducts() != null) {
+            item.setItemsCount(offer.getProducts().size());
+            item.setOfferProducts(offer.getProducts().stream()
+                .map(p -> new com.jomap.backend.DTOs.Offers.OfferProductResponse(p.getId(), p.getProductName(), p.getPriceBefore(), p.getPriceAfter()))
+                .collect(java.util.stream.Collectors.toList()));
+        } else {
+            item.setItemsCount(0);
+            item.setOfferProducts(new java.util.ArrayList<>());
+        }
+        
         if (offer.getStatus() != null) {
             item.setStatus(offer.getStatus().getLabel());
         }
