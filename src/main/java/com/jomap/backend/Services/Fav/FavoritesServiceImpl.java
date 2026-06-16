@@ -2,7 +2,7 @@ package com.jomap.backend.Services.Fav;
 
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Fav.FavoriteEventDto;
-import com.jomap.backend.DTOs.Fav.FavoritePlaceDto;
+import com.jomap.backend.DTOs.Fav.FavoriteLocationDto;
 import com.jomap.backend.DTOs.Fav.FavoritePostDto;
 import com.jomap.backend.DTOs.Fav.FavoritesDataDto;
 import com.jomap.backend.Entities.Activities.Activity;
@@ -51,14 +51,14 @@ public class FavoritesServiceImpl implements FavoritesService {
         User user = userOptional.get();
         FavoritesDataDto data = new FavoritesDataDto();
 
-        List<FavoritePlaceDto> places = new ArrayList<>();
+        List<FavoriteLocationDto> locations = new ArrayList<>();
         if (user.getFavoriteLocations() != null) {
-            places.addAll(user.getFavoriteLocations().stream()
+            locations.addAll(user.getFavoriteLocations().stream()
                     .map(this::mapLocationToDto)
                     .toList());
         }
         if (user.getFavoritePlaces() != null) {
-            places.addAll(user.getFavoritePlaces().stream()
+            locations.addAll(user.getFavoritePlaces().stream()
                     .map(this::mapPlaceToDto)
                     .toList());
         }
@@ -69,7 +69,7 @@ public class FavoritesServiceImpl implements FavoritesService {
                         .map(this::mapActivityToDto)
                         .toList();
 
-        data.setPlaces(places);
+        data.setLocations(locations);
         data.setEvents(events);
         List<FavoritePostDto> posts = savedPostsRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
                 .stream()
@@ -248,32 +248,91 @@ public class FavoritesServiceImpl implements FavoritesService {
         return ApiResponse.success("تمت إزالة الفعالية من المفضلة بنجاح", null);
     }
 
-    private FavoritePlaceDto mapLocationToDto(LocationList location) {
-        FavoritePlaceDto dto = new FavoritePlaceDto();
+    private FavoriteLocationDto mapLocationToDto(LocationList location) {
+        FavoriteLocationDto dto = new FavoriteLocationDto();
         dto.setId(location.getId());
         dto.setName(location.getName());
         dto.setCategory(location.getCategory() != null ? location.getCategory().name() : null);
         dto.setDescription(location.getDescription());
-        dto.setImageUrl(location.getCoverUrl() != null ? location.getCoverUrl() : location.getLogoUrl());
+        dto.setImageUrl(location.getLogoUrl()); //imageUrl is the logo
+        dto.setCoverUrl(location.getCoverUrl()); //coverUrl is the cover URL
         dto.setRating(location.getRating());
         dto.setLatitude(location.getLatitude());
         dto.setLongitude(location.getLongitude());
         dto.setPlaceType("LOCATION");
+
+        // الحقول الإضافية البريميوم
+        dto.setGovernorateName(location.getGovernorate() != null ? location.getGovernorate().getName() : null);
+        dto.setIsOpenNow(calculateIsOpenNow(location));
+        dto.setReviewCount(location.getReviewCount() != null ? location.getReviewCount() : 0);
+        dto.setLocationType(location.getCategory() != null ? location.getCategory().name() : null);
+
         return dto;
     }
 
-    private FavoritePlaceDto mapPlaceToDto(Place place) {
-        FavoritePlaceDto dto = new FavoritePlaceDto();
+    private FavoriteLocationDto mapPlaceToDto(Place place) {
+        FavoriteLocationDto dto = new FavoriteLocationDto();
         dto.setId(place.getId());
         dto.setName(place.getName());
         dto.setCategory(place.getCategory() != null ? place.getCategory().name() : null);
         dto.setDescription(place.getDescription());
         dto.setImageUrl(place.getImageUrl());
+        dto.setCoverUrl(null);
         dto.setRating(null);
         dto.setLatitude(null);
         dto.setLongitude(null);
         dto.setPlaceType("PLACE");
+
+        // الحقول الإضافية للـ Place للتوافقية
+        dto.setGovernorateName(place.getGovernorate() != null ? place.getGovernorate().getName() : null);
+        dto.setIsOpenNow(null);
+        dto.setReviewCount(0);
+        dto.setLocationType(place.getCategory() != null ? place.getCategory().name() : null);
+
         return dto;
+    }
+
+    private boolean calculateIsOpenNow(LocationList location) {
+        boolean isOpenNow = false;
+        String currentDayName = getCurrentArabicDayName();
+        java.time.LocalTime now = java.time.LocalTime.now();
+
+        if (location.getSchedules() != null) {
+            for (com.jomap.backend.Entities.Locations.LocationSchedule s : location.getSchedules()) {
+                if (s.getDayName() != null && s.getDayName().equals(currentDayName)) {
+                    if (Boolean.TRUE.equals(s.getIsClosed())) {
+                        isOpenNow = false;
+                    } else if (s.getStartTime() != null && s.getEndTime() != null) {
+                        try {
+                            java.time.LocalTime start = java.time.LocalTime.parse(s.getStartTime());
+                            java.time.LocalTime end = java.time.LocalTime.parse(s.getEndTime());
+                            if (start.isBefore(end)) {
+                                isOpenNow = !now.isBefore(start) && !now.isAfter(end);
+                            } else {
+                                isOpenNow = !now.isBefore(start) || !now.isAfter(end);
+                            }
+                        } catch (Exception e) {
+                            isOpenNow = false;
+                        }
+                    }
+                }
+            }
+        }
+        return isOpenNow;
+    }
+
+    private String getCurrentArabicDayName() {
+        java.time.DayOfWeek day = java.time.LocalDate.now().getDayOfWeek();
+        switch (day) {
+            case MONDAY: return "الإثنين";
+            case TUESDAY: return "الثلاثاء";
+            case WEDNESDAY: return "الأربعاء";
+            case THURSDAY: return "الخميس";
+            case FRIDAY: return "الجمعة";
+            case SATURDAY: return "السبت";
+            case SUNDAY: return "الأحد";
+            default: return "";
+        }
     }
 
     private FavoriteEventDto mapActivityToDto(Activity activity) {

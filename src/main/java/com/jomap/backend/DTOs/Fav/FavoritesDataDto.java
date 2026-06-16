@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class FavoritesDataDto{
-private List<FavoritePlaceDto> places;
+private List<FavoriteLocationDto> locations;
 private List<FavoriteEventDto> events;
 private List<FavoritePostDto> posts;
 }
