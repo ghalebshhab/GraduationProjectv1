@@ -1,9 +1,10 @@
 package com.jomap.backend.DTOs.Fav;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
-public class FavoriteEventDto {
+public class FavoriteActivityDto {
     private Long id;
     private String title;
     private String description;
@@ -14,4 +15,5 @@ public class FavoriteEventDto {
     private String organizer;
     private int attendeesCount;
     private String price;
+    private List<com.jomap.backend.DTOs.Activities.ActivitySchedule> schedules;
 }

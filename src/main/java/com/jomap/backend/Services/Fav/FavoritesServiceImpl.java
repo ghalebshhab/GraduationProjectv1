@@ -1,13 +1,18 @@
 package com.jomap.backend.Services.Fav;
 
 import com.jomap.backend.DTOs.ApiResponse;
-import com.jomap.backend.DTOs.Fav.FavoriteEventDto;
+import com.jomap.backend.DTOs.Fav.FavoriteActivityDto;
 import com.jomap.backend.DTOs.Fav.FavoriteLocationDto;
+import com.jomap.backend.DTOs.Fav.FavoriteOfferDto;
 import com.jomap.backend.DTOs.Fav.FavoritePostDto;
 import com.jomap.backend.DTOs.Fav.FavoritesDataDto;
 import com.jomap.backend.Entities.Activities.Activity;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivitySchedule;
+import com.jomap.backend.DTOs.Offers.OfferResponse;
+import com.jomap.backend.DTOs.Offers.OfferProductResponse;
+import com.jomap.backend.Entities.Offers.Offer;
+import com.jomap.backend.Entities.Offers.OfferProduct;
 import com.jomap.backend.Entities.Governorate.Place;
 import com.jomap.backend.Entities.Governorate.PlaceRepository;
 import com.jomap.backend.Entities.Locations.LocationList;
@@ -63,14 +68,21 @@ public class FavoritesServiceImpl implements FavoritesService {
                     .toList());
         }
 
-        List<FavoriteEventDto> events = user.getFavoriteEvents() == null
+        List<FavoriteActivityDto> activities = user.getFavoriteEvents() == null
                 ? Collections.emptyList()
                 : user.getFavoriteEvents().stream()
                         .map(this::mapActivityToDto)
                         .toList();
 
+        List<FavoriteOfferDto> offers = user.getFavoriteOffers() == null
+                ? Collections.emptyList()
+                : user.getFavoriteOffers().stream()
+                        .map(this::mapOfferToDto)
+                        .toList();
+
         data.setLocations(locations);
-        data.setEvents(events);
+        data.setActivities(activities);
+        data.setOffers(offers);
         List<FavoritePostDto> posts = savedPostsRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
                 .stream()
                 .map(SavedPost::getPost)
@@ -335,8 +347,8 @@ public class FavoritesServiceImpl implements FavoritesService {
         }
     }
 
-    private FavoriteEventDto mapActivityToDto(Activity activity) {
-        FavoriteEventDto dto = new FavoriteEventDto();
+    private FavoriteActivityDto mapActivityToDto(Activity activity) {
+        FavoriteActivityDto dto = new FavoriteActivityDto();
         dto.setId(activity.getId());
         dto.setTitle(activity.getTitle());
         dto.setDescription(activity.getDescription());
@@ -350,6 +362,12 @@ public class FavoritesServiceImpl implements FavoritesService {
         if (firstSchedule != null) {
             dto.setDate(firstSchedule.getDate());
             dto.setTime(firstSchedule.getStartTime());
+        }
+
+        if (activity.getSchedules() != null) {
+            dto.setSchedules(activity.getSchedules().stream()
+                .map(s -> new com.jomap.backend.DTOs.Activities.ActivitySchedule(s.getDate(), s.getDayName(), s.getStartTime(), s.getEndTime()))
+                .toList());
         }
 
         return dto;
@@ -379,5 +397,54 @@ public class FavoritesServiceImpl implements FavoritesService {
             return null;
         }
         return activity.getSchedules().get(0);
+    }
+
+    private FavoriteOfferDto mapOfferToDto(Offer offer) {
+        List<OfferProductResponse> productDtos = new ArrayList<>();
+        if (offer.getProducts() != null) {
+            for (OfferProduct p : offer.getProducts()) {
+                productDtos.add(OfferProductResponse.builder()
+                        .id(p.getId())
+                        .productName(p.getProductName())
+                        .priceBefore(p.getPriceBefore())
+                        .priceAfter(p.getPriceAfter())
+                        .build());
+            }
+        }
+
+        String phone = offer.getPhoneNumber() != null ? offer.getPhoneNumber() :
+                       ((offer.getLocation() != null && offer.getLocation().getPhoneNumber() != null) 
+                        ? offer.getLocation().getPhoneNumber() 
+                        : (offer.getCreatedBy() != null ? offer.getCreatedBy().getPhoneNumber() : null));
+
+        String locPhone = offer.getLocation() != null ? offer.getLocation().getPhoneNumber() : null;
+
+        return FavoriteOfferDto.builder()
+                .id(offer.getId())
+                .title(offer.getTitle())
+                .description(offer.getDescription())
+                .scheduleType(offer.getScheduleType())
+                .startDate(offer.getStartDate())
+                .endDate(offer.getEndDate())
+                .startTime(offer.getStartTime())
+                .endTime(offer.getEndTime())
+                .products(productDtos)
+                .locationId(offer.getLocation() != null ? offer.getLocation().getId() : null)
+                .locationName(offer.getLocation() != null ? offer.getLocation().getName() : null)
+                .imageUrl(offer.getImageUrl())
+                .latitude(offer.getLatitude())
+                .longitude(offer.getLongitude())
+                .governorateId(offer.getGovernorate() != null ? offer.getGovernorate().getId() : null)
+                .governorateName(offer.getGovernorate() != null ? offer.getGovernorate().getName() : null)
+                .statusId(offer.getStatus() != null ? (long) offer.getStatus().getId() : null)
+                .createdByUsername(offer.getLocation() != null ? offer.getLocation().getName() : (offer.getCreatedBy() != null ? offer.getCreatedBy().getUsername() : null))
+                .phoneNumber(phone)
+                .locationPhone(locPhone)
+                .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
+                .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
+                .cancelledAt(offer.getCancelledAt())
+                .isRenewed(offer.getRenewedFromOfferId() != null)
+                .isFavorite(true)
+                .build();
     }
 }

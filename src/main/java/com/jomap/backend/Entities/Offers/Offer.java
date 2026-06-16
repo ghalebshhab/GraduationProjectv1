@@ -94,6 +94,9 @@ public class Offer {
     @Column(name = "renewed_from_offer_id")
     private Long renewedFromOfferId;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @PrePersist
     public void beforeCreate() {
         createdAt = LocalDateTime.now();

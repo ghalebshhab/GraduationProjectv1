@@ -1,0 +1,40 @@
+package com.jomap.backend.DTOs.Fav;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class FavoriteOfferDto {
+
+    private Long id;
+    private String title;
+    private String description;
+    private String scheduleType;
+    private String startDate;
+    private String endDate;
+    private String startTime;
+    private String endTime;
+    private String imageUrl;
+    private Double latitude;
+    private Double longitude;
+    private Long governorateId;
+    private String governorateName;
+    private Long statusId;
+    private String createdByUsername;
+    private String phoneNumber;
+    private String locationPhone;
+    private Integer viewsCount;
+    private Integer clicksCount;
+    private Long locationId;
+    private String locationName;
+    private String cancelledAt;
+    private Boolean isRenewed;
+    private Boolean isFavorite;
+    private List<com.jomap.backend.DTOs.Offers.OfferProductResponse> products;
+}

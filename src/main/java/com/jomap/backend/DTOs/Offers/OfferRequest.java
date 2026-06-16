@@ -54,4 +54,6 @@ public class OfferRequest {
     private Integer clicksCount = 0;
     
     private Long renewedFromOfferId;
+
+    private String phoneNumber;
 }

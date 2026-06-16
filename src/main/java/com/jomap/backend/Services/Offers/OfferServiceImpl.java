@@ -109,6 +109,7 @@ public class OfferServiceImpl implements OfferService {
             offer.setCreatedBy(user);
             offer.setClicksCount(request.getClicksCount() != null ? request.getClicksCount() : 0);
             offer.setRenewedFromOfferId(request.getRenewedFromOfferId());
+            offer.setPhoneNumber(request.getPhoneNumber());
 
             List<OfferProduct> products = new ArrayList<>();
             if (request.getProducts() != null && !request.getProducts().isEmpty()) {
@@ -187,9 +188,12 @@ public class OfferServiceImpl implements OfferService {
             }
         }
 
-        String phone = (offer.getLocation() != null && offer.getLocation().getPhoneNumber() != null) 
+        String phone = offer.getPhoneNumber() != null ? offer.getPhoneNumber() :
+                       ((offer.getLocation() != null && offer.getLocation().getPhoneNumber() != null) 
                         ? offer.getLocation().getPhoneNumber() 
-                        : (offer.getCreatedBy() != null ? offer.getCreatedBy().getPhoneNumber() : null);
+                        : (offer.getCreatedBy() != null ? offer.getCreatedBy().getPhoneNumber() : null));
+
+        String locPhone = offer.getLocation() != null ? offer.getLocation().getPhoneNumber() : null;
 
         boolean isFavorite = false;
         try {
@@ -224,7 +228,7 @@ public class OfferServiceImpl implements OfferService {
                 .createdById(offer.getCreatedBy().getId())
                 .createdByUsername(offer.getLocation() != null ? offer.getLocation().getName() : offer.getCreatedBy().getUsername())
                 .phoneNumber(phone)
-                .locationPhone(phone)
+                .locationPhone(locPhone)
                 .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
                 .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
                 .cancelledAt(offer.getCancelledAt())

@@ -7,6 +7,7 @@ public class SearchItem {
 
     private Long id;
     private String title;
+    private String description;
     private String subTitle;
     private int imageRes;
     private String imageUrl;
@@ -60,4 +61,10 @@ public class SearchItem {
 
     @com.fasterxml.jackson.annotation.JsonProperty("offerProducts")
     private java.util.List<com.jomap.backend.DTOs.Offers.OfferProductResponse> offerProducts;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("viewsCount")
+    private Integer viewsCount;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("clicksCount")
+    private Integer clicksCount;
 }

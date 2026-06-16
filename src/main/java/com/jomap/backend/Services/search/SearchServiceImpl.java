@@ -138,7 +138,10 @@ public class SearchServiceImpl implements SearchService {
         item.setId(activity.getId());
         item.setType(SearchType.ACTIVITY);
         item.setTitle(activity.getTitle());
-        item.setSubTitle(firstNonBlank(activity.getActivityLocation(), activity.getDescription()));
+        item.setDescription(activity.getDescription());
+        // subTitle: نمرر فيه اسم المنظم الفعلي createdByUsername ليظهر بقمة الكارت كـ Organizer
+        item.setSubTitle(activity.getCreatedBy() != null ? activity.getCreatedBy().getUsername() : null);
+        
         // locationName = اسم المنشأة المنظِّمة (للرابط الأزرق أعلى الكارد)
         if (activity.getLocationId() != null) {
             locationRepository.findById(activity.getLocationId())
@@ -173,6 +176,7 @@ public class SearchServiceImpl implements SearchService {
 
         item.setPrice(activity.getPrice());
         item.setActivityLocation(activity.getActivityLocation());
+        item.setItemsCount(activity.getAttendeesCount() != null ? activity.getAttendeesCount() : 0);
         item.setLocationId(activity.getLocationId());
         
         if (activity.getStatus() != null) {
@@ -271,8 +275,11 @@ public class SearchServiceImpl implements SearchService {
         item.setType(SearchType.OFFER);
         item.setTitle(offer.getTitle());
         item.setSubTitle(offer.getDescription());
+        item.setDescription(offer.getDescription());
         item.setImageUrl(offer.getImageUrl());
         item.setImageRes(0);
+        item.setViewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0);
+        item.setClicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0);
         
         if (offer.getLocation() != null) {
             item.setLocationName(offer.getLocation().getName());
