@@ -190,6 +190,34 @@ public class ActivityController {
         return ActivityService.updateRegistrationStatus(regId, finalStatus, principal.getName());
     }
 
+    @PostMapping("/{activityId}/registrations/{registrationId}/status")
+    public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> updateRegistrationStatusWithActivity(
+            @PathVariable Long activityId,
+            @PathVariable Long registrationId,
+            @RequestParam(required = false) String status,
+            @RequestBody(required = false) java.util.Map<String, Object> body,
+            Principal principal) {
+            
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+
+        String finalStatus = status;
+        if (finalStatus == null && body != null) {
+            if (body.containsKey("status")) {
+                finalStatus = String.valueOf(body.get("status"));
+            } else if (body.containsKey("statusId")) {
+                finalStatus = String.valueOf(body.get("statusId"));
+            }
+        }
+        
+        if (finalStatus == null) {
+            return ApiResponse.error("الحالة مطلوبة");
+        }
+        
+        return ActivityService.updateRegistrationStatus(registrationId, finalStatus, principal.getName());
+    }
+
     @GetMapping("/{id}/my-registration")
     public ApiResponse<com.jomap.backend.DTOs.Activities.RegistrationResponse> getMyRegistration(
             @PathVariable Long id,
@@ -198,5 +226,15 @@ public class ActivityController {
             return ApiResponse.error("المستخدم غير موثق بالأنظمة");
         }
         return ActivityService.getMyRegistration(id, principal.getName());
+    }
+
+    @GetMapping("/{activityId}/notifications")
+    public ApiResponse<List<com.jomap.backend.DTOs.Notifications.NotificationResponse>> getActivityNotifications(
+            @PathVariable Long activityId,
+            Principal principal) {
+        if (principal == null) {
+            return ApiResponse.error("المستخدم غير موثق بالأنظمة");
+        }
+        return ActivityService.getActivityNotifications(activityId, principal.getName());
     }
 }

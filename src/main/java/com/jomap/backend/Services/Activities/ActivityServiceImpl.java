@@ -22,6 +22,10 @@ import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Notifications.Notification;
+import com.jomap.backend.Entities.Notifications.NotificationCategory;
+import com.jomap.backend.Entities.Notifications.NotificationRepository;
+import com.jomap.backend.Entities.Notifications.NotificationType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,6 +45,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final com.jomap.backend.Entities.Activities.RegistrationRepository registrationRepository;
     private final com.jomap.backend.Entities.Feedback.FeedbackRepository feedbackRepository;
     private final com.jomap.backend.Services.Notefications.EmailService emailService;
+    private final NotificationRepository notificationRepository;
 
     @Override
     @Transactional
@@ -656,9 +661,39 @@ public class ActivityServiceImpl implements ActivityService {
         if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.APPROVED) {
             String customMessage = "تم قبول طلب تسجيلك بنجاح. شكراً لك.";
             emailService.sendActivityStatusNotification(registration.getUser().getEmail(), registration.getActivity().getTitle(), status.getLabel(), customMessage);
+            
+            try {
+                Notification dbNotification = Notification.builder()
+                        .text("تم قبول تسجيلك في الفعالية: " + registration.getActivity().getTitle())
+                        .type(NotificationType.REGISTRATION_ACCEPTED)
+                        .category(NotificationCategory.USER)
+                        .toUser(registration.getUser())
+                        .fromUser(currentUser)
+                        .activityId(registration.getActivity().getId())
+                        .isRead(false)
+                        .build();
+                notificationRepository.save(dbNotification);
+            } catch (Exception e) {
+                System.out.println("Failed to save activity registration approval notification: " + e.getMessage());
+            }
         } else if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.REJECTED) {
             String customMessage = "نأسف، تم رفض طلب تسجيلك في هذه الفعالية.";
             emailService.sendActivityStatusNotification(registration.getUser().getEmail(), registration.getActivity().getTitle(), status.getLabel(), customMessage);
+            
+            try {
+                Notification dbNotification = Notification.builder()
+                        .text("تم رفض تسجيلك في الفعالية: " + registration.getActivity().getTitle())
+                        .type(NotificationType.REGISTRATION_REJECTED)
+                        .category(NotificationCategory.USER)
+                        .toUser(registration.getUser())
+                        .fromUser(currentUser)
+                        .activityId(registration.getActivity().getId())
+                        .isRead(false)
+                        .build();
+                notificationRepository.save(dbNotification);
+            } catch (Exception e) {
+                System.out.println("Failed to save activity registration rejection notification: " + e.getMessage());
+            }
         } else if (status == com.jomap.backend.Entities.Activities.RegistrationStatus.CANCELLED) {
             String customMessage = "تم إلغاء طلب تسجيلك في هذه الفعالية من قبل المنظم.";
             emailService.sendActivityStatusNotification(registration.getUser().getEmail(), registration.getActivity().getTitle(), status.getLabel(), customMessage);
@@ -741,4 +776,67 @@ public class ActivityServiceImpl implements ActivityService {
         return ApiResponse.success("Favorite activities fetched", responses);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<com.jomap.backend.DTOs.Notifications.NotificationResponse>> getActivityNotifications(Long activityId, String email) {
+        User currentUser = userRepository.findByEmail(email).orElse(null);
+        if (currentUser == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        Activity activity = activityRepository.findById(activityId).orElse(null);
+        if (activity == null) {
+            return ApiResponse.error("Activity not found");
+        }
+
+        boolean isOwner = activity.getCreatedBy() != null && activity.getCreatedBy().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() != null && currentUser.getRole() == com.jomap.backend.Entities.Users.Role.ADMIN;
+
+        if (!isOwner && !isAdmin) {
+            return ApiResponse.error("غير مصرح لك بعرض إشعارات هذه الفعالية");
+        }
+
+        List<Notification> notifications = notificationRepository.findByActivityIdOrderByCreatedAtDesc(activityId);
+
+        List<com.jomap.backend.DTOs.Notifications.NotificationResponse> result = notifications.stream()
+                .map(n -> {
+                    String fromUsername = null;
+                    String fromUserProfileImage = null;
+                    if (n.getFromUser() != null) {
+                        try {
+                            User fromUser = n.getFromUser();
+                            fromUsername = fromUser.getUsername();
+                            if (fromUser.getProfile() != null && fromUser.getProfile().getFirstName() != null) {
+                                fromUsername = fromUser.getProfile().getFirstName() + " " + fromUser.getProfile().getLastName();
+                            }
+                            if (fromUser.getProfileImageUrl() != null) {
+                                fromUserProfileImage = fromUser.getProfileImageUrl();
+                            } else if (fromUser.getProfile() != null && fromUser.getProfile().getProfileImageUrl() != null) {
+                                fromUserProfileImage = fromUser.getProfile().getProfileImageUrl();
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error mapping profile info for notification: " + e.getMessage());
+                        }
+                    }
+                    return com.jomap.backend.DTOs.Notifications.NotificationResponse.builder()
+                            .id(n.getId())
+                            .text(n.getText())
+                            .type(n.getType().name())
+                            .category(n.getCategory().name())
+                            .toUserId(n.getToUser().getId())
+                            .fromUserId(n.getFromUser() != null ? n.getFromUser().getId() : null)
+                            .fromUsername(fromUsername)
+                            .fromUserProfileImage(fromUserProfileImage)
+                            .activityId(n.getActivityId())
+                            .postId(n.getPostId())
+                            .offerId(n.getOfferId())
+                            .locationId(n.getLocationId())
+                            .isRead(n.getIsRead())
+                            .createdAt(n.getCreatedAt() != null ? n.getCreatedAt().toString() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("تم تحميل قائمة الإشعارات بنجاح", result);
+    }
 }

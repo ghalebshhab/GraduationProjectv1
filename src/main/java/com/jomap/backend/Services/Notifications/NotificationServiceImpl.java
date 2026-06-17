@@ -99,6 +99,10 @@ public class NotificationServiceImpl implements NotificationService {
             return ApiResponse.error("المستخدم غير موجود");
         }
 
+        if ("ALL".equalsIgnoreCase(categoryParam)) {
+            return getUserNotifications(email);
+        }
+
         NotificationCategory category;
         try {
             category = NotificationCategory.valueOf(categoryParam.toUpperCase());

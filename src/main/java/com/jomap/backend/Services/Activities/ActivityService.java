@@ -47,4 +47,6 @@ public interface ActivityService {
     ApiResponse<String> toggleFavoriteActivity(Long activityId, String userEmail);
 
     ApiResponse<List<ActivityResponse>> getFavoriteActivities(String userEmail);
+
+    ApiResponse<List<com.jomap.backend.DTOs.Notifications.NotificationResponse>> getActivityNotifications(Long activityId, String email);
 }

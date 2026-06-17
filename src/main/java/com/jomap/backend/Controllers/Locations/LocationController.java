@@ -181,4 +181,37 @@ public class LocationController {
         }
         return ResponseEntity.ok(locationService.getLocationFollowers(locationId, principal.getName()));
     }
+
+    @PostMapping("/{id}/follow")
+    public ResponseEntity<ApiResponse<String>> followLocation(
+            @PathVariable Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.followLocation(id, principal.getName()));
+    }
+
+    @PostMapping("/{id}/unfollow")
+    public ResponseEntity<ApiResponse<String>> unfollowLocation(
+            @PathVariable Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.unfollowLocation(id, principal.getName()));
+    }
+
+    @PostMapping("/{id}/block")
+    public ResponseEntity<ApiResponse<String>> blockLocation(
+            @PathVariable Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.blockLocation(id, principal.getName()));
+    }
 }

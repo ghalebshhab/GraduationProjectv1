@@ -38,11 +38,15 @@ public class NotificationController {
     }
 
     @GetMapping("/unread-count")
-    public ResponseEntity<ApiResponse<Long>> getUnreadCount(Principal principal) {
+    public ResponseEntity<ApiResponse<java.util.Map<String, Long>>> getUnreadCount(Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
         }
-        return ResponseEntity.ok(notificationService.getUnreadCount(principal.getName()));
+        ApiResponse<Long> serviceResponse = notificationService.getUnreadCount(principal.getName());
+        if (!serviceResponse.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.error(serviceResponse.getMessage()));
+        }
+        return ResponseEntity.ok(ApiResponse.success(serviceResponse.getMessage(), java.util.Map.of("count", serviceResponse.getData())));
     }
 
     @PutMapping("/{id}/read")

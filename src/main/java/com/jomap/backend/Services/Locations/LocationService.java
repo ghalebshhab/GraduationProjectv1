@@ -32,4 +32,8 @@ public interface LocationService {
     ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request, String currentUserEmail);
 
     ApiResponse<java.util.List<com.jomap.backend.DTOs.Locations.LocationFollowerResponse>> getLocationFollowers(Long locationId, String currentUserEmail);
+
+    ApiResponse<String> followLocation(Long locationId, String userEmail);
+    ApiResponse<String> unfollowLocation(Long locationId, String userEmail);
+    ApiResponse<String> blockLocation(Long locationId, String userEmail);
 }

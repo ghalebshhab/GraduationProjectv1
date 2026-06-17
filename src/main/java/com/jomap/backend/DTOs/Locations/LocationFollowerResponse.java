@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LocationFollowerResponse {
-    private Long userId;
+    private Long id;
     private String username;
-    private String profileImageUrl;
-    private String firstName;
-    private String lastName;
+    private String profileImage;
+    private String followedAt;
 }
