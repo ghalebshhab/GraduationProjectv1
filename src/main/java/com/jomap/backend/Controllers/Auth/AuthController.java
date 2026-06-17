@@ -114,17 +114,6 @@ public class AuthController {
         return response;
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String jwt = authHeader.substring(7);
-            java.util.Date expiration = jwtService.extractExpiration(jwt);
-            tokenBlacklistService.blacklistToken(jwt, expiration);
-            return ResponseEntity.ok(ApiResponse.success("تم تسجيل الخروج بنجاح", "Logged out successfully"));
-        }
-        return ResponseEntity.badRequest().body(ApiResponse.error("Invalid Authorization header"));
-    }
-
     // @PostMapping("/google")
     // public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(@RequestBody
     // SocialLoginRequest request) {
