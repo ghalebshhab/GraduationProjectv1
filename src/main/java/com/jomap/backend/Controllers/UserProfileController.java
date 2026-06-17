@@ -3,12 +3,14 @@ package com.jomap.backend.Controllers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.UserProfile.UpdateUserProfileRequest;
@@ -59,5 +61,10 @@ public class UserProfileController {
         String emailFromToken = authentication.getName();
         return ResponseEntity.ok(userProfileService.updateMyProfile(emailFromToken, request));
     }
-    
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<String>> deleteMyProfile(Authentication authentication) {
+        String emailFromToken = authentication.getName();
+        return ResponseEntity.ok(userProfileService.deleteMyProfile(emailFromToken));
+    }
 }

@@ -29,6 +29,11 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
+    public java.util.Date extractExpiration(String token) {
+        return extractAllClaims(token).getExpiration();
+    }
+
+
     public boolean isTokenValid(String token, String email) {
         final String extractedEmail = extractEmail(token);
         return extractedEmail.equals(email) && !isTokenExpired(token);

@@ -169,4 +169,16 @@ public class LocationController {
         ApiResponse<LocationResponse> response = locationService.updateLogo(id, request, principal.getName());
         return ResponseEntity.ok(response);
     }
-}
+
+    // 10. جلب متابعي منشأة معينة (لصاحب المنشأة فقط أو الادمن)
+    @GetMapping("/{locationId}/followers")
+    public ResponseEntity<ApiResponse<java.util.List<com.jomap.backend.DTOs.Locations.LocationFollowerResponse>>> getLocationFollowers(
+            @PathVariable Long locationId,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.getLocationFollowers(locationId, principal.getName()));
+    }
+}

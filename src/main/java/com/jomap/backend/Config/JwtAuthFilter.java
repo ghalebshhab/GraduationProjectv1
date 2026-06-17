@@ -2,6 +2,7 @@ package com.jomap.backend.Config;
 
 import com.jomap.backend.Services.Auth.CustomUserDetailsService;
 import com.jomap.backend.Services.Auth.JwtService;
+import com.jomap.backend.Services.Auth.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,10 +21,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+    public JwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailsService, TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -54,7 +57,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             String jwt = authHeader.substring(7);
+            if (tokenBlacklistService.isBlacklisted(jwt)) {
+                System.out.println("Token is blacklisted: " + jwt);
+                filterChain.doFilter(request, response);
+                return;
+            }
             String email = jwtService.extractEmail(jwt);
+
 
             System.out.println("JWT extracted email = " + email);
 

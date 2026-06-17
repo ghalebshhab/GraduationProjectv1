@@ -32,4 +32,8 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     List<User> findTop10ByIsActiveTrueAndRoleNotOrderByIdDesc(Role role);
     org.springframework.data.domain.Page<User> findByIsActiveTrueAndRoleNotOrderByIdDesc(Role role, org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM User u JOIN u.favoriteLocations fl WHERE fl.id = :locationId")
+    List<User> findFollowersByLocationId(@org.springframework.data.repository.query.Param("locationId") Long locationId);
 }
+

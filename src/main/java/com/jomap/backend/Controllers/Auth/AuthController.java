@@ -14,6 +14,8 @@ import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Auth.NormalAuth.AuthService;
 
 import com.jomap.backend.Services.Auth.ResetPassword.PasswordResetService;
+import com.jomap.backend.Services.Auth.TokenBlacklistService;
+import com.jomap.backend.Services.Auth.JwtService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,8 @@ public class AuthController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final PasswordResetService passwordResetService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
@@ -40,7 +44,23 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
 
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            try {
+                java.util.Date expiration = jwtService.extractExpiration(token);
+                tokenBlacklistService.blacklistToken(token, expiration);
+            } catch (Exception e) {
+                // Token is invalid or already expired - still treat as logout
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.success("تم تسجيل الخروج بنجاح", "Logged out successfully"));
     }
 
     @PutMapping("/make-admin")
@@ -92,6 +112,17 @@ public class AuthController {
         }
 
         return response;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String jwt = authHeader.substring(7);
+            java.util.Date expiration = jwtService.extractExpiration(jwt);
+            tokenBlacklistService.blacklistToken(jwt, expiration);
+            return ResponseEntity.ok(ApiResponse.success("تم تسجيل الخروج بنجاح", "Logged out successfully"));
+        }
+        return ResponseEntity.badRequest().body(ApiResponse.error("Invalid Authorization header"));
     }
 
     // @PostMapping("/google")

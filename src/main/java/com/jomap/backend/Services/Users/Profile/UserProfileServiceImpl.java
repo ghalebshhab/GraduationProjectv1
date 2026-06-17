@@ -211,4 +211,16 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         return response;
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> deleteMyProfile(String emailFromToken) {
+        User user = userRepository.findByEmail(emailFromToken).orElse(null);
+        if (user == null) {
+            return ApiResponse.error("User not found");
+        }
+        user.setIsActive(false);
+        userRepository.save(user);
+        return ApiResponse.success("تم حذف الحساب بنجاح", "Account deleted successfully");
+    }
 }

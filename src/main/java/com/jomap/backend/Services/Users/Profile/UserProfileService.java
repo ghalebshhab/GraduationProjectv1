@@ -18,5 +18,7 @@ public interface UserProfileService {
     @Transactional
     ApiResponse<UserProfileResponse> updateMyProfile(String usernameFromToken, UpdateUserProfileRequest request);
 
-   ApiResponse< UserProfileResponse> updateProfile(Long userId, UpdateUserProfileRequest request);
+   ApiResponse<UserProfileResponse> updateProfile(Long userId, UpdateUserProfileRequest request);
+
+   ApiResponse<String> deleteMyProfile(String emailFromToken);
 }

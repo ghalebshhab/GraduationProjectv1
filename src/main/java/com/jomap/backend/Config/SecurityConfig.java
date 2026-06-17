@@ -60,6 +60,7 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/offers").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/support/tickets").permitAll()
                                                 .anyRequest().authenticated())
                                 .userDetailsService(userDetailsService)
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -30,4 +30,6 @@ public interface LocationService {
     ApiResponse<LocationResponse> updateCover(Long locationId, UpdateLocationRequest request, String currentUserEmail);
 
     ApiResponse<LocationResponse> updateLogo(Long locationId, UpdateLocationRequest request, String currentUserEmail);
-}
+
+    ApiResponse<java.util.List<com.jomap.backend.DTOs.Locations.LocationFollowerResponse>> getLocationFollowers(Long locationId, String currentUserEmail);
+}

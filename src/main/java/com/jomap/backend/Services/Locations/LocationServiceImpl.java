@@ -527,4 +527,48 @@ public class LocationServiceImpl implements LocationService {
             default: return "";
         }
     }
-}
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<java.util.List<com.jomap.backend.DTOs.Locations.LocationFollowerResponse>> getLocationFollowers(Long locationId, String currentUserEmail) {
+        User currentUser = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (currentUser == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        LocationList location = locationRepository.findById(locationId).orElse(null);
+        if (location == null) {
+            return ApiResponse.error("Location not found");
+        }
+
+        // Only owner or admin can view followers
+        boolean isOwner = location.getOwner() != null && location.getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() != null && currentUser.getRole() == Role.ADMIN;
+
+        if (!isOwner && !isAdmin) {
+            return ApiResponse.error("غير مصرح لك بعرض متابعي هذه المنشأة");
+        }
+
+        // Followers are users who favorited this location
+        List<com.jomap.backend.Entities.Users.User> followers = userRepository.findFollowersByLocationId(locationId);
+
+        java.util.List<com.jomap.backend.DTOs.Locations.LocationFollowerResponse> result = followers.stream()
+            .map(u -> {
+                String firstName = "";
+                String lastName = "";
+                String imgUrl = u.getProfileImageUrl();
+                var profile = u.getProfile();
+                if (profile != null) {
+                    firstName = profile.getFirstName() != null ? profile.getFirstName() : "";
+                    lastName = profile.getLastName() != null ? profile.getLastName() : "";
+                    if (profile.getProfileImageUrl() != null) imgUrl = profile.getProfileImageUrl();
+                }
+                return new com.jomap.backend.DTOs.Locations.LocationFollowerResponse(
+                    u.getId(), u.getUsername(), imgUrl, firstName, lastName
+                );
+            })
+            .collect(java.util.stream.Collectors.toList());
+
+        return ApiResponse.success("تم تحميل قائمة المتابعين بنجاح", result);
+    }
+}
