@@ -16,9 +16,12 @@ import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.UserProfile.UpdateUserProfileRequest;
 import com.jomap.backend.DTOs.UserProfile.UserProfileResponse;
 import com.jomap.backend.Services.Users.Profile.UserProfileService;
+import com.jomap.backend.Services.Auth.TokenBlacklistService;
+import com.jomap.backend.Services.Auth.JwtService;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/profile")
@@ -26,6 +29,8 @@ import lombok.AllArgsConstructor;
 public class UserProfileController {
 
     private final UserProfileService userProfileService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtService jwtService;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileResponse>> getMyProfile(Authentication authentication) {
@@ -44,15 +49,6 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.getProfileByUserId(userId));
     }
 
-    /*@PutMapping("/{userId}")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
-            Authentication authentication,
-            @Valid @RequestBody UpdateUserProfileRequest request
-    ) {
-        String emailFromToken = authentication.getName();
-        return ResponseEntity.ok(userProfileService.updateMyProfile(emailFromToken, request));
-    }*/
-
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
             Authentication authentication,
@@ -63,8 +59,24 @@ public class UserProfileController {
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<String>> deleteMyProfile(Authentication authentication) {
+    public ResponseEntity<ApiResponse<String>> deleteMyProfile(
+            Authentication authentication,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
         String emailFromToken = authentication.getName();
+
+        // Extract token and blacklist it upon deletion
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            try {
+                java.util.Date expiration = jwtService.extractExpiration(token);
+                tokenBlacklistService.blacklistToken(token, expiration);
+            } catch (Exception ignored) {
+                // Token is invalid or already expired
+            }
+        }
+
         return ResponseEntity.ok(userProfileService.deleteMyProfile(emailFromToken));
     }
 }

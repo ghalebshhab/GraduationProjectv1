@@ -241,8 +241,29 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (user == null) {
             return ApiResponse.error("User not found");
         }
+
+        // Deactivate the user account
         user.setIsActive(false);
+
+        // Secure soft delete: Anonymize sensitive fields
+        user.setUsername("deleted_user_" + user.getId());
+        user.setEmail("deleted_" + user.getId() + "@jomap.com");
+        user.setPhoneNumber("deleted_" + user.getId());
+        user.setProfileImageUrl(null);
+
+        if (user.getProfile() != null) {
+            user.getProfile().setFirstName("Deleted");
+            user.getProfile().setLastName("User");
+            user.getProfile().setBio(null);
+            user.getProfile().setLocation(null);
+            user.getProfile().setProfileImageUrl(null);
+            user.getProfile().setInstagramUrl(null);
+            user.getProfile().setFacebookUrl(null);
+            user.getProfile().setLinkedinUrl(null);
+            user.getProfile().setBirthDate(null);
+        }
+
         userRepository.save(user);
-        return ApiResponse.success("تم حذف الحساب بنجاح", "Account deleted successfully");
+        return ApiResponse.success("تم حذف الحساب نهائياً بنجاح", null);
     }
 }
