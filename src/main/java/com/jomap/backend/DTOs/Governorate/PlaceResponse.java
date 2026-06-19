@@ -16,4 +16,6 @@ public class PlaceResponse {
     private String imageUrl;
     private String category; 
     private boolean isUserGenerated;
+    private String logoUrl;
+    private Double rating;
 }

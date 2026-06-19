@@ -211,9 +211,11 @@ public class GovernorateService {
                 .id(loc.getId())
                 .name(loc.getName())
                 .description(loc.getDescription())
-                .imageUrl(loc.getLogoUrl()) 
+                .imageUrl(loc.getCoverUrl() != null ? loc.getCoverUrl() : loc.getLogoUrl()) 
                 .category(loc.getCategory() != null ? loc.getCategory().getLabel() : "اخرى")
                 .isUserGenerated(true) 
+                .logoUrl(loc.getLogoUrl())
+                .rating(loc.getRating())
                 .build();
     }
 
