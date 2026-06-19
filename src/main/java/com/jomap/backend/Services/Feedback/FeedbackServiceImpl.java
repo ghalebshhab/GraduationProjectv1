@@ -108,6 +108,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                 notifReq.setToUserId(location.getOwner().getId());
                 notifReq.setFromUserId(user.getId());
                 notifReq.setLocationId(location.getId());
+                notifReq.setReviewId(savedFeedback.getId());
                 notificationService.sendNotification(notifReq);
             }
         }

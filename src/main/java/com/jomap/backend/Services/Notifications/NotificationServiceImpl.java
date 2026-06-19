@@ -9,6 +9,8 @@ import com.jomap.backend.Entities.Notifications.NotificationRepository;
 import com.jomap.backend.Entities.Notifications.NotificationType;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Feedback.Feedback;
+import com.jomap.backend.Entities.Feedback.FeedbackRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +23,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final FeedbackRepository feedbackRepository;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationServiceImpl(NotificationRepository notificationRepository, UserRepository userRepository, FeedbackRepository feedbackRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.feedbackRepository = feedbackRepository;
     }
 
     @Override
@@ -67,6 +71,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .postId(request.getPostId())
                 .offerId(request.getOfferId())
                 .locationId(request.getLocationId())
+                .reviewId(request.getReviewId())
                 .isRead(false)
                 .build();
 
@@ -193,6 +198,33 @@ public class NotificationServiceImpl implements NotificationService {
     private NotificationResponse mapToResponse(Notification notification) {
         String fromUsername = null;
         String fromUserProfileImage = null;
+        String ownerReply = null;
+        Long reviewId = notification.getReviewId();
+
+        // If reviewId is null but type is REVIEW (for older notifications), try to find it
+        if (reviewId == null && notification.getType() == NotificationType.REVIEW 
+                && notification.getFromUser() != null && notification.getLocationId() != null) {
+            try {
+                java.util.Optional<Feedback> oldFeedbackOpt = feedbackRepository.findFirstByUser_IdAndTargetTypeAndTargetIdOrderByCreatedAtDesc(
+                        notification.getFromUser().getId(), com.jomap.backend.Entities.Feedback.TargetType.LOCATION, notification.getLocationId());
+                if (oldFeedbackOpt.isPresent()) {
+                    reviewId = oldFeedbackOpt.get().getId();
+                }
+            } catch (Exception e) {
+                System.out.println("Error fetching old feedback for notification: " + e.getMessage());
+            }
+        }
+
+        if (reviewId != null) {
+            try {
+                Optional<Feedback> feedbackOpt = feedbackRepository.findById(reviewId);
+                if (feedbackOpt.isPresent()) {
+                    ownerReply = feedbackOpt.get().getOwnerReply();
+                }
+            } catch (Exception e) {
+                System.out.println("Error fetching feedback info for notification: " + e.getMessage());
+            }
+        }
 
         if (notification.getFromUser() != null) {
             try {
@@ -225,6 +257,8 @@ public class NotificationServiceImpl implements NotificationService {
                 .postId(notification.getPostId())
                 .offerId(notification.getOfferId())
                 .locationId(notification.getLocationId())
+                .reviewId(reviewId)
+                .ownerReply(ownerReply)
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt() != null ? notification.getCreatedAt().toString() : null)
                 .build();

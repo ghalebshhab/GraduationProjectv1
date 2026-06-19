@@ -21,4 +21,5 @@ public class NotificationRequest {
     private Long postId; // Nullable
     private Long offerId; // Nullable
     private Long locationId; // Nullable
+    private Long reviewId; // Nullable - set when type is REVIEW
 }

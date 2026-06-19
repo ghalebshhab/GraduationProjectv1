@@ -25,6 +25,8 @@ public class NotificationResponse {
     private Long postId;
     private Long offerId;
     private Long locationId;
+    private Long reviewId;
+    private String ownerReply;
     
     private Boolean isRead;
     private String createdAt;

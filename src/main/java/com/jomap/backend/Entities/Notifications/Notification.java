@@ -51,6 +51,9 @@ public class Notification {
     @Column(name = "location_id")
     private Long locationId;
 
+    @Column(name = "review_id")
+    private Long reviewId;
+
     @Builder.Default
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
