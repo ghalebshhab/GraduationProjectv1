@@ -28,6 +28,10 @@ import com.jomap.backend.Entities.Offers.OfferRepo;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.Activity;
+import com.jomap.backend.Entities.Notifications.Notification;
+import com.jomap.backend.Entities.Notifications.NotificationCategory;
+import com.jomap.backend.Entities.Notifications.NotificationRepository;
+import com.jomap.backend.Entities.Notifications.NotificationType;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -44,6 +48,7 @@ public class PostServiceImpl implements PostsServices {
     private final com.jomap.backend.Entities.Locations.LocationRepo locationRepo;
     private final ActivityRepository activityRepository;
     private final OfferRepo offerRepo;
+    private final NotificationRepository notificationRepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // ALGORITHM WEIGHTS (each mode must sum to 1.0)
@@ -219,6 +224,29 @@ public class PostServiceImpl implements PostsServices {
         post.setActivityId(request.getActivityId());
 
         Post saved = postRepository.save(post);
+
+        // Send notification if post type is USER and activity exists
+        if (post.getType() == Post.PostType.USER && request.getActivityId() != null) {
+            Activity activity = activityRepository.findById(request.getActivityId()).orElse(null);
+            if (activity != null && activity.getCreatedBy() != null && !activity.getCreatedBy().getId().equals(author.getId())) {
+                String username = author.getUsername() != null ? author.getUsername() : "مستخدم";
+                if (author.getProfile() != null && author.getProfile().getFirstName() != null) {
+                    username = author.getProfile().getFirstName() + " " + author.getProfile().getLastName();
+                }
+                Notification notification = Notification.builder()
+                        .text(username + " أضاف منشوراً جديداً في الفعالية: " + activity.getTitle())
+                        .type(NotificationType.NEW_POST)
+                        .category(NotificationCategory.ACTIVITY)
+                        .toUser(activity.getCreatedBy())
+                        .fromUser(author)
+                        .activityId(activity.getId())
+                        .postId(saved.getId())
+                        .isRead(false)
+                        .build();
+                notificationRepository.save(notification);
+            }
+        }
+
         return ApiResponse.success("Activity Post created successfully", toResponse(saved, null, null));
     }
 
