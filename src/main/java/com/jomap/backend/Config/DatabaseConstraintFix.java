@@ -24,5 +24,21 @@ public class DatabaseConstraintFix {
         } catch (Exception e) {
             logger.warn("Could not drop posts_type_check constraint. It may not exist or another error occurred: {}", e.getMessage());
         }
+
+        try {
+            logger.info("Checking and dropping old notifications_category_check constraint if it exists...");
+            jdbcTemplate.execute("ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_category_check;");
+            logger.info("Successfully dropped notifications_category_check constraint.");
+        } catch (Exception e) {
+            logger.warn("Could not drop notifications_category_check constraint: {}", e.getMessage());
+        }
+
+        try {
+            logger.info("Checking and dropping old notifications_type_check constraint if it exists...");
+            jdbcTemplate.execute("ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;");
+            logger.info("Successfully dropped notifications_type_check constraint.");
+        } catch (Exception e) {
+            logger.warn("Could not drop notifications_type_check constraint: {}", e.getMessage());
+        }
     }
 }

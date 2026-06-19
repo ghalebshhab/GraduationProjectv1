@@ -1,5 +1,14 @@
 package com.jomap.backend.Services.Community.Posts.Comments;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.Posts.Comments.CreatePostCommentRequest;
 import com.jomap.backend.DTOs.Posts.Comments.PostCommentResponse;
@@ -8,17 +17,12 @@ import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Posts.postComments.PostComment;
 import com.jomap.backend.Entities.Posts.postComments.PostCommentRepository;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import lombok.AllArgsConstructor;
-import org.springframework.dao.DataAccessException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
@@ -27,6 +31,7 @@ public class PostCommentServiceImpl implements PostCommentService {
     private final PostCommentRepository postCommentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final LocationRepo locationRepo;
     private final com.jomap.backend.Services.Notifications.NotificationService notificationService;
 
     @Override
@@ -116,6 +121,22 @@ public class PostCommentServiceImpl implements PostCommentService {
                 notifReq.setFromUserId(user.getId());
                 notifReq.setPostId(post.getId());
                 notificationService.sendNotification(notifReq);
+            }
+
+            if ("OWNER".equalsIgnoreCase(post.getCategory()) && !post.getAuthor().getId().equals(user.getId())) {
+                com.jomap.backend.DTOs.Notifications.NotificationRequest ownerNotifReq = new com.jomap.backend.DTOs.Notifications.NotificationRequest();
+                ownerNotifReq.setText("علق " + user.getUsername() + " على منشورك");
+                ownerNotifReq.setType("POST_COMMENT");
+                ownerNotifReq.setCategory("OWNER");
+                ownerNotifReq.setToUserId(post.getAuthor().getId());
+                ownerNotifReq.setFromUserId(user.getId());
+                ownerNotifReq.setPostId(post.getId());
+                // Attach the owner's location ID so the frontend can navigate to it
+                LocationList ownerLocation = locationRepo.findByOwnerId(post.getAuthor().getId()).orElse(null);
+                if (ownerLocation != null) {
+                    ownerNotifReq.setLocationId(ownerLocation.getId());
+                }
+                notificationService.sendNotification(ownerNotifReq);
             }
 
             return ApiResponse.success("Comment added successfully", toResponse(saved));
