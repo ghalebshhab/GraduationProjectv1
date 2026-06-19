@@ -13,6 +13,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     List<Activity> findByStatusAndGovernorateId(ActivityStatus status, Long governorateId);
 
+    List<Activity> findByStatusInAndGovernorateId(List<ActivityStatus> statuses, Long governorateId);
+
     List<Activity> findByCreatedById(Long userId);
 
     List<Activity> findByLocationId(Long locationId);

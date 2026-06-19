@@ -14,6 +14,8 @@ import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Offers.OfferRepo;
 import com.jomap.backend.Entities.Offers.OfferStatus;
 import com.jomap.backend.DTOs.Offers.OfferResponse;
+import com.jomap.backend.DTOs.Offers.OfferProductResponse;
+import com.jomap.backend.Entities.Offers.OfferProduct;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -115,7 +117,8 @@ public class GovernorateService {
 
         // 🎯 هندسة الفعاليات القادمة (Upcoming Activities)
         List<ActivityResponse> approvedActivities = activityRepository
-                .findByStatusAndGovernorateId(ActivityStatus.APPROVED, id).stream()
+                .findByStatusInAndGovernorateId(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), id).stream()
+                .filter(activity -> !activity.getIsDeleted())
                 .limit(5)
                 .map(activity -> { 
                     List<com.jomap.backend.DTOs.Activities.ActivitySchedule> scheduleDtos = new ArrayList<>();
@@ -154,28 +157,54 @@ public class GovernorateService {
         // 🎯 هندسة العروض (Offers)
         List<OfferResponse> approvedOffers = offerRepository
                 .findByStatusAndGovernorateId(OfferStatus.ACTIVE, id).stream()
+                .filter(offer -> !offer.getIsDeleted())
                 .limit(5)
-                .map(offer -> OfferResponse.builder()
-                        .id(offer.getId())
-                        .title(offer.getTitle())
-                        .description(offer.getDescription())
-                        .imageUrl(offer.getImageUrl())
-                        .scheduleType(offer.getScheduleType())
-                        .startDate(offer.getStartDate())
-                        .endDate(offer.getEndDate())
-                        .startTime(offer.getStartTime())
-                        .endTime(offer.getEndTime())
-                        .latitude(offer.getLatitude())
-                        .longitude(offer.getLongitude())
-                        .locationId(offer.getLocation().getId())
-                        .governorateId(offer.getGovernorate().getId())
-                        .governorateName(offer.getGovernorate().getName())
-                        .statusId((long) offer.getStatus().getId())
-                        .createdById(offer.getCreatedBy().getId())
-                        .createdByUsername(offer.getCreatedBy().getUsername())
-                        .viewsCount(offer.getViewsCount())
-                        .clicksCount(offer.getClicksCount())
-                        .build())
+                .map(offer -> {
+                    List<OfferProductResponse> productDtos = new ArrayList<>();
+                    if (offer.getProducts() != null) {
+                        for (OfferProduct p : offer.getProducts()) {
+                            productDtos.add(OfferProductResponse.builder()
+                                    .id(p.getId())
+                                    .productName(p.getProductName())
+                                    .priceBefore(p.getPriceBefore())
+                                    .priceAfter(p.getPriceAfter())
+                                    .build());
+                        }
+                    }
+
+                    String phone = offer.getPhoneNumber() != null ? offer.getPhoneNumber() :
+                                   ((offer.getLocation() != null && offer.getLocation().getPhoneNumber() != null) 
+                                    ? offer.getLocation().getPhoneNumber() 
+                                    : (offer.getCreatedBy() != null ? offer.getCreatedBy().getPhoneNumber() : null));
+
+                    String locPhone = offer.getLocation() != null ? offer.getLocation().getPhoneNumber() : null;
+
+                    return OfferResponse.builder()
+                            .id(offer.getId())
+                            .title(offer.getTitle())
+                            .description(offer.getDescription())
+                            .imageUrl(offer.getImageUrl())
+                            .scheduleType(offer.getScheduleType())
+                            .startDate(offer.getStartDate())
+                            .endDate(offer.getEndDate())
+                            .startTime(offer.getStartTime())
+                            .endTime(offer.getEndTime())
+                            .products(productDtos)
+                            .locationId(offer.getLocation().getId())
+                            .locationName(offer.getLocation().getName())
+                            .latitude(offer.getLatitude())
+                            .longitude(offer.getLongitude())
+                            .governorateId(offer.getGovernorate().getId())
+                            .governorateName(offer.getGovernorate().getName())
+                            .statusId((long) offer.getStatus().getId())
+                            .createdById(offer.getCreatedBy().getId())
+                            .createdByUsername(offer.getLocation() != null ? offer.getLocation().getName() : offer.getCreatedBy().getUsername())
+                            .phoneNumber(phone)
+                            .locationPhone(locPhone)
+                            .viewsCount(offer.getViewsCount() != null ? offer.getViewsCount() : 0)
+                            .clicksCount(offer.getClicksCount() != null ? offer.getClicksCount() : 0)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         GovernorateDetailsResponse details = GovernorateDetailsResponse.builder()
