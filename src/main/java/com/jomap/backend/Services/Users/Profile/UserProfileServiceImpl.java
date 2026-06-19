@@ -12,6 +12,7 @@ import com.jomap.backend.Entities.Users.UserBlockRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
 @Service
 @AllArgsConstructor
@@ -21,6 +22,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final LocationRepo locationRepository;
     private final UserBlockRepository userBlockRepository;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
@@ -262,6 +264,74 @@ public class UserProfileServiceImpl implements UserProfileService {
             user.getProfile().setLinkedinUrl(null);
             user.getProfile().setBirthDate(null);
         }
+
+        // Soft delete user's own data (Posts, Comments, Stories, Story Replies, Activities, Offers, Feedback)
+        entityManager.createQuery("UPDATE Post p SET p.isDeleted = true WHERE p.author = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE PostComment pc SET pc.isDeleted = true WHERE pc.author = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE Story s SET s.isDeleted = true WHERE s.author = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE StoryReply sr SET sr.isDeleted = true WHERE sr.user = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE Activity a SET a.isDeleted = true WHERE a.createdBy = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE Offer o SET o.isDeleted = true WHERE o.createdBy = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE Feedback f SET f.isDeleted = true WHERE f.user = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        // Clear user favorites relationships (many-to-many join tables)
+        if (user.getFavoriteLocations() != null) {
+            user.getFavoriteLocations().clear();
+        }
+        if (user.getFavoritePlaces() != null) {
+            user.getFavoritePlaces().clear();
+        }
+        if (user.getFavoriteEvents() != null) {
+            user.getFavoriteEvents().clear();
+        }
+        if (user.getFavoriteOffers() != null) {
+            user.getFavoriteOffers().clear();
+        }
+
+        // Hard delete interactions, friendships, blocks, notifications to maintain integrity and compliance
+        entityManager.createQuery("DELETE FROM PostLikes pl WHERE pl.user = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("DELETE FROM StoryLike sl WHERE sl.user = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("DELETE FROM StoryView sv WHERE sv.user = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("DELETE FROM Notification n WHERE n.toUser = :user OR n.fromUser = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("DELETE FROM Friendship f WHERE f.requester = :user OR f.receiver = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
+        entityManager.createQuery("DELETE FROM UserBlock ub WHERE ub.blocker = :user OR ub.blocked = :user")
+                .setParameter("user", user)
+                .executeUpdate();
 
         userRepository.save(user);
         return ApiResponse.success("تم حذف الحساب نهائياً بنجاح", null);
