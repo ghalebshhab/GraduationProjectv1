@@ -31,4 +31,5 @@ public class UserProfileResponse {
     private String linkedinUrl;
 
     private Boolean isBlocked;
+    private Boolean isBlockedByThem;
 }

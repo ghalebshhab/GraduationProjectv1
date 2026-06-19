@@ -212,6 +212,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         // isBlocked: check if the currently authenticated user has blocked this profile's user
         response.setIsBlocked(false);
+        response.setIsBlockedByThem(false);
         try {
             org.springframework.security.core.Authentication auth =
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -219,8 +220,12 @@ public class UserProfileServiceImpl implements UserProfileService {
                 String currentEmail = auth.getName();
                 userRepository.findByEmail(currentEmail).ifPresent(currentUser -> {
                     if (!currentUser.getId().equals(user.getId())) {
+                        // أنا حظرت هذا الشخص؟
                         boolean blocked = userBlockRepository.existsByBlockerAndBlocked(currentUser, user);
                         response.setIsBlocked(blocked);
+                        // هذا الشخص حظرني؟
+                        boolean blockedByThem = userBlockRepository.existsByBlockerAndBlocked(user, currentUser);
+                        response.setIsBlockedByThem(blockedByThem);
                     }
                 });
             }
