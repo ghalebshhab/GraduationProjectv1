@@ -120,29 +120,40 @@ public class PostServiceImpl implements PostsServices {
         }
         final User currentUser = user;
 
-        List<PostResponse> responses = postRepository.findAll(pageable)
-                .getContent()
-                .stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
-                .map(p -> toResponse(p, null, null))
-                .toList();
+        List<PostResponse> userPosts = postRepository.findActivePostsByCategory("USER", pageable)
+                .stream().map(p -> toResponse(p, null, null)).toList();
+        
+        List<PostResponse> activityPosts = postRepository.findActivePostsByCategory("ACTIVITY", pageable)
+                .stream().map(p -> toResponse(p, null, null)).toList();
+        
+        List<PostResponse> ownerPosts = postRepository.findActivePostsByCategory("OWNER", pageable)
+                .stream().map(p -> toResponse(p, null, null)).toList();
+        
+        List<PostResponse> offerPosts = postRepository.findActivePostsByCategory("OFFER", pageable)
+                .stream().map(p -> toResponse(p, null, null)).toList();
+
+        List<PostResponse> allResponses = new java.util.ArrayList<>();
+        allResponses.addAll(userPosts);
+        allResponses.addAll(activityPosts);
+        allResponses.addAll(ownerPosts);
+        allResponses.addAll(offerPosts);
 
         if (currentUser != null) {
             List<Long> likedPostIds = likesService.getPostIdsLikedByUser(currentUser.getId());
             List<Long> savedPostIds = savedPostsRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
                     .stream().map(sp -> sp.getPost().getId()).toList();
 
-            responses.forEach(r -> {
+            allResponses.forEach(r -> {
                 r.setLikedByCurrentUser(likedPostIds.contains(r.getId()));
                 r.setSavedByCurrentUser(savedPostIds.contains(r.getId()));
             });
         }
 
         com.jomap.backend.DTOs.Posts.FeedSummaryResponse summary = new com.jomap.backend.DTOs.Posts.FeedSummaryResponse();
-        summary.setUSER(responses.stream().filter(p -> "USER".equalsIgnoreCase(p.getCategory())).toList());
-        summary.setACTIVITY(responses.stream().filter(p -> "ACTIVITY".equalsIgnoreCase(p.getCategory())).toList());
-        summary.setOWNER(responses.stream().filter(p -> "OWNER".equalsIgnoreCase(p.getCategory())).toList());
-        summary.setOFFER(responses.stream().filter(p -> "OFFER".equalsIgnoreCase(p.getCategory())).toList());
+        summary.setUSER(userPosts);
+        summary.setACTIVITY(activityPosts);
+        summary.setOWNER(ownerPosts);
+        summary.setOFFER(offerPosts);
 
         return ApiResponse.success("Feed fetched successfully", summary);
     }
