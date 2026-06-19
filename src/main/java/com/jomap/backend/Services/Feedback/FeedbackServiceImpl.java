@@ -83,6 +83,13 @@ public class FeedbackServiceImpl implements FeedbackService {
             return ApiResponse.error("نوع التقييم غير مدعوم");
         }
 
+        // Check if user already provided feedback for this target
+        java.util.Optional<Feedback> existingFeedback = feedbackRepository.findFirstByUser_IdAndTargetTypeAndTargetIdOrderByCreatedAtDesc(
+                user.getId(), type, request.getTargetId());
+        if (existingFeedback.isPresent() && Boolean.FALSE.equals(existingFeedback.get().getIsDeleted())) {
+            return ApiResponse.error("لقد قمت بإضافة تقييم مسبقاً");
+        }
+
         Feedback feedback = new Feedback();
         feedback.setUser(user);
         feedback.setTargetId(request.getTargetId());

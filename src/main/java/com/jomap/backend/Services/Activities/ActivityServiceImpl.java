@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,20 +19,18 @@ import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.ActivityStatus;
 import com.jomap.backend.Entities.Governorate.Governorate;
 import com.jomap.backend.Entities.Governorate.GovernorateRepository;
-import com.jomap.backend.Entities.Posts.Post;
-import com.jomap.backend.Entities.Posts.PostRepository;
-import com.jomap.backend.Entities.Users.User;
-import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Notifications.Notification;
 import com.jomap.backend.Entities.Notifications.NotificationCategory;
 import com.jomap.backend.Entities.Notifications.NotificationRepository;
 import com.jomap.backend.Entities.Notifications.NotificationType;
+import com.jomap.backend.Entities.Posts.Post;
+import com.jomap.backend.Entities.Posts.PostRepository;
+import com.jomap.backend.Entities.Users.User;
+import com.jomap.backend.Entities.Users.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
-import com.jomap.backend.Entities.Locations.LocationRepo;
-import com.jomap.backend.Entities.Locations.LocationList;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -584,6 +583,34 @@ public class ActivityServiceImpl implements ActivityService {
         }
         
         com.jomap.backend.Entities.Activities.Registration savedRegistration = registrationRepository.save(registration);
+
+        if (activity.getCreatedBy() != null && !activity.getCreatedBy().getId().equals(user.getId())) {
+            String username = user.getUsername() != null ? user.getUsername() : "مستخدم جديد";
+            if (user.getProfile() != null && user.getProfile().getFirstName() != null) {
+                username = user.getProfile().getFirstName() + " " + user.getProfile().getLastName();
+            }
+            Notification notification = Notification.builder()
+                    .text(username + " سجل في الفعالية: " + activity.getTitle())
+                    .type(NotificationType.REGISTER)
+                    .category(NotificationCategory.ACTIVITY)
+                    .toUser(activity.getCreatedBy())
+                    .fromUser(user)
+                    .activityId(activity.getId())
+                    .isRead(false)
+                    .build();
+            notificationRepository.save(notification);
+        }
+
+        // Notification for the user who registered
+        Notification userNotification = Notification.builder()
+                .text("تم استلام طلب تسجيلك في الفعالية: " + activity.getTitle())
+                .type(NotificationType.ACTIVITY_REGISTRATION)
+                .category(NotificationCategory.USER)
+                .toUser(user)
+                .activityId(activity.getId())
+                .isRead(false)
+                .build();
+        notificationRepository.save(userNotification);
 
         return ApiResponse.success("تم إرسال طلب التسجيل بنجاح", mapToRegistrationResponse(savedRegistration));
     }

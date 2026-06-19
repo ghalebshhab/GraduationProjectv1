@@ -7,6 +7,7 @@ public enum NotificationType {
     REGISTER,
     SYSTEM,
     REPLY,
+    ACTIVITY_REGISTRATION,
     COMMENT,
     ACTIVITY_INVITE,
     OFFER_UPDATE,
