@@ -64,4 +64,10 @@ public class NotificationController {
         }
         return ResponseEntity.ok(notificationService.markAllAsRead(principal.getName()));
     }
+
+    @GetMapping("/location/{locationId}")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getNotificationsByLocationId(
+            @PathVariable Long locationId) {
+        return ResponseEntity.ok(notificationService.getNotificationsByLocationId(locationId));
+    }
 }

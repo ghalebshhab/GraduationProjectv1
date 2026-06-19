@@ -178,6 +178,18 @@ public class NotificationServiceImpl implements NotificationService {
         return ApiResponse.success("تم تحديد جميع الإشعارات كمقروءة", null);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<NotificationResponse>> getNotificationsByLocationId(Long locationId) {
+        List<NotificationResponse> responses = notificationRepository
+                .findByLocationIdOrderByCreatedAtDesc(locationId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("تم جلب إشعارات المنشأة بنجاح", responses);
+    }
+
     private NotificationResponse mapToResponse(Notification notification) {
         String fromUsername = null;
         String fromUserProfileImage = null;
