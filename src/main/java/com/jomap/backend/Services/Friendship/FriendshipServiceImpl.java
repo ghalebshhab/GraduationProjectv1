@@ -50,11 +50,11 @@ public class FriendshipServiceImpl implements FriendshipService {
             Friendship friendship = existingFriendship.get(existingFriendship.size() - 1);
 
             if (friendship.getStatus() == FriendshipStatus.PENDING) {
-                return new ApiResponse<>(false, "Friend request already exists", mapToResponse(friendship));
+                return new ApiResponse<>(false, "Friend request already exists", mapToResponse(friendship, sender));
             }
 
             if (friendship.getStatus() == FriendshipStatus.ACCEPTED) {
-                return new ApiResponse<>(false, "You are already friends", mapToResponse(friendship));
+                return new ApiResponse<>(false, "You are already friends", mapToResponse(friendship, sender));
             }
 
             if (friendship.getStatus() == FriendshipStatus.BLOCKED) {
@@ -76,7 +76,7 @@ public class FriendshipServiceImpl implements FriendshipService {
             notifReq.setFromUserId(sender.getId());
             notificationService.sendNotification(notifReq);
 
-            return new ApiResponse<>(true, "Friend request sent again", mapToResponse(updated));
+            return new ApiResponse<>(true, "Friend request sent again", mapToResponse(updated, sender));
         }
 
         Friendship friendship = new Friendship();
@@ -95,7 +95,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         notifReq.setFromUserId(sender.getId());
         notificationService.sendNotification(notifReq);
 
-        return new ApiResponse<>(true, "Friend request sent successfully", mapToResponse(saved));
+        return new ApiResponse<>(true, "Friend request sent successfully", mapToResponse(saved, sender));
     }
     @Override
     @Transactional
@@ -116,7 +116,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         }
 
         if (friendship.getStatus() != FriendshipStatus.PENDING) {
-            return new ApiResponse<>(false, "Friend request is not pending", mapToResponse(friendship));
+            return new ApiResponse<>(false, "Friend request is not pending", mapToResponse(friendship, receiver));
         }
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
@@ -131,7 +131,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         notifReq.setFromUserId(receiver.getId());
         notificationService.sendNotification(notifReq);
 
-        return new ApiResponse<>(true, "Friend request accepted", mapToResponse(saved));
+        return new ApiResponse<>(true, "Friend request accepted", mapToResponse(saved, receiver));
     }
     @Override
     @Transactional
@@ -197,7 +197,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         List<FriendshipResponse> responses = friendshipRepository
                 .findByReceiverAndStatus(user, FriendshipStatus.PENDING)
                 .stream()
-                .map(this::mapToResponse)
+                .map(f -> mapToResponse(f, user))
                 .toList();
 
         return new ApiResponse<>(true, "Pending friend requests fetched successfully", responses);
@@ -213,7 +213,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         List<FriendshipResponse> responses = friendshipRepository
                 .findByRequesterAndStatus(user, FriendshipStatus.PENDING)
                 .stream()
-                .map(this::mapToResponse)
+                .map(f -> mapToResponse(f, user))
                 .toList();
 
         return new ApiResponse<>(true, "Sent friend requests fetched successfully", responses);
@@ -232,7 +232,7 @@ public class FriendshipServiceImpl implements FriendshipService {
                         user, FriendshipStatus.ACCEPTED
                 )
                 .stream()
-                .map(this::mapToResponse)
+                .map(f -> mapToResponse(f, user))
                 .toList();
 
         return new ApiResponse<>(true, "Friends fetched successfully", responses);
@@ -267,26 +267,85 @@ public class FriendshipServiceImpl implements FriendshipService {
         return new ApiResponse<>(true, "Friend removed successfully", null);
     }
     private FriendshipResponse mapToResponse(Friendship friendship) {
+        return mapToResponse(friendship, null);
+    }
 
+    private FriendshipResponse mapToResponse(Friendship friendship, User currentUser) {
         FriendshipResponse response = new FriendshipResponse();
 
+        response.setId(friendship.getId());
         response.setFriendshipId(friendship.getId());
 
-        response.setSenderId(friendship.getRequester().getId());
-        response.setSenderUsername(friendship.getRequester().getUsername());
+        response.setSender(mapUserToFriendDto(friendship.getRequester()));
+        response.setReceiver(mapUserToFriendDto(friendship.getReceiver()));
 
-        response.setReceiverId(friendship.getReceiver().getId());
-        response.setReceiverUsername(friendship.getReceiver().getUsername());
+        // Flat fields for backward compatibility
+        if (friendship.getRequester() != null) {
+            response.setSenderId(friendship.getRequester().getId());
+            response.setSenderUsername(friendship.getRequester().getUsername());
+            response.setSenderProfileImage(friendship.getRequester().getProfileImageUrl());
+        }
 
-        // إذا عندك profile image داخل User
-        response.setSenderProfileImage(friendship.getRequester().getProfileImageUrl());
-        response.setReceiverProfileImage(friendship.getReceiver().getProfileImageUrl());
+        if (friendship.getReceiver() != null) {
+            response.setReceiverId(friendship.getReceiver().getId());
+            response.setReceiverUsername(friendship.getReceiver().getUsername());
+            response.setReceiverProfileImage(friendship.getReceiver().getProfileImageUrl());
+        }
+
+        // Populate friend details relative to currentUser context
+        if (currentUser != null) {
+            User friend = friendship.getRequester().getId().equals(currentUser.getId())
+                    ? friendship.getReceiver()
+                    : friendship.getRequester();
+            if (friend != null) {
+                response.setFriendId(friend.getId());
+                response.setFriendUsername(friend.getUsername());
+                if (friend.getProfile() != null) {
+                    response.setFriendProfileImageUrl(friend.getProfile().getProfileImageUrl());
+                }
+                if (response.getFriendProfileImageUrl() == null || response.getFriendProfileImageUrl().isEmpty()) {
+                    response.setFriendProfileImageUrl(friend.getProfileImageUrl());
+                }
+            }
+        } else {
+            // Fallback friend mapping
+            if (friendship.getReceiver() != null) {
+                response.setFriendId(friendship.getReceiver().getId());
+                response.setFriendUsername(friendship.getReceiver().getUsername());
+                if (friendship.getReceiver().getProfile() != null) {
+                    response.setFriendProfileImageUrl(friendship.getReceiver().getProfile().getProfileImageUrl());
+                }
+                if (response.getFriendProfileImageUrl() == null || response.getFriendProfileImageUrl().isEmpty()) {
+                    response.setFriendProfileImageUrl(friendship.getReceiver().getProfileImageUrl());
+                }
+            }
+        }
 
         response.setStatus(friendship.getStatus().name());
         response.setCreatedAt(friendship.getCreatedAt());
 
         return response;
     }
+
+    private FriendshipResponse.UserFriendDto mapUserToFriendDto(User user) {
+        if (user == null) return null;
+        FriendshipResponse.UserFriendDto dto = new FriendshipResponse.UserFriendDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+
+        if (user.getProfile() != null) {
+            dto.setFirstName(user.getProfile().getFirstName());
+            dto.setLastName(user.getProfile().getLastName());
+            dto.setProfileImageUrl(user.getProfile().getProfileImageUrl());
+        }
+
+        if (dto.getProfileImageUrl() == null || dto.getProfileImageUrl().isEmpty()) {
+            dto.setProfileImageUrl(user.getProfileImageUrl());
+        }
+        return dto;
+    }
+
     @Override
     @Transactional
     public ApiResponse<FriendshipResponse> checkFriendshipStatus(String currentUserEmail, Long targetUserId) {
@@ -317,6 +376,6 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         // Return the latest interaction
         Friendship friendship = friendships.get(friendships.size() - 1);
-        return ApiResponse.success("Status checked", mapToResponse(friendship));
+        return ApiResponse.success("Status checked", mapToResponse(friendship, currentUser));
     }
 }
