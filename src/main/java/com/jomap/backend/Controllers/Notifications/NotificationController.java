@@ -70,4 +70,10 @@ public class NotificationController {
             @PathVariable Long locationId) {
         return ResponseEntity.ok(notificationService.getNotificationsByLocationId(locationId));
     }
+
+    @GetMapping("/activity/{activityId}")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getNotificationsByActivityId(
+            @PathVariable Long activityId) {
+        return ResponseEntity.ok(notificationService.getNotificationsByActivityId(activityId));
+    }
 }

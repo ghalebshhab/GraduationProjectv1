@@ -199,6 +199,18 @@ public class NotificationServiceImpl implements NotificationService {
         return ApiResponse.success("تم جلب إشعارات المنشأة بنجاح", responses);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<NotificationResponse>> getNotificationsByActivityId(Long activityId) {
+        List<NotificationResponse> responses = notificationRepository
+                .findByActivityIdOrderByCreatedAtDesc(activityId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("تم جلب إشعارات الفعالية بنجاح", responses);
+    }
+
     private NotificationResponse mapToResponse(Notification notification) {
         String fromUsername = null;
         String fromUserProfileImage = null;

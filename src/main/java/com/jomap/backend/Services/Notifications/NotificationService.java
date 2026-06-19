@@ -21,4 +21,6 @@ public interface NotificationService {
     ApiResponse<String> markAllAsRead(String email);
 
     ApiResponse<List<NotificationResponse>> getNotificationsByLocationId(Long locationId);
+
+    ApiResponse<List<NotificationResponse>> getNotificationsByActivityId(Long activityId);
 }
