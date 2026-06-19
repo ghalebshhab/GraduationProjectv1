@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.jomap.backend.Entities.Locations.LocationBlockRepository;
+
 @Service
 public class OfferServiceImpl implements OfferService {
 
@@ -33,17 +35,20 @@ public class OfferServiceImpl implements OfferService {
     private final GovernorateRepository governorateRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final LocationBlockRepository locationBlockRepository;
 
     public OfferServiceImpl(OfferRepo offerRepo, 
                             LocationRepo locationRepo, 
                             GovernorateRepository governorateRepository,
                             UserRepository userRepository,
-                            PostRepository postRepository) {
+                            PostRepository postRepository,
+                            LocationBlockRepository locationBlockRepository) {
         this.offerRepo = offerRepo;
         this.locationRepo = locationRepo;
         this.governorateRepository = governorateRepository;
         this.userRepository = userRepository;
         this.postRepository = postRepository;
+        this.locationBlockRepository = locationBlockRepository;
     }
 
     @Override
@@ -284,7 +289,17 @@ public class OfferServiceImpl implements OfferService {
     @Override
     public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<OfferResponse>> getAllOffers(int page, int size) {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        org.springframework.data.domain.Page<Offer> offerPage = offerRepo.findAllByOrderByIdDesc(pageable);
+        
+        User currentUser = getCurrentUser();
+        List<Long> blockedLocationIds = currentUser != null ? 
+            locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId()) : List.of();
+
+        org.springframework.data.domain.Page<Offer> offerPage;
+        if (blockedLocationIds.isEmpty()) {
+            offerPage = offerRepo.findAllByOrderByIdDesc(pageable);
+        } else {
+            offerPage = offerRepo.findByLocationIdNotInOrderByIdDesc(blockedLocationIds, pageable);
+        }
         
         org.springframework.data.domain.Page<OfferResponse> responsePage = offerPage.map(this::mapToResponse);
         return ApiResponse.success("تم جلب العروض بنجاح", com.jomap.backend.DTOs.PaginatedResponse.from(responsePage));
@@ -365,5 +380,14 @@ public class OfferServiceImpl implements OfferService {
         } catch (Exception e) {
             return java.time.LocalTime.parse(time.trim()); // standard HH:mm or HH:mm:ss
         }
+    }
+
+    private User getCurrentUser() {
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return userRepository.findByEmail(auth.getName()).orElse(null);
+        }
+        return null;
     }
 }

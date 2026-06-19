@@ -22,6 +22,9 @@ import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 
+import com.jomap.backend.Entities.Users.UserBlockRepository;
+import java.util.ArrayList;
+
 import lombok.AllArgsConstructor;
 
 @Service
@@ -33,12 +36,21 @@ public class PostCommentServiceImpl implements PostCommentService {
     private final UserRepository userRepository;
     private final LocationRepo locationRepo;
     private final com.jomap.backend.Services.Notifications.NotificationService notificationService;
+    private final UserBlockRepository userBlockRepository;
 
     @Override
     public ApiResponse<List<PostCommentResponse>> getCommentsByPostId(Long postId) {
+        User currentUser = getCurrentUser();
+        List<Long> excludedUserIds = new ArrayList<>();
+        if (currentUser != null) {
+            excludedUserIds.addAll(userBlockRepository.findBlockedUserIdsByBlockerId(currentUser.getId()));
+            excludedUserIds.addAll(userBlockRepository.findBlockedUserIdsByBlockedId(currentUser.getId()));
+        }
+
         List<PostCommentResponse> responses = postCommentRepository
                 .findActiveByPostId(postId)
                 .stream()
+                .filter(c -> c.getAuthor() == null || !excludedUserIds.contains(c.getAuthor().getId()))
                 .map(this::toResponse)
                 .toList();
 
@@ -263,5 +275,14 @@ public class PostCommentServiceImpl implements PostCommentService {
         }
 
         return r;
+    }
+
+    private User getCurrentUser() {
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return userRepository.findByEmail(auth.getName()).orElse(null);
+        }
+        return null;
     }
 }

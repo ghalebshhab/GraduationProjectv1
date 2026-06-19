@@ -28,6 +28,9 @@ import com.jomap.backend.Entities.Offers.Offer;
 import com.jomap.backend.Entities.Offers.OfferRepo;
 import com.jomap.backend.Entities.Offers.OfferStatus;
 
+import com.jomap.backend.Entities.Users.UserBlockRepository;
+import com.jomap.backend.Entities.Locations.LocationBlockRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -42,6 +45,8 @@ public class SearchServiceImpl implements SearchService {
     private final LocationRepo locationRepository;
     private final FriendshipRepository friendshipRepository;
     private final OfferRepo offerRepository;
+    private final UserBlockRepository userBlockRepository;
+    private final LocationBlockRepository locationBlockRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,23 +60,31 @@ public class SearchServiceImpl implements SearchService {
         }
         final User finalCurrentUser = currentUser;
 
+        List<Long> blockedUserIds = currentUser != null ? userBlockRepository.findBlockedUserIdsByBlockerId(currentUser.getId()) : List.of();
+        List<Long> blockedByUserIds = currentUser != null ? userBlockRepository.findBlockedUserIdsByBlockedId(currentUser.getId()) : List.of();
+        List<Long> blockedLocationIds = currentUser != null ? locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId()) : List.of();
+
         org.springframework.data.domain.Page<User> usersPage = userRepository.findByIsActiveTrueAndRoleNotOrderByIdDesc(Role.ADMIN, pageable);
         usersPage.getContent().stream()
+                .filter(u -> !blockedUserIds.contains(u.getId()) && !blockedByUserIds.contains(u.getId()))
                 .map(u -> toUserSearchItem(u, finalCurrentUser))
                 .forEach(items::add);
 
         org.springframework.data.domain.Page<Activity> activitiesPage = activityRepository.findByStatusInOrderByIdDesc(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), pageable);
         activitiesPage.getContent().stream()
+                .filter(act -> act.getLocationId() == null || !blockedLocationIds.contains(act.getLocationId()))
                 .map(act -> toEventSearchItem(act, finalCurrentUser))
                 .forEach(items::add);
 
         org.springframework.data.domain.Page<LocationList> locationsPage = locationRepository.findByActiveTrueAndStatusOrderByIdDesc(com.jomap.backend.Entities.Locations.LocationStatus.PUBLISHED, pageable);
         locationsPage.getContent().stream()
+                .filter(loc -> !blockedLocationIds.contains(loc.getId()))
                 .map(loc -> toLocationSearchItem(loc, finalCurrentUser))
                 .forEach(items::add);
 
         org.springframework.data.domain.Page<Offer> offersPage = offerRepository.findByStatusOrderByIdDesc(OfferStatus.ACTIVE, pageable);
         offersPage.getContent().stream()
+                .filter(off -> off.getLocation() == null || !blockedLocationIds.contains(off.getLocation().getId()))
                 .map(off -> toOfferSearchItem(off, finalCurrentUser))
                 .forEach(items::add);
 

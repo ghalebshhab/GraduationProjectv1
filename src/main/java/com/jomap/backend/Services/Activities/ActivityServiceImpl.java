@@ -30,6 +30,9 @@ import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 
+import com.jomap.backend.Entities.Users.UserBlockRepository;
+import com.jomap.backend.Entities.Locations.LocationBlockRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -45,6 +48,8 @@ public class ActivityServiceImpl implements ActivityService {
     private final com.jomap.backend.Entities.Feedback.FeedbackRepository feedbackRepository;
     private final com.jomap.backend.Services.Notefications.EmailService emailService;
     private final NotificationRepository notificationRepository;
+    private final UserBlockRepository userBlockRepository;
+    private final LocationBlockRepository locationBlockRepository;
 
     @Override
     @Transactional
@@ -165,8 +170,19 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     public ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<ActivityResponse>> getApprovedActivities(int page, int size) {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        org.springframework.data.domain.Page<Activity> activityPage = activityRepository.findByStatusInOrderByIdDesc(
+        
+        User currentUser = getCurrentUser();
+        List<Long> blockedLocationIds = currentUser != null ? 
+            locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId()) : List.of();
+
+        org.springframework.data.domain.Page<Activity> activityPage;
+        if (blockedLocationIds.isEmpty()) {
+            activityPage = activityRepository.findByStatusInOrderByIdDesc(
                 List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), pageable);
+        } else {
+            activityPage = activityRepository.findApprovedActivitiesExcludingBlocked(
+                List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), blockedLocationIds, pageable);
+        }
         
         org.springframework.data.domain.Page<ActivityResponse> responsePage = activityPage.map(this::mapToResponse);
         return ApiResponse.success("Approved Activities fetched successfully", com.jomap.backend.DTOs.PaginatedResponse.from(responsePage));
@@ -174,8 +190,13 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public ApiResponse<List<ActivityResponse>> getUpcomingApprovedActivities() {
+        User currentUser = getCurrentUser();
+        List<Long> blockedLocationIds = currentUser != null ? 
+            locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId()) : List.of();
+
         List<ActivityResponse> activities = activityRepository.findByStatus(ActivityStatus.APPROVED)
                 .stream()
+                .filter(activity -> activity.getLocationId() == null || !blockedLocationIds.contains(activity.getLocationId()))
                 .map(this::mapToResponse)
                 .toList();
         return ApiResponse.success("Upcoming Activities fetched successfully", activities);
@@ -183,9 +204,14 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public ApiResponse<List<ActivityResponse>> getActivitiesByGovernorate(Long governorateId) {
+        User currentUser = getCurrentUser();
+        List<Long> blockedLocationIds = currentUser != null ? 
+            locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId()) : List.of();
+
         List<ActivityResponse> activities = activityRepository
                 .findByStatusAndGovernorateId(ActivityStatus.APPROVED, governorateId)
                 .stream()
+                .filter(activity -> activity.getLocationId() == null || !blockedLocationIds.contains(activity.getLocationId()))
                 .map(this::mapToResponse)
                 .toList();
 
@@ -865,5 +891,14 @@ public class ActivityServiceImpl implements ActivityService {
                 .collect(Collectors.toList());
 
         return ApiResponse.success("تم تحميل قائمة الإشعارات بنجاح", result);
+    }
+
+    private User getCurrentUser() {
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return userRepository.findByEmail(auth.getName()).orElse(null);
+        }
+        return null;
     }
 }

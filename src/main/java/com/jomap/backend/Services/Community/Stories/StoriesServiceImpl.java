@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import com.jomap.backend.Entities.Users.UserBlockRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -30,6 +31,7 @@ public class StoriesServiceImpl implements StoryService {
     private final Storyrepo storyRepository;
     private final UserRepository userRepository;
     private final FriendshipRepository friendshipRepository;
+    private final UserBlockRepository userBlockRepository;
 
     @PersistenceContext
     private EntityManager entity;
@@ -66,14 +68,24 @@ public class StoriesServiceImpl implements StoryService {
     @Override
     public ApiResponse<List<StoryResponse>> getActiveStories(int page, int size) {
         Instant now = Instant.now();
+        User currentUser = getCurrentUser();
+        List<Long> excludedUserIds = new ArrayList<>();
+        if (currentUser != null) {
+            excludedUserIds.addAll(userBlockRepository.findBlockedUserIdsByBlockerId(currentUser.getId()));
+            excludedUserIds.addAll(userBlockRepository.findBlockedUserIdsByBlockedId(currentUser.getId()));
+        }
 
-        TypedQuery<Story> q = entity.createQuery(
-                "FROM Story s " +
-                        "WHERE s.isDeleted = false AND s.expiresAt > :now " +
-                        "ORDER BY s.createdAt DESC",
-                Story.class
-        );
+        String jpql = "FROM Story s WHERE s.isDeleted = false AND s.expiresAt > :now ";
+        if (!excludedUserIds.isEmpty()) {
+            jpql += "AND s.author.id NOT IN :excludedUserIds ";
+        }
+        jpql += "ORDER BY s.createdAt DESC";
+
+        TypedQuery<Story> q = entity.createQuery(jpql, Story.class);
         q.setParameter("now", now);
+        if (!excludedUserIds.isEmpty()) {
+            q.setParameter("excludedUserIds", excludedUserIds);
+        }
         q.setFirstResult(page * size);
         q.setMaxResults(size);
 
@@ -88,6 +100,15 @@ public class StoriesServiceImpl implements StoryService {
     @Override
     public ApiResponse<List<StoryResponse>> getActiveStoriesByUser(Long userId, int page, int size) {
         Instant now = Instant.now();
+
+        User currentUser = getCurrentUser();
+        if (currentUser != null) {
+            List<Long> blockedUserIds = userBlockRepository.findBlockedUserIdsByBlockerId(currentUser.getId());
+            List<Long> blockedByUserIds = userBlockRepository.findBlockedUserIdsByBlockedId(currentUser.getId());
+            if (blockedUserIds.contains(userId) || blockedByUserIds.contains(userId)) {
+                return ApiResponse.success("User active stories fetched successfully", new ArrayList<>());
+            }
+        }
 
         TypedQuery<Story> q = entity.createQuery(
                 "FROM Story s " +
@@ -130,6 +151,11 @@ public class StoriesServiceImpl implements StoryService {
                 friendIds.add(f.getRequester().getId());
             }
         }
+
+        List<Long> blockedUserIds = userBlockRepository.findBlockedUserIdsByBlockerId(currentUser.getId());
+        List<Long> blockedByUserIds = userBlockRepository.findBlockedUserIdsByBlockedId(currentUser.getId());
+        friendIds.removeAll(blockedUserIds);
+        friendIds.removeAll(blockedByUserIds);
 
         if (friendIds.isEmpty()) {
             return ApiResponse.success("No friends found", new ArrayList<>());

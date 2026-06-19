@@ -26,6 +26,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Users.User;
+import com.jomap.backend.Entities.Locations.LocationBlockRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
 public class GovernorateService {
@@ -36,6 +42,8 @@ public class GovernorateService {
     private final ActivityRepository activityRepository;
     private final LocationRepo locationRepo; 
     private final OfferRepo offerRepository;
+    private final UserRepository userRepository;
+    private final LocationBlockRepository locationBlockRepository;
 
     public List<Governorate> getAllGovernorates() {
         return governorateRepository.findAll();
@@ -83,6 +91,19 @@ public class GovernorateService {
             return new ApiResponse<>(false, "المحافظة غير موجودة", null);
         }
 
+        // Fetch blocked location IDs for current user
+        List<Long> blockedLocationIds = new ArrayList<>();
+        try {
+            org.springframework.security.core.Authentication auth = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                userRepository.findByEmail(auth.getName()).ifPresent(currentUser -> {
+                    blockedLocationIds.addAll(locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId()));
+                });
+            }
+        } catch (Exception ignored) {}
+        final List<Long> finalBlockedLocs = blockedLocationIds;
+
         // 1. سحب صور غلاف المحافظة
         List<String> imageUrls = gov.getImages().stream()
                 .map(GovernorateImage::getImageUrl)
@@ -93,6 +114,11 @@ public class GovernorateService {
 
         // 3. سحب المواقع النشطة والمقبولة التي أنشأها المستخدمون في هذه المحافظة
         List<LocationList> userLocations = locationRepo.findByGovernorateIdAndActiveTrueAndApprovedTrue(id);
+        if (!finalBlockedLocs.isEmpty()) {
+            userLocations = userLocations.stream()
+                    .filter(loc -> !finalBlockedLocs.contains(loc.getId()))
+                    .collect(Collectors.toList());
+        }
 
         // 🎯 أماكن مقترحة: User locations ONLY (excluding teams/organizations)
         List<PlaceResponse> suggestedPlaces = userLocations.stream()
@@ -119,17 +145,18 @@ public class GovernorateService {
         List<ActivityResponse> approvedActivities = activityRepository
                 .findByStatusInAndGovernorateId(List.of(ActivityStatus.APPROVED, ActivityStatus.POSTPONED), id).stream()
                 .filter(activity -> !activity.getIsDeleted())
+                .filter(activity -> activity.getLocationId() == null || !finalBlockedLocs.contains(activity.getLocationId()))
                 .limit(5)
                 .map(activity -> { 
                     List<com.jomap.backend.DTOs.Activities.ActivitySchedule> scheduleDtos = new ArrayList<>();
                     if (activity.getSchedules() != null) {
                         for (ActivitySchedule schedule : activity.getSchedules()) {
                             scheduleDtos.add(com.jomap.backend.DTOs.Activities.ActivitySchedule.builder()
-                                    .date(schedule.getDate())
-                                    .dayName(schedule.getDayName())
-                                    .startTime(schedule.getStartTime())
-                                    .endTime(schedule.getEndTime())
-                                    .build());
+                                     .date(schedule.getDate())
+                                     .dayName(schedule.getDayName())
+                                     .startTime(schedule.getStartTime())
+                                     .endTime(schedule.getEndTime())
+                                     .build());
                         }
                     }
 
@@ -158,6 +185,7 @@ public class GovernorateService {
         List<OfferResponse> approvedOffers = offerRepository
                 .findByStatusAndGovernorateId(OfferStatus.ACTIVE, id).stream()
                 .filter(offer -> !offer.getIsDeleted())
+                .filter(offer -> offer.getLocation() == null || !finalBlockedLocs.contains(offer.getLocation().getId()))
                 .limit(5)
                 .map(offer -> {
                     List<OfferProductResponse> productDtos = new ArrayList<>();

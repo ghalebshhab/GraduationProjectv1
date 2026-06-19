@@ -27,4 +27,7 @@ public interface OfferRepo extends JpaRepository<Offer, Long> {
     List<Offer> findAllByOrderByIdDesc();
     org.springframework.data.domain.Page<Offer> findAllByOrderByIdDesc(org.springframework.data.domain.Pageable pageable);
     org.springframework.data.domain.Page<Offer> findByStatusOrderByIdDesc(OfferStatus status, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT o FROM Offer o WHERE o.location.id NOT IN :locationIds ORDER BY o.id DESC")
+    org.springframework.data.domain.Page<Offer> findByLocationIdNotInOrderByIdDesc(@Param("locationIds") java.util.Collection<Long> locationIds, org.springframework.data.domain.Pageable pageable);
 }

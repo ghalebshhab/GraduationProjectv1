@@ -25,6 +25,7 @@ import com.jomap.backend.Services.Community.Posts.Likes.PostLikeService;
 import com.jomap.backend.Entities.Posts.SavedPosts.SavedPostsRepository;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Offers.OfferRepo;
+import com.jomap.backend.Entities.Offers.Offer;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
 import com.jomap.backend.Entities.Activities.Activity;
@@ -32,6 +33,9 @@ import com.jomap.backend.Entities.Notifications.Notification;
 import com.jomap.backend.Entities.Notifications.NotificationCategory;
 import com.jomap.backend.Entities.Notifications.NotificationRepository;
 import com.jomap.backend.Entities.Notifications.NotificationType;
+
+import com.jomap.backend.Entities.Users.UserBlockRepository;
+import com.jomap.backend.Entities.Locations.LocationBlockRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -49,6 +53,8 @@ public class PostServiceImpl implements PostsServices {
     private final ActivityRepository activityRepository;
     private final OfferRepo offerRepo;
     private final NotificationRepository notificationRepository;
+    private final UserBlockRepository userBlockRepository;
+    private final LocationBlockRepository locationBlockRepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // ALGORITHM WEIGHTS (each mode must sum to 1.0)
@@ -345,6 +351,8 @@ public class PostServiceImpl implements PostsServices {
                 .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
                 .toList();
 
+        candidates = filterCandidatesByBlocks(candidates, currentUser);
+
         if (candidates.isEmpty()) {
             return ApiResponse.success("Personalized feed fetched successfully", List.of());
         }
@@ -400,6 +408,8 @@ public class PostServiceImpl implements PostsServices {
                 .stream()
                 .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
                 .toList();
+
+        candidates = filterCandidatesByBlocks(candidates, currentUser);
 
         if (candidates.isEmpty()) {
             return ApiResponse.success("Feed fetched successfully", 
@@ -766,6 +776,44 @@ public class PostServiceImpl implements PostsServices {
                 .toList();
 
         return ApiResponse.success("Activity posts fetched successfully", responses);
+    }
+
+    private List<Post> filterCandidatesByBlocks(List<Post> candidates, User currentUser) {
+        if (currentUser == null) {
+            return candidates;
+        }
+        List<Long> blockedUserIds = userBlockRepository.findBlockedUserIdsByBlockerId(currentUser.getId());
+        List<Long> blockedByUserIds = userBlockRepository.findBlockedUserIdsByBlockedId(currentUser.getId());
+        List<Long> blockedLocationIds = locationBlockRepository.findBlockedLocationIdsByBlockerId(currentUser.getId());
+
+        return candidates.stream()
+                .filter(p -> {
+                    if (p.getAuthor() != null) {
+                        Long authorId = p.getAuthor().getId();
+                        if (blockedUserIds.contains(authorId) || blockedByUserIds.contains(authorId)) {
+                            return false;
+                        }
+                        
+                        Optional<LocationList> ownerLocOpt = locationRepo.findByOwnerId(authorId);
+                        if (ownerLocOpt.isPresent() && blockedLocationIds.contains(ownerLocOpt.get().getId())) {
+                            return false;
+                        }
+                    }
+                    if (p.getOfferId() != null) {
+                        Offer offer = offerRepo.findById(p.getOfferId()).orElse(null);
+                        if (offer != null && offer.getLocation() != null && blockedLocationIds.contains(offer.getLocation().getId())) {
+                            return false;
+                        }
+                    }
+                    if (p.getActivityId() != null) {
+                        Activity activity = activityRepository.findById(p.getActivityId()).orElse(null);
+                        if (activity != null && activity.getLocationId() != null && blockedLocationIds.contains(activity.getLocationId())) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .toList();
     }
     // ─────────────────────────────────────────────────────────────────────────
     // INTERNAL RECORD

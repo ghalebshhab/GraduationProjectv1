@@ -34,4 +34,11 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     List<Activity> findByStatusInOrderByIdDesc(List<ActivityStatus> statuses);
 
     org.springframework.data.domain.Page<Activity> findByStatusInOrderByIdDesc(List<ActivityStatus> statuses, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT a FROM Activity a WHERE a.status IN :statuses AND (a.locationId IS NULL OR a.locationId NOT IN :blockedLocationIds) ORDER BY a.id DESC")
+    org.springframework.data.domain.Page<Activity> findApprovedActivitiesExcludingBlocked(
+            @Param("statuses") java.util.Collection<ActivityStatus> statuses,
+            @Param("blockedLocationIds") java.util.Collection<Long> blockedLocationIds,
+            org.springframework.data.domain.Pageable pageable
+    );
 }
