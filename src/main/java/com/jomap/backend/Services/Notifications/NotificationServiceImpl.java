@@ -11,6 +11,8 @@ import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Entities.Feedback.Feedback;
 import com.jomap.backend.Entities.Feedback.FeedbackRepository;
+import com.jomap.backend.Entities.Activities.Activity;
+import com.jomap.backend.Entities.Activities.ActivityRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +26,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final FeedbackRepository feedbackRepository;
+    private final ActivityRepository activityRepository;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository, UserRepository userRepository, FeedbackRepository feedbackRepository) {
+    public NotificationServiceImpl(NotificationRepository notificationRepository, UserRepository userRepository, FeedbackRepository feedbackRepository, ActivityRepository activityRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.feedbackRepository = feedbackRepository;
+        this.activityRepository = activityRepository;
     }
 
     @Override
@@ -226,6 +230,20 @@ public class NotificationServiceImpl implements NotificationService {
             }
         }
 
+        String activityName = null;
+        String activityImage = null;
+        if (notification.getActivityId() != null) {
+            try {
+                Optional<Activity> activityOpt = activityRepository.findById(notification.getActivityId());
+                if (activityOpt.isPresent()) {
+                    activityName = activityOpt.get().getTitle();
+                    activityImage = activityOpt.get().getImageUrl();
+                }
+            } catch (Exception e) {
+                System.out.println("Error fetching activity info for notification: " + e.getMessage());
+            }
+        }
+
         if (notification.getFromUser() != null) {
             try {
                 User fromUser = notification.getFromUser();
@@ -254,6 +272,8 @@ public class NotificationServiceImpl implements NotificationService {
                 .fromUsername(fromUsername)
                 .fromUserProfileImage(fromUserProfileImage)
                 .activityId(notification.getActivityId())
+                .activityName(activityName)
+                .activityImage(activityImage)
                 .postId(notification.getPostId())
                 .offerId(notification.getOfferId())
                 .locationId(notification.getLocationId())

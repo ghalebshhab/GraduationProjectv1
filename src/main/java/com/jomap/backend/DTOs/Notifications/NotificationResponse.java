@@ -22,6 +22,8 @@ public class NotificationResponse {
     private String fromUserProfileImage;
     
     private Long activityId;
+    private String activityName;
+    private String activityImage;
     private Long postId;
     private Long offerId;
     private Long locationId;
