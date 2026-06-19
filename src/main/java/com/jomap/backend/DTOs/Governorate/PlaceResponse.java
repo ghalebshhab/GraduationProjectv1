@@ -18,4 +18,5 @@ public class PlaceResponse {
     private boolean isUserGenerated;
     private String logoUrl;
     private Double rating;
+    private String governorateName;
 }

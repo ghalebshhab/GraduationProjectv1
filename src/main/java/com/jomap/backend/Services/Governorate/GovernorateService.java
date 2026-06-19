@@ -202,6 +202,7 @@ public class GovernorateService {
                 .imageUrl(place.getImageUrl())
                 .category(place.getCategory() != null ? place.getCategory().getLabel() : "اخرى")
                 .isUserGenerated(false) 
+                .governorateName(place.getGovernorate() != null ? place.getGovernorate().getName() : null)
                 .build();
     }
 
@@ -216,6 +217,7 @@ public class GovernorateService {
                 .isUserGenerated(true) 
                 .logoUrl(loc.getLogoUrl())
                 .rating(loc.getRating())
+                .governorateName(loc.getGovernorate() != null ? loc.getGovernorate().getName() : null)
                 .build();
     }
 
