@@ -203,7 +203,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public ApiResponse<List<NotificationResponse>> getNotificationsByActivityId(Long activityId) {
         List<NotificationResponse> responses = notificationRepository
-                .findByActivityIdOrderByCreatedAtDesc(activityId)
+                .findByActivityIdAndTypeNotOrderByCreatedAtDesc(activityId, NotificationType.ACTIVITY_REGISTRATION)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
