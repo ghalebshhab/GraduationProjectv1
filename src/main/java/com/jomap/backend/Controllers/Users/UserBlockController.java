@@ -1,6 +1,7 @@
 package com.jomap.backend.Controllers.Users;
 
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Locations.BlockedLocationResponse;
 import com.jomap.backend.DTOs.Users.BlockedUserResponse;
 import com.jomap.backend.Services.Users.UserBlockService;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +43,13 @@ public class UserBlockController {
     ) {
         String email = authentication.getName();
         return ResponseEntity.ok(userBlockService.unblockUser(email, userId));
+    }
+
+    @GetMapping("/blocks/locations")
+    public ResponseEntity<ApiResponse<List<BlockedLocationResponse>>> getBlockedLocations(
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(userBlockService.getBlockedLocations(email));
     }
 }

@@ -12,4 +12,8 @@ public interface LocationBlockRepository extends JpaRepository<LocationBlock, Lo
     boolean existsByBlockerAndBlockedLocation(User blocker, LocationList blockedLocation);
 
     void deleteByBlockerAndBlockedLocation(User blocker, LocationList blockedLocation);
+
+    java.util.List<LocationBlock> findByBlocker(User blocker);
+
+    java.util.Optional<LocationBlock> findByBlockerAndBlockedLocation(User blocker, LocationList blockedLocation);
 }

@@ -29,4 +29,6 @@ public class UserProfileResponse {
     private String instagramUrl;
     private String facebookUrl;
     private String linkedinUrl;
+
+    private Boolean isBlocked;
 }

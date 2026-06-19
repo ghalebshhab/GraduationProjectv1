@@ -1,10 +1,13 @@
 package com.jomap.backend.Services.Users;
 
 import com.jomap.backend.DTOs.ApiResponse;
+import com.jomap.backend.DTOs.Locations.BlockedLocationResponse;
 import com.jomap.backend.DTOs.Users.BlockedUserResponse;
 import com.jomap.backend.Entities.Friendship.Friendship;
 import com.jomap.backend.Entities.Friendship.FriendshipRepository;
 import com.jomap.backend.Entities.Friendship.FriendshipStatus;
+import com.jomap.backend.Entities.Locations.LocationBlock;
+import com.jomap.backend.Entities.Locations.LocationBlockRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserBlock;
 import com.jomap.backend.Entities.Users.UserBlockRepository;
@@ -25,6 +28,7 @@ public class UserBlockServiceImpl implements UserBlockService {
     private final UserBlockRepository userBlockRepository;
     private final FriendshipRepository friendshipRepository;
     private final UserProfileRepository userProfileRepository;
+    private final LocationBlockRepository locationBlockRepository;
 
     @Override
     @Transactional
@@ -122,5 +126,31 @@ public class UserBlockServiceImpl implements UserBlockService {
                 .collect(Collectors.toList());
 
         return ApiResponse.success("تم تحميل قائمة الحظر بنجاح", responseList);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<BlockedLocationResponse>> getBlockedLocations(String blockerEmail) {
+        User blocker = userRepository.findByEmail(blockerEmail).orElse(null);
+        if (blocker == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        List<LocationBlock> blocks = locationBlockRepository.findByBlocker(blocker);
+
+        List<BlockedLocationResponse> responseList = blocks.stream()
+                .map(block -> {
+                    var loc = block.getBlockedLocation();
+                    return new BlockedLocationResponse(
+                            loc.getId(),
+                            loc.getName(),
+                            loc.getLogoUrl(),
+                            loc.getCoverUrl(),
+                            loc.getCategory()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return ApiResponse.success("تم تحميل قائمة حظر المنشآت بنجاح", responseList);
     }
 }

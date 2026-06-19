@@ -23,6 +23,7 @@ public class LocationResponse {
     private Boolean isActive;
     private Boolean isApproved;
     private Boolean isFavorite;
+    private Boolean isBlocked;
     
     private String facebookUrl;
     private String instagramUrl;

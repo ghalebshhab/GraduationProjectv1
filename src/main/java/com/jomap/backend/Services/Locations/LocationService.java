@@ -36,4 +36,5 @@ public interface LocationService {
     ApiResponse<String> followLocation(Long locationId, String userEmail);
     ApiResponse<String> unfollowLocation(Long locationId, String userEmail);
     ApiResponse<String> blockLocation(Long locationId, String userEmail);
-}
+    ApiResponse<String> unblockLocation(Long locationId, String userEmail);
+}

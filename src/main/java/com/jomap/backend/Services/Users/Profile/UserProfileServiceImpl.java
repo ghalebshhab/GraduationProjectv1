@@ -8,6 +8,7 @@ import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.Profile.UserProfile;
 import com.jomap.backend.Entities.Users.Profile.UserProfileRepository;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Entities.Users.UserBlockRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,8 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
-    private final LocationRepo locationRepository; 
+    private final LocationRepo locationRepository;
+    private final UserBlockRepository userBlockRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -207,7 +209,22 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setInstagramUrl(profile.getInstagramUrl());
         response.setFacebookUrl(profile.getFacebookUrl());
         response.setLinkedinUrl(profile.getLinkedinUrl());
-        
+
+        // isBlocked: check if the currently authenticated user has blocked this profile's user
+        response.setIsBlocked(false);
+        try {
+            org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String currentEmail = auth.getName();
+                userRepository.findByEmail(currentEmail).ifPresent(currentUser -> {
+                    if (!currentUser.getId().equals(user.getId())) {
+                        boolean blocked = userBlockRepository.existsByBlockerAndBlocked(currentUser, user);
+                        response.setIsBlocked(blocked);
+                    }
+                });
+            }
+        } catch (Exception ignored) { }
 
         return response;
     }

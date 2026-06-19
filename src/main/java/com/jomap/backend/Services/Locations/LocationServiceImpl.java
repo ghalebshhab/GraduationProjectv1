@@ -397,6 +397,7 @@ public class LocationServiceImpl implements LocationService {
         response.setName(location.getName());
         
         response.setIsFavorite(false);
+        response.setIsBlocked(false);
         try {
             org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
@@ -404,6 +405,8 @@ public class LocationServiceImpl implements LocationService {
                 userRepository.findByEmail(email).ifPresent(user -> {
                     boolean isFav = user.getFavoriteLocations().stream().anyMatch(l -> l.getId().equals(location.getId()));
                     response.setIsFavorite(isFav);
+                    boolean isBlocked = locationBlockRepository.existsByBlockerAndBlockedLocation(user, location);
+                    response.setIsBlocked(isBlocked);
                 });
             }
         } catch (Exception ignored) { }
@@ -650,4 +653,26 @@ public class LocationServiceImpl implements LocationService {
 
         return ApiResponse.success("تم حظر المنشأة بنجاح", "Location blocked successfully");
     }
-}
+
+    @Override
+    @Transactional
+    public ApiResponse<String> unblockLocation(Long locationId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user == null) {
+            return ApiResponse.error("User not found");
+        }
+
+        LocationList location = locationRepository.findById(locationId).orElse(null);
+        if (location == null) {
+            return ApiResponse.error("Location not found");
+        }
+
+        if (!locationBlockRepository.existsByBlockerAndBlockedLocation(user, location)) {
+            return ApiResponse.success("المنشأة غير محظورة أصلاً", "Location is not blocked");
+        }
+
+        locationBlockRepository.deleteByBlockerAndBlockedLocation(user, location);
+
+        return ApiResponse.success("تم إلغاء حظر المنشأة بنجاح", "Location unblocked successfully");
+    }
+}

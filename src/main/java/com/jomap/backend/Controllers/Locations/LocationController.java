@@ -214,4 +214,15 @@ public class LocationController {
         }
         return ResponseEntity.ok(locationService.blockLocation(id, principal.getName()));
     }
-}
+
+    @PostMapping("/{id}/unblock")
+    public ResponseEntity<ApiResponse<String>> unblockLocation(
+            @PathVariable Long id,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        return ResponseEntity.ok(locationService.unblockLocation(id, principal.getName()));
+    }
+}
