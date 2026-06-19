@@ -34,6 +34,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     private final UserRepository userRepository;
     private final LocationRepo locationRepo;
     private final ActivityRepository activityRepository;
+    private final com.jomap.backend.Services.Notifications.NotificationService notificationService;
 
     @Override
     public ApiResponse<List<FeedbackResponse>> getFeedbacks(TargetType targetType, Long targetId) {
@@ -93,6 +94,23 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         // Update the Location/Activity average rating and reviewCount
         updateTargetStats(type, request.getTargetId());
+
+        // Send notification to location owner when a review is submitted
+        if (type == TargetType.LOCATION) {
+            LocationList location = locationRepo.findById(request.getTargetId()).orElse(null);
+            if (location != null && location.getOwner() != null
+                    && !location.getOwner().getId().equals(user.getId())) {
+                com.jomap.backend.DTOs.Notifications.NotificationRequest notifReq =
+                        new com.jomap.backend.DTOs.Notifications.NotificationRequest();
+                notifReq.setText(user.getUsername() + " قيّم منشأتك بـ " + request.getRating() + " نجوم");
+                notifReq.setType("REVIEW");
+                notifReq.setCategory("OWNER");
+                notifReq.setToUserId(location.getOwner().getId());
+                notifReq.setFromUserId(user.getId());
+                notifReq.setLocationId(location.getId());
+                notificationService.sendNotification(notifReq);
+            }
+        }
 
         return ApiResponse.success("تم إضافة التقييم بنجاح", mapToResponse(savedFeedback));
     }
