@@ -85,7 +85,7 @@ public class FavoritesController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/events/{id}")
+    @PostMapping({"/events/{id}", "/activities/{id}"})
     public ResponseEntity<ApiResponse<Void>> addFavoriteActivity(
             @PathVariable Long id,
             Principal principal
@@ -98,7 +98,7 @@ public class FavoritesController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/events/{id}")
+    @DeleteMapping({"/events/{id}", "/activities/{id}"})
     public ResponseEntity<ApiResponse<Void>> removeFavoriteActivity(
             @PathVariable Long id,
             Principal principal
