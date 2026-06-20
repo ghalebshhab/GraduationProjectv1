@@ -2,17 +2,21 @@ package com.jomap.backend.Services.Notefications;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
 
 
@@ -23,7 +27,7 @@ public class EmailService {
 
             helper.setTo(toEmail);
             helper.setSubject("Welcome to JoMap");
-            helper.setFrom("jomap.noreply@gmail.com", "JoMap");
+            helper.setFrom(fromEmail, "JoMap");
 
             String htmlContent = buildWelcomeEmailTemplate(username);
 
@@ -42,6 +46,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
             helper.setSubject("JoMap Password Reset OTP");
+            helper.setFrom(fromEmail, "JoMap");
 
             String htmlContent = """
                 <!DOCTYPE html>
@@ -90,7 +95,7 @@ public class EmailService {
                                             </div>
                 
                                             <p style="background:#fff7ed; color:#c2410c; padding:12px 16px; border-radius:10px; font-size:14px; margin:25px 0;">
-                                                This OTP is valid for <strong>1 minute only</strong>.
+                                                This OTP is valid for <strong>5 minutes only</strong>.
                                             </p>
                 
                                             <p style="color:#6b7280; font-size:14px; line-height:1.6;">
@@ -141,7 +146,7 @@ public class EmailService {
 
             helper.setTo(toEmail);
             helper.setSubject("Login Successful - JoMap");
-            helper.setFrom("jomap.noreply@gmail.com", "JoMap");
+            helper.setFrom(fromEmail, "JoMap");
 
             String htmlContent = buildLoginSuccessTemplate(username);
 
@@ -161,7 +166,7 @@ public class EmailService {
 
             helper.setTo(toEmail);
             helper.setSubject("تحديث حالة الفعالية: " + activityName);
-            helper.setFrom("jomap.noreply@gmail.com", "JoMap");
+            helper.setFrom(fromEmail, "JoMap");
 
             String htmlContent = """
                 <!DOCTYPE html>
@@ -194,7 +199,7 @@ public class EmailService {
 
             helper.setTo(toEmail);
             helper.setSubject("تعديل على تفاصيل الفعالية: " + activityName);
-            helper.setFrom("jomap.noreply@gmail.com", "JoMap");
+            helper.setFrom(fromEmail, "JoMap");
 
             StringBuilder changesList = new StringBuilder("<ul>");
             for(String change : changes) {

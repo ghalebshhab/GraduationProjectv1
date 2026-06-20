@@ -41,6 +41,9 @@ public class SecurityConfig {
                                         .requestMatchers("/api/auth/register").permitAll()
                                         .requestMatchers("/api/auth/google").permitAll()
                                         .requestMatchers("/api/auth/facebook").permitAll()
+                                        .requestMatchers("/api/auth/forgot-password").permitAll()
+                                        .requestMatchers("/api/auth/verify-reset-otp").permitAll()
+                                        .requestMatchers("/api/auth/reset-password").permitAll()
                                                 .requestMatchers("/api/admin/auth/**").permitAll()
                                                 .requestMatchers("/api/test/**").authenticated()
                                                 .requestMatchers(
