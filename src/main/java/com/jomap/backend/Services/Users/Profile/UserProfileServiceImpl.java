@@ -4,6 +4,7 @@ import com.jomap.backend.DTOs.ApiResponse;
 import com.jomap.backend.DTOs.UserProfile.UpdateUserProfileRequest;
 import com.jomap.backend.DTOs.UserProfile.UserProfileResponse;
 import com.jomap.backend.Entities.Locations.LocationRepo;
+import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.Profile.UserProfile;
 import com.jomap.backend.Entities.Users.Profile.UserProfileRepository;
@@ -265,7 +266,23 @@ public class UserProfileServiceImpl implements UserProfileService {
             user.getProfile().setBirthDate(null);
         }
 
-        // Soft delete user's own data (Posts, Comments, Stories, Story Replies, Activities, Offers, Feedback)
+        // Soft delete user's location (LocationList) and its related data (Offers, Activities)
+        LocationList location = locationRepository.findByOwnerId(user.getId()).orElse(null);
+        if (location != null) {
+            entityManager.createQuery("UPDATE LocationList l SET l.isDeleted = true, l.deletedAt = :deletedAt WHERE l.id = :locationId")
+                    .setParameter("locationId", location.getId())
+                    .setParameter("deletedAt", java.time.LocalDateTime.now())
+                    .executeUpdate();
+
+            entityManager.createQuery("UPDATE Offer o SET o.isDeleted = true WHERE o.location = :location")
+                    .setParameter("location", location)
+                    .executeUpdate();
+
+            entityManager.createQuery("UPDATE Activity a SET a.isDeleted = true WHERE a.locationId = :locationId")
+                    .setParameter("locationId", location.getId())
+                    .executeUpdate();
+        }
+
         entityManager.createQuery("UPDATE Post p SET p.isDeleted = true WHERE p.author = :user")
                 .setParameter("user", user)
                 .executeUpdate();
