@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @CrossOrigin(origins = {
         "http://localhost:5173",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "https://jomab-712232187160.europe-west1.run.app"
 })
 public class SocialController {
 
