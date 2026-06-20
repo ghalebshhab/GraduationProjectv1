@@ -374,8 +374,6 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     private String persistNotificationRejectionReasonDirectly(Notification notification, LocationList location) {
-        ensureNotificationRejectionReasonColumnExists();
-
         String text = buildLocationRejectedText(location);
         String rejectionReason = location.getRejectionReason() == null ? "" : location.getRejectionReason().trim();
 
@@ -397,20 +395,6 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         );
     }
 
-    private void ensureNotificationRejectionReasonColumnExists() {
-        try {
-            jdbcTemplate.execute("ALTER TABLE notifications ADD COLUMN rejection_reason VARCHAR(2000)");
-        } catch (Exception e) {
-            String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
-            if (message.contains("duplicate")
-                    || message.contains("already exists")
-                    || message.contains("exists")
-                    || (message.contains("column") && message.contains("rejection_reason"))) {
-                return;
-            }
-            throw e;
-        }
-    }
     private String buildLocationRejectedText(LocationList location) {
         String locationName = location.getName() == null || location.getName().trim().isEmpty()
                 ? "منشأتك"
