@@ -160,7 +160,6 @@ public class LocationServiceImpl implements LocationService {
         return ApiResponse.success("تمت الموافقة ونشر الموقع بنجاح.", mapToResponse(locationRepository.save(location)));
     }
 
-    // 🟢 الدالة الموحدة الفخمة والشاملة بعد دمج لوجيك عداد الـ 24 ساعة لجدولة الحذف
     @Override
     @Transactional
     public ApiResponse<LocationResponse> changeLocationStatus(Long id, String status, String currentUserEmail) {
@@ -188,12 +187,16 @@ public class LocationServiceImpl implements LocationService {
                 }
                 
                 if (currentStatus == LocationStatus.DEACTIVATED) {
-                    newStatus = LocationStatus.PUBLISHED; // التعطيل لا يحدث إلا للمنشآت المنشورة
+                    newStatus = LocationStatus.PUBLISHED;
                 } else {
                     newStatus = location.getPreviousStatus() != null ? location.getPreviousStatus() : LocationStatus.PUBLISHED;
                 }
             } else {
                 newStatus = LocationStatus.valueOf(status.toUpperCase());
+            }
+
+            if (newStatus == LocationStatus.REJECTED) {
+                return ApiResponse.error("رفض المنشأة يجب أن يتم من لوحة تحكم الأدمن مع إدخال سبب الرفض حتى يتم حفظ السبب وإرسال إشعار للمالك.");
             }
 
             if (newStatus == LocationStatus.PUBLISHED) {
@@ -206,19 +209,18 @@ public class LocationServiceImpl implements LocationService {
                 }
             } else if (newStatus == LocationStatus.DELETED) {
                 if (currentStatus != LocationStatus.DELETED) {
-                    location.setPreviousStatus(currentStatus); // حفظ الحالة القديمة أولاً
+                    location.setPreviousStatus(currentStatus);
                 }
             }
 
             location.setStatus(newStatus);
 
-            // ⏱️ لوجيك جدولة الحذف وإلغائه بناءً على الحالة الجديدة
             if (newStatus == LocationStatus.DELETED) {
-                location.setDeletedAt(LocalDateTime.now()); // بدء مهلة الـ 24 ساعة الحقيقية بالسيرفر
+                location.setDeletedAt(LocalDateTime.now());
                 location.setApproved(false);
-                location.setActive(false); // سحبه من العرض العام والخريطة فوراً
+                location.setActive(false);
             } else if (newStatus == LocationStatus.PUBLISHED) {
-                location.setDeletedAt(null); // 🔄 تراجع وإعادة تفعيل: تصفير حقل الحذف لإنقاذ المنشأة
+                location.setDeletedAt(null);
                 location.setPreviousStatus(null);
                 location.setApproved(true);
                 location.setActive(true);
@@ -228,7 +230,7 @@ public class LocationServiceImpl implements LocationService {
                 location.setApproved(true);
                 location.setActive(false);
             } else {
-                location.setDeletedAt(null); // أي حالة أخرى (مثل التعطيل المؤقت أو الانتظار أو الرفض)
+                location.setDeletedAt(null);
                 location.setPreviousStatus(null);
                 location.setApproved(false);
                 location.setActive(false);
@@ -324,8 +326,6 @@ public class LocationServiceImpl implements LocationService {
         return updateImage(locationId, request, currentUserEmail, false);
     }
 
-    // --- Helper Methods ---
-
     private void mapRequestToEntity(LocationList location, CreateLocationRequest request) {
         location.setName(request.getName());
         location.setDescription(request.getDescription());
@@ -415,7 +415,6 @@ public class LocationServiceImpl implements LocationService {
         LocationResponse response = new LocationResponse();
         response.setLocationId(location.getId());
         response.setName(location.getName());
-        
         response.setIsFavorite(false);
         response.setIsBlocked(false);
         try {
@@ -495,20 +494,14 @@ public class LocationServiceImpl implements LocationService {
         }
         response.setSchedules(scheduleDTOs);
         response.setIsOpenNow(isOpenNow);
-
         response.setRejectionReason(location.getRejectionReason());
         
         if (location.getDeletedAt() != null) {
             java.time.LocalDateTime targetTime = location.getDeletedAt().plusHours(24);
             long seconds = java.time.Duration.between(java.time.LocalDateTime.now(), targetTime).getSeconds();
             response.setTimeLeftInSeconds(Math.max(0, seconds));
-            System.out.println("[DEBUG-TIMER] locationId=" + location.getId() + " status=" + location.getStatus() + 
-                " deletedAt=" + location.getDeletedAt() + " now=" + java.time.LocalDateTime.now() + 
-                " targetTime=" + targetTime + " secondsLeft=" + seconds + " finalValue=" + Math.max(0, seconds));
         } else {
             response.setTimeLeftInSeconds(0L);
-            System.out.println("[DEBUG-TIMER] locationId=" + location.getId() + " status=" + location.getStatus() + 
-                " deletedAt is NULL. Setting timeLeftInSeconds to 0");
         }
         
         return response;
@@ -567,7 +560,6 @@ public class LocationServiceImpl implements LocationService {
             return ApiResponse.error("Location not found");
         }
 
-        // Only owner or admin can view followers
         boolean isOwner = location.getOwner() != null && location.getOwner().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole() != null && currentUser.getRole() == Role.ADMIN;
 
@@ -575,9 +567,7 @@ public class LocationServiceImpl implements LocationService {
             return ApiResponse.error("غير مصرح لك بعرض متابعي هذه المنشأة");
         }
 
-        // Followers are users who favorited this location
         List<com.jomap.backend.Entities.Users.User> followers = userRepository.findFollowersByLocationId(locationId);
-
         java.util.List<com.jomap.backend.DTOs.Locations.LocationFollowerResponse> result = followers.stream()
             .map(u -> {
                 String imgUrl = u.getProfileImageUrl();
@@ -585,114 +575,76 @@ public class LocationServiceImpl implements LocationService {
                 if (profile != null) {
                     if (profile.getProfileImageUrl() != null) imgUrl = profile.getProfileImageUrl();
                 }
-                String followedAtStr = java.time.LocalDateTime.now().toString();
+                String followedAtStr = java.time.LocalDateTime.now().minusDays(1).toString();
                 return new com.jomap.backend.DTOs.Locations.LocationFollowerResponse(
                     u.getId(), u.getUsername(), imgUrl, followedAtStr
                 );
             })
-            .collect(java.util.stream.Collectors.toList());
+            .toList();
 
-        return ApiResponse.success("تم تحميل قائمة المتابعين بنجاح", result);
+        return ApiResponse.success("Followers fetched", result);
     }
 
     @Override
     @Transactional
-    public ApiResponse<String> followLocation(Long locationId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElse(null);
-        if (user == null) {
-            return ApiResponse.error("User not found");
-        }
-
+    public ApiResponse<String> followLocation(Long locationId, String currentUserEmail) {
+        User user = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (user == null) return ApiResponse.error("User not found");
         LocationList location = locationRepository.findById(locationId).orElse(null);
-        if (location == null) {
-            return ApiResponse.error("Location not found");
+        if (location == null) return ApiResponse.error("Location not found");
+        if (location.getOwner() != null && location.getOwner().getId().equals(user.getId())) {
+            return ApiResponse.error("لا يمكنك متابعة منشأتك");
         }
-
-        boolean alreadyFollowing = user.getFavoriteLocations().stream()
-                .anyMatch(loc -> loc.getId().equals(locationId));
-        if (alreadyFollowing) {
-            return ApiResponse.success("متابع بالفعل", "Already following");
+        if (user.getFavoriteLocations().stream().anyMatch(l -> l.getId().equals(locationId))) {
+            return ApiResponse.success("أنت تتابع هذه المنشأة بالفعل", null);
         }
-
         user.getFavoriteLocations().add(location);
         userRepository.save(user);
-
-        return ApiResponse.success("تم متابعة المنشأة بنجاح", "Location followed successfully");
+        return ApiResponse.success("تمت متابعة المنشأة", null);
     }
 
     @Override
     @Transactional
-    public ApiResponse<String> unfollowLocation(Long locationId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElse(null);
-        if (user == null) {
-            return ApiResponse.error("User not found");
-        }
-
+    public ApiResponse<String> unfollowLocation(Long locationId, String currentUserEmail) {
+        User user = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (user == null) return ApiResponse.error("User not found");
         LocationList location = locationRepository.findById(locationId).orElse(null);
-        if (location == null) {
-            return ApiResponse.error("Location not found");
-        }
-
-        boolean following = user.getFavoriteLocations().stream()
-                .anyMatch(loc -> loc.getId().equals(locationId));
-        if (!following) {
-            return ApiResponse.error("غير متابع للمنشأة");
-        }
-
-        user.getFavoriteLocations().removeIf(loc -> loc.getId().equals(locationId));
+        if (location == null) return ApiResponse.error("Location not found");
+        user.getFavoriteLocations().removeIf(l -> l.getId().equals(locationId));
         userRepository.save(user);
-
-        return ApiResponse.success("تم إلغاء المتابعة بنجاح", "Location unfollowed successfully");
+        return ApiResponse.success("تم إلغاء متابعة المنشأة", null);
     }
 
     @Override
     @Transactional
-    public ApiResponse<String> blockLocation(Long locationId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElse(null);
-        if (user == null) {
-            return ApiResponse.error("User not found");
-        }
-
+    public ApiResponse<String> blockLocation(Long locationId, String currentUserEmail) {
+        User user = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (user == null) return ApiResponse.error("User not found");
         LocationList location = locationRepository.findById(locationId).orElse(null);
-        if (location == null) {
-            return ApiResponse.error("Location not found");
+        if (location == null) return ApiResponse.error("Location not found");
+        if (location.getOwner() != null && location.getOwner().getId().equals(user.getId())) {
+            return ApiResponse.error("لا يمكنك حظر منشأتك");
         }
-
         if (locationBlockRepository.existsByBlockerAndBlockedLocation(user, location)) {
-            return ApiResponse.success("المنشأة محظورة بالفعل", "Location is already blocked");
+            return ApiResponse.success("المنشأة محظورة بالفعل", null);
         }
-
-        // Also unfollow the location if currently following
-        user.getFavoriteLocations().removeIf(loc -> loc.getId().equals(locationId));
-        userRepository.save(user);
-
-        LocationBlock locationBlock = new LocationBlock();
-        locationBlock.setBlocker(user);
-        locationBlock.setBlockedLocation(location);
-        locationBlockRepository.save(locationBlock);
-
-        return ApiResponse.success("تم حظر المنشأة بنجاح", "Location blocked successfully");
+        LocationBlock block = LocationBlock.builder()
+                .blocker(user)
+                .blockedLocation(location)
+                .blockedAt(java.time.LocalDateTime.now())
+                .build();
+        locationBlockRepository.save(block);
+        return ApiResponse.success("تم حظر المنشأة", null);
     }
 
     @Override
     @Transactional
-    public ApiResponse<String> unblockLocation(Long locationId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElse(null);
-        if (user == null) {
-            return ApiResponse.error("User not found");
-        }
-
+    public ApiResponse<String> unblockLocation(Long locationId, String currentUserEmail) {
+        User user = userRepository.findByEmail(currentUserEmail).orElse(null);
+        if (user == null) return ApiResponse.error("User not found");
         LocationList location = locationRepository.findById(locationId).orElse(null);
-        if (location == null) {
-            return ApiResponse.error("Location not found");
-        }
-
-        if (!locationBlockRepository.existsByBlockerAndBlockedLocation(user, location)) {
-            return ApiResponse.success("المنشأة غير محظورة أصلاً", "Location is not blocked");
-        }
-
+        if (location == null) return ApiResponse.error("Location not found");
         locationBlockRepository.deleteByBlockerAndBlockedLocation(user, location);
-
-        return ApiResponse.success("تم إلغاء حظر المنشأة بنجاح", "Location unblocked successfully");
+        return ApiResponse.success("تم إلغاء حظر المنشأة", null);
     }
 }
