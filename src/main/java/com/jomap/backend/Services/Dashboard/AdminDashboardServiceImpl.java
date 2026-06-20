@@ -9,6 +9,10 @@ import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationStatus;
+import com.jomap.backend.Entities.Notifications.Notification;
+import com.jomap.backend.Entities.Notifications.NotificationCategory;
+import com.jomap.backend.Entities.Notifications.NotificationRepository;
+import com.jomap.backend.Entities.Notifications.NotificationType;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
@@ -29,6 +33,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final LocationRepo locationRepository;
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
+    private final NotificationRepository notificationRepository;
 
     @Override
     public ApiResponse<AdminStatsResponse> getStats() {
@@ -156,13 +161,19 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
             return ApiResponse.error("Location not found");
         }
 
+        String rejectionReason = reason == null ? "" : reason.trim();
+        if (rejectionReason.isEmpty()) {
+            return ApiResponse.error("Rejection reason is required");
+        }
+
         LocationList location = locationOptional.get();
         location.setStatus(LocationStatus.REJECTED);
         location.setApproved(false);
         location.setActive(false);
-        location.setRejectionReason(reason);
+        location.setRejectionReason(rejectionReason);
 
         LocationList savedLocation = locationRepository.save(location);
+        sendLocationRejectedNotification(savedLocation, rejectionReason);
 
         return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
     }
@@ -325,6 +336,26 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setRejectionReason(normalizedLocation.getRejectionReason());
 
         return response;
+    }
+
+    private void sendLocationRejectedNotification(LocationList location, String reason) {
+        if (location.getOwner() == null) {
+            return;
+        }
+
+        String locationName = location.getName() == null ? "your location" : location.getName();
+        String text = "Your location \"" + locationName + "\" was rejected by admin. Reason: " + reason;
+
+        Notification notification = Notification.builder()
+                .text(text)
+                .type(NotificationType.SYSTEM)
+                .category(NotificationCategory.OWNER)
+                .toUser(location.getOwner())
+                .locationId(location.getId())
+                .isRead(false)
+                .build();
+
+        notificationRepository.save(notification);
     }
 
     private AdminPostResponse mapPostToAdminResponse(Post post) {
