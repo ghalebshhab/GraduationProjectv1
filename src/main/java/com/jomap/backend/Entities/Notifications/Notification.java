@@ -20,7 +20,7 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 1000)
+    @Column(name = "text", nullable = false, length = 3000)
     private String text;
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +53,9 @@ public class Notification {
 
     @Column(name = "review_id")
     private Long reviewId;
+
+    @Column(name = "rejection_reason", length = 2000)
+    private String rejectionReason;
 
     @Builder.Default
     @Column(name = "is_read", nullable = false)

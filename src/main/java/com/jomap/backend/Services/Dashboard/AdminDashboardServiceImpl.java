@@ -9,14 +9,18 @@ import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationStatus;
+import com.jomap.backend.Entities.Notifications.Notification;
+import com.jomap.backend.Entities.Notifications.NotificationCategory;
+import com.jomap.backend.Entities.Notifications.NotificationRepository;
+import com.jomap.backend.Entities.Notifications.NotificationType;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
 import com.jomap.backend.Entities.Reports.ReportRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import com.jomap.backend.Services.Notifications.LocationNotificationService;
 import lombok.AllArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +35,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final LocationRepo locationRepository;
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
-    private final LocationNotificationService locationNotificationService;
+    private final NotificationRepository notificationRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public ApiResponse<AdminStatsResponse> getStats() {
@@ -167,15 +172,30 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         LocationList location = locationOptional.get();
+
+        if (location.getOwner() == null || location.getOwner().getId() == null) {
+            return ApiResponse.error("Cannot reject this location because it has no owner to notify");
+        }
+
         location.setStatus(LocationStatus.REJECTED);
         location.setApproved(false);
         location.setActive(false);
         location.setRejectionReason(rejectionReason);
 
         LocationList savedLocation = locationRepository.saveAndFlush(location);
-        locationNotificationService.sendLocationRejectedNotification(savedLocation, rejectionReason);
+        Notification savedNotification = createLocationRejectedNotification(savedLocation);
 
-        return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
+        if (savedNotification == null || savedNotification.getId() == null) {
+            return ApiResponse.error("Location was rejected, but notification was not saved. Please check notifications table mapping.");
+        }
+
+        String storedReason = persistNotificationRejectionReasonDirectly(savedNotification, savedLocation);
+
+        if (!rejectionReason.equals(storedReason)) {
+            return ApiResponse.error("Notification was saved, but the rejection reason was not stored in notifications.rejection_reason.");
+        }
+
+        return ApiResponse.success("Location rejected successfully. Notification rejection reason: " + storedReason, mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -339,6 +359,54 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return response;
     }
 
+    private Notification createLocationRejectedNotification(LocationList location) {
+        Notification notification = Notification.builder()
+                .text(buildLocationRejectedText(location))
+                .type(NotificationType.SYSTEM)
+                .category(NotificationCategory.OWNER)
+                .toUser(location.getOwner())
+                .locationId(location.getId())
+                .rejectionReason(location.getRejectionReason())
+                .isRead(false)
+                .build();
+
+        return notificationRepository.saveAndFlush(notification);
+    }
+
+    private String persistNotificationRejectionReasonDirectly(Notification notification, LocationList location) {
+        String text = buildLocationRejectedText(location);
+        String rejectionReason = location.getRejectionReason() == null ? "" : location.getRejectionReason().trim();
+
+        int updatedRows = jdbcTemplate.update(
+                "UPDATE notifications SET rejection_reason = ?, text = ? WHERE id = ?",
+                rejectionReason,
+                text,
+                notification.getId()
+        );
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Expected to update exactly one notification row, but updated " + updatedRows);
+        }
+
+        return jdbcTemplate.queryForObject(
+                "SELECT rejection_reason FROM notifications WHERE id = ?",
+                String.class,
+                notification.getId()
+        );
+    }
+
+    private String buildLocationRejectedText(LocationList location) {
+        String locationName = location.getName() == null || location.getName().trim().isEmpty()
+                ? "منشأتك"
+                : location.getName().trim();
+
+        String rejectionReason = location.getRejectionReason() == null || location.getRejectionReason().trim().isEmpty()
+                ? "لم يتم تحديد السبب."
+                : location.getRejectionReason().trim();
+
+        return "تم رفض طلب اعتماد منشأة \"" + locationName + "\". السبب: " + rejectionReason;
+    }
+
     private AdminPostResponse mapPostToAdminResponse(Post post) {
 
         AdminPostResponse response = new AdminPostResponse();
@@ -351,6 +419,22 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         if (post.getAuthor() != null) {
             response.setAuthorId(post.getAuthor().getId());
             response.setAuthorName(post.getAuthor().getUsername());
+        }
+
+        return response;
+    }
+
+    private AdminReportResponse mapReportToResponse(Report report) {
+
+        AdminReportResponse response = new AdminReportResponse();
+
+        response.setId(report.getId());
+        response.setReason(report.getReason());
+        response.setResolved(report.getResolved());
+
+        if (report.getReportedBy() != null) {
+            response.setReportedById(report.getReportedBy().getId());
+            response.setReportedBy(report.getReportedBy().getUsername());
         }
 
         return response;

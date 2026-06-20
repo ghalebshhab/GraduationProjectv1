@@ -74,6 +74,23 @@ public class NotificationServiceImpl implements NotificationService {
             return ApiResponse.error("تصنيف الإشعار غير صحيح");
         }
 
+        // Delete old notification of the same type between the same users/entities to avoid duplicates
+        if (fromUser != null) {
+            List<Notification> duplicates = notificationRepository.findByToUserAndFromUserAndType(toUserOpt.get(), fromUser, type);
+            List<Notification> toDelete = duplicates.stream().filter(old -> {
+                if (request.getPostId() != null ? !request.getPostId().equals(old.getPostId()) : old.getPostId() != null) return false;
+                if (request.getActivityId() != null ? !request.getActivityId().equals(old.getActivityId()) : old.getActivityId() != null) return false;
+                if (request.getOfferId() != null ? !request.getOfferId().equals(old.getOfferId()) : old.getOfferId() != null) return false;
+                if (request.getLocationId() != null ? !request.getLocationId().equals(old.getLocationId()) : old.getLocationId() != null) return false;
+                if (request.getReviewId() != null ? !request.getReviewId().equals(old.getReviewId()) : old.getReviewId() != null) return false;
+                return true;
+            }).collect(Collectors.toList());
+
+            if (!toDelete.isEmpty()) {
+                notificationRepository.deleteAll(toDelete);
+            }
+        }
+
         Notification notification = Notification.builder()
                 .text(request.getText())
                 .type(type)
@@ -266,7 +283,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         String locationName = null;
         String locationStatus = null;
-        String rejectionReason = null;
+        String rejectionReason = notification.getRejectionReason();
         if (notification.getLocationId() != null) {
             try {
                 Optional<LocationList> locationOpt = locationRepository.findById(notification.getLocationId());
@@ -274,7 +291,9 @@ public class NotificationServiceImpl implements NotificationService {
                     LocationList location = locationOpt.get();
                     locationName = location.getName();
                     locationStatus = location.getStatus() == null ? null : location.getStatus().name();
-                    rejectionReason = location.getRejectionReason();
+                    if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+                        rejectionReason = location.getRejectionReason();
+                    }
                 }
             } catch (Exception e) {
                 System.out.println("Error fetching location info for notification: " + e.getMessage());
