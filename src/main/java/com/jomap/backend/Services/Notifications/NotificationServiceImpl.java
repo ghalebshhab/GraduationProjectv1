@@ -283,7 +283,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         String locationName = null;
         String locationStatus = null;
-        String rejectionReason = null;
+        String rejectionReason = notification.getRejectionReason();
         if (notification.getLocationId() != null) {
             try {
                 Optional<LocationList> locationOpt = locationRepository.findById(notification.getLocationId());
@@ -291,7 +291,9 @@ public class NotificationServiceImpl implements NotificationService {
                     LocationList location = locationOpt.get();
                     locationName = location.getName();
                     locationStatus = location.getStatus() == null ? null : location.getStatus().name();
-                    rejectionReason = location.getRejectionReason();
+                    if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+                        rejectionReason = location.getRejectionReason();
+                    }
                 }
             } catch (Exception e) {
                 System.out.println("Error fetching location info for notification: " + e.getMessage());
