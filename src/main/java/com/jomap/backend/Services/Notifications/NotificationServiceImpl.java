@@ -13,6 +13,8 @@ import com.jomap.backend.Entities.Feedback.Feedback;
 import com.jomap.backend.Entities.Feedback.FeedbackRepository;
 import com.jomap.backend.Entities.Activities.Activity;
 import com.jomap.backend.Entities.Activities.ActivityRepository;
+import com.jomap.backend.Entities.Locations.LocationList;
+import com.jomap.backend.Entities.Locations.LocationRepo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +29,19 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepository;
     private final FeedbackRepository feedbackRepository;
     private final ActivityRepository activityRepository;
+    private final LocationRepo locationRepository;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository, UserRepository userRepository, FeedbackRepository feedbackRepository, ActivityRepository activityRepository) {
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository,
+            UserRepository userRepository,
+            FeedbackRepository feedbackRepository,
+            ActivityRepository activityRepository,
+            LocationRepo locationRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.feedbackRepository = feedbackRepository;
         this.activityRepository = activityRepository;
+        this.locationRepository = locationRepository;
     }
 
     @Override
@@ -217,11 +226,10 @@ public class NotificationServiceImpl implements NotificationService {
         String ownerReply = null;
         Long reviewId = notification.getReviewId();
 
-        // If reviewId is null but type is REVIEW (for older notifications), try to find it
-        if (reviewId == null && notification.getType() == NotificationType.REVIEW 
+        if (reviewId == null && notification.getType() == NotificationType.REVIEW
                 && notification.getFromUser() != null && notification.getLocationId() != null) {
             try {
-                java.util.Optional<Feedback> oldFeedbackOpt = feedbackRepository.findFirstByUser_IdAndTargetTypeAndTargetIdOrderByCreatedAtDesc(
+                Optional<Feedback> oldFeedbackOpt = feedbackRepository.findFirstByUser_IdAndTargetTypeAndTargetIdOrderByCreatedAtDesc(
                         notification.getFromUser().getId(), com.jomap.backend.Entities.Feedback.TargetType.LOCATION, notification.getLocationId());
                 if (oldFeedbackOpt.isPresent()) {
                     reviewId = oldFeedbackOpt.get().getId();
@@ -256,6 +264,23 @@ public class NotificationServiceImpl implements NotificationService {
             }
         }
 
+        String locationName = null;
+        String locationStatus = null;
+        String rejectionReason = null;
+        if (notification.getLocationId() != null) {
+            try {
+                Optional<LocationList> locationOpt = locationRepository.findById(notification.getLocationId());
+                if (locationOpt.isPresent()) {
+                    LocationList location = locationOpt.get();
+                    locationName = location.getName();
+                    locationStatus = location.getStatus() == null ? null : location.getStatus().name();
+                    rejectionReason = location.getRejectionReason();
+                }
+            } catch (Exception e) {
+                System.out.println("Error fetching location info for notification: " + e.getMessage());
+            }
+        }
+
         if (notification.getFromUser() != null) {
             try {
                 User fromUser = notification.getFromUser();
@@ -263,7 +288,7 @@ public class NotificationServiceImpl implements NotificationService {
                 if (fromUser.getProfile() != null && fromUser.getProfile().getFirstName() != null) {
                     fromUsername = fromUser.getProfile().getFirstName() + " " + fromUser.getProfile().getLastName();
                 }
-                
+
                 if (fromUser.getProfileImageUrl() != null) {
                     fromUserProfileImage = fromUser.getProfileImageUrl();
                 } else if (fromUser.getProfile() != null && fromUser.getProfile().getProfileImageUrl() != null) {
@@ -289,6 +314,9 @@ public class NotificationServiceImpl implements NotificationService {
                 .postId(notification.getPostId())
                 .offerId(notification.getOfferId())
                 .locationId(notification.getLocationId())
+                .locationName(locationName)
+                .locationStatus(locationStatus)
+                .rejectionReason(rejectionReason)
                 .reviewId(reviewId)
                 .ownerReply(ownerReply)
                 .isRead(notification.getIsRead())

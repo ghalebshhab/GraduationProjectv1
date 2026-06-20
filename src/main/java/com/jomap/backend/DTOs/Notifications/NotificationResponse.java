@@ -27,6 +27,9 @@ public class NotificationResponse {
     private Long postId;
     private Long offerId;
     private Long locationId;
+    private String locationName;
+    private String locationStatus;
+    private String rejectionReason;
     private Long reviewId;
     private String ownerReply;
     
