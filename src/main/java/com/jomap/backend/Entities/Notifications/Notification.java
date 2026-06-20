@@ -54,6 +54,9 @@ public class Notification {
     @Column(name = "review_id")
     private Long reviewId;
 
+    @Column(name = "admin_note", length = 2000)
+    private String adminNote;
+
     @Builder.Default
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
