@@ -62,6 +62,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/offers").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/offers/*/view").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/offers/*/click").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/support/tickets").permitAll()
                                                 .anyRequest().authenticated())
                                 .userDetailsService(userDetailsService)

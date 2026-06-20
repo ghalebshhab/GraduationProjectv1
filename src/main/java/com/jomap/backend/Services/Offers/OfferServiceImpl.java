@@ -390,4 +390,32 @@ public class OfferServiceImpl implements OfferService {
         }
         return null;
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> incrementViews(Long id) {
+        Optional<Offer> offerOpt = offerRepo.findById(id);
+        if (offerOpt.isEmpty()) {
+            return ApiResponse.error("العرض غير موجود");
+        }
+        Offer offer = offerOpt.get();
+        Integer current = offer.getViewsCount();
+        offer.setViewsCount(current == null ? 1 : current + 1);
+        offerRepo.save(offer);
+        return ApiResponse.success("تم زيادة المشاهدات بنجاح", null);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> incrementClicks(Long id) {
+        Optional<Offer> offerOpt = offerRepo.findById(id);
+        if (offerOpt.isEmpty()) {
+            return ApiResponse.error("العرض غير موجود");
+        }
+        Offer offer = offerOpt.get();
+        Integer current = offer.getClicksCount();
+        offer.setClicksCount(current == null ? 1 : current + 1);
+        offerRepo.save(offer);
+        return ApiResponse.success("تم زيادة النقرات بنجاح", null);
+    }
 }

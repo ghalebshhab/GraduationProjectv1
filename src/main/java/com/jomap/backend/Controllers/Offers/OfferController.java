@@ -141,4 +141,24 @@ public class OfferController {
         }
         return ResponseEntity.ok(offerService.getFavoriteOffers(principal.getName()));
     }
+
+    @PostMapping("/{id}/view")
+    public ResponseEntity<ApiResponse<Void>> incrementViews(@PathVariable Long id) {
+        ApiResponse<Void> response = offerService.incrementViews(id);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/{id}/click")
+    public ResponseEntity<ApiResponse<Void>> incrementClicks(@PathVariable Long id) {
+        ApiResponse<Void> response = offerService.incrementClicks(id);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }

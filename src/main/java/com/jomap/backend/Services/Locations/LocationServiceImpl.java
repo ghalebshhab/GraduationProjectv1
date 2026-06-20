@@ -102,6 +102,26 @@ public class LocationServiceImpl implements LocationService {
             return ApiResponse.error("ليس لديك صلاحية لتعديل هذا الموقع");
         }
 
+        if (request.getCategory() != null) {
+            LocationCategory currentCategory = location.getCategory();
+            LocationCategory newCategory;
+            try {
+                newCategory = LocationCategory.valueOf(request.getCategory().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error("فئة الموقع المحددة غير صالحة");
+            }
+
+            boolean isCurrentVolOrOrg = (currentCategory == LocationCategory.VOLUNTEER_TEAM || currentCategory == LocationCategory.ORGANIZATION);
+            boolean isNewVolOrOrg = (newCategory == LocationCategory.VOLUNTEER_TEAM || newCategory == LocationCategory.ORGANIZATION);
+
+            if (isCurrentVolOrOrg && !isNewVolOrOrg) {
+                return ApiResponse.error("غير مسموح بالتحويل بين الفئات التطوعية والفئات التجارية");
+            }
+            if (!isCurrentVolOrOrg && isNewVolOrOrg) {
+                return ApiResponse.error("غير مسموح بالتحويل بين الفئات التطوعية والفئات التجارية");
+            }
+        }
+
         if (request.getGovernorateId() != null) {
             Optional<Governorate> govOpt = governorateRepository.findById(request.getGovernorateId());
             if (govOpt.isEmpty())

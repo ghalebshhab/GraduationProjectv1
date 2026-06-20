@@ -717,7 +717,7 @@ public class ActivityServiceImpl implements ActivityService {
             
             try {
                 Notification dbNotification = Notification.builder()
-                        .text("تم قبول تسجيلك في الفعالية: " + registration.getActivity().getTitle())
+                        .text("حالة طلبك للتسجيل بفعالية (" + registration.getActivity().getTitle() + ") أصبحت جاهزة، اضغط لمشاهدة التفاصيل")
                         .type(NotificationType.REGISTRATION_ACCEPTED)
                         .category(NotificationCategory.USER)
                         .toUser(registration.getUser())
@@ -735,7 +735,7 @@ public class ActivityServiceImpl implements ActivityService {
             
             try {
                 Notification dbNotification = Notification.builder()
-                        .text("تم رفض تسجيلك في الفعالية: " + registration.getActivity().getTitle())
+                        .text("حالة طلبك للتسجيل بفعالية (" + registration.getActivity().getTitle() + ") أصبحت جاهزة، اضغط لمشاهدة التفاصيل")
                         .type(NotificationType.REGISTRATION_REJECTED)
                         .category(NotificationCategory.USER)
                         .toUser(registration.getUser())
