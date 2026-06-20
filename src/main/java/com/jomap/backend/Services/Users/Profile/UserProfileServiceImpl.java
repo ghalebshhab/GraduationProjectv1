@@ -269,9 +269,10 @@ public class UserProfileServiceImpl implements UserProfileService {
         // Soft delete user's location (LocationList) and its related data (Offers, Activities)
         LocationList location = locationRepository.findByOwnerId(user.getId()).orElse(null);
         if (location != null) {
-            entityManager.createQuery("UPDATE LocationList l SET l.isDeleted = true, l.deletedAt = :deletedAt WHERE l.id = :locationId")
+            entityManager.createQuery("UPDATE LocationList l SET l.isDeleted = true, l.deletedAt = :deletedAt, l.status = :status, l.approved = false, l.active = false WHERE l.id = :locationId")
                     .setParameter("locationId", location.getId())
                     .setParameter("deletedAt", java.time.LocalDateTime.now())
+                    .setParameter("status", com.jomap.backend.Entities.Locations.LocationStatus.DELETED)
                     .executeUpdate();
 
             entityManager.createQuery("UPDATE Offer o SET o.isDeleted = true WHERE o.location = :location")
@@ -304,10 +305,6 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .executeUpdate();
 
         entityManager.createQuery("UPDATE Offer o SET o.isDeleted = true WHERE o.createdBy = :user")
-                .setParameter("user", user)
-                .executeUpdate();
-
-        entityManager.createQuery("UPDATE LocationList l SET l.isDeleted = true WHERE l.owner = :user")
                 .setParameter("user", user)
                 .executeUpdate();
 
