@@ -187,18 +187,19 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
             return ApiResponse.error("Location was rejected, but notification was not saved. Please check notifications table mapping.");
         }
 
-        String savedText = savedNotification.getText() == null ? "" : savedNotification.getText();
-        if (!savedText.contains(savedLocation.getRejectionReason())) {
+        String savedReason = savedNotification.getRejectionReason() == null ? "" : savedNotification.getRejectionReason();
+        if (!savedReason.equals(savedLocation.getRejectionReason())) {
+            savedNotification.setRejectionReason(savedLocation.getRejectionReason());
             savedNotification.setText(buildLocationRejectedText(savedLocation));
             savedNotification = notificationRepository.saveAndFlush(savedNotification);
         }
 
-        String finalText = savedNotification.getText() == null ? "" : savedNotification.getText();
-        if (!finalText.contains(savedLocation.getRejectionReason())) {
-            return ApiResponse.error("Notification was saved but its text does not contain the rejection reason.");
+        String finalReason = savedNotification.getRejectionReason() == null ? "" : savedNotification.getRejectionReason();
+        if (!finalReason.equals(savedLocation.getRejectionReason())) {
+            return ApiResponse.error("Notification was saved but its rejection reason was not stored.");
         }
 
-        return ApiResponse.success("Location rejected successfully. Notification text: " + finalText, mapLocationToResponse(savedLocation));
+        return ApiResponse.success("Location rejected successfully. Notification rejection reason: " + finalReason, mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -369,6 +370,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .category(NotificationCategory.OWNER)
                 .toUser(location.getOwner())
                 .locationId(location.getId())
+                .rejectionReason(location.getRejectionReason())
                 .isRead(false)
                 .build();
 
