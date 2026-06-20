@@ -40,9 +40,13 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setBlockedUsers(userRepository.countByIsActiveFalse());
 
         response.setTotalLocations(locationRepository.count());
-        response.setApprovedLocations(locationRepository.countByApprovedTrueAndActiveTrue());
-        response.setPendingLocations(locationRepository.countByApprovedFalseAndActiveTrue());
-        response.setInactiveLocations(locationRepository.countByActiveFalse());
+        response.setApprovedLocations(locationRepository.countByStatus(LocationStatus.PUBLISHED));
+        response.setPendingLocations(locationRepository.countByStatus(LocationStatus.PENDING));
+        response.setInactiveLocations(
+                locationRepository.countByStatus(LocationStatus.REJECTED)
+                        + locationRepository.countByStatus(LocationStatus.DEACTIVATED)
+                        + locationRepository.countByStatus(LocationStatus.DELETED)
+        );
 
         response.setTotalPosts(postRepository.count());
         response.setActivePosts(postRepository.countByIsDeletedFalse());
@@ -103,12 +107,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     @Override
     public ApiResponse<List<LocationResponse>> getPendingLocations() {
 
-        List<LocationResponse> response = locationRepository.findByApprovedFalseAndActiveTrue()
+        List<LocationResponse> response = locationRepository.findByStatusOrderByIdDesc(LocationStatus.PENDING)
                 .stream()
                 .map(this::mapLocationToResponse)
                 .toList();
 
-        return ApiResponse.success("Pending places fetched successfully", response);
+        return ApiResponse.success("Pending locations fetched successfully", response);
     }
 
     @Override
@@ -116,6 +120,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         List<LocationResponse> response = locationRepository.findAll()
                 .stream()
+                .map(this::syncLocationApprovalFlags)
                 .map(this::mapLocationToResponse)
                 .toList();
 
@@ -132,12 +137,14 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         LocationList location = locationOptional.get();
+        location.setStatus(LocationStatus.PUBLISHED);
         location.setApproved(true);
         location.setActive(true);
+        location.setRejectionReason(null);
 
         LocationList savedLocation = locationRepository.save(location);
 
-        return ApiResponse.success("Location approved successfully", mapLocationToResponse(savedLocation));
+        return ApiResponse.success("Location approved and published successfully", mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -150,14 +157,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         LocationList location = locationOptional.get();
+        location.setStatus(LocationStatus.REJECTED);
         location.setApproved(false);
         location.setActive(false);
-        location.setStatus(LocationStatus.REJECTED);
         location.setRejectionReason(reason);
 
         LocationList savedLocation = locationRepository.save(location);
-
-        // TODO: Send push notification to the owner about rejection
 
         return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
     }
@@ -172,7 +177,9 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         LocationList location = locationOptional.get();
+        location.setStatus(LocationStatus.DEACTIVATED);
         location.setActive(false);
+        location.setApproved(false);
 
         LocationList savedLocation = locationRepository.save(location);
 
@@ -263,40 +270,59 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return response;
     }
 
+    private LocationList syncLocationApprovalFlags(LocationList location) {
+        if (location.getStatus() == LocationStatus.PUBLISHED) {
+            location.setApproved(true);
+            location.setActive(true);
+        } else if (location.getStatus() == LocationStatus.PENDING) {
+            location.setApproved(false);
+            location.setActive(true);
+        } else if (location.getStatus() == LocationStatus.APPROVED) {
+            location.setApproved(true);
+            location.setActive(false);
+        } else {
+            location.setApproved(false);
+            location.setActive(false);
+        }
+
+        return location;
+    }
+
     private LocationResponse mapLocationToResponse(LocationList location) {
+
+        LocationList normalizedLocation = syncLocationApprovalFlags(location);
 
         LocationResponse response = new LocationResponse();
 
-        response.setLocationId(location.getId());
-        response.setName(location.getName());
-        response.setDescription(location.getDescription());
-        response.setEmail(location.getEmail());
-        response.setPhoneNumber(location.getPhoneNumber());
-        response.setLogoUrl(location.getLogoUrl());
-        response.setLatitude(location.getLatitude());
-        response.setLongitude(location.getLongitude());
-        if (location.getGovernorate() != null) {
-        response.setGovernorateName(location.getGovernorate().getName()); 
-        response.setGovernorateId(location.getGovernorate().getId()); 
-        }  
-        response.setCategory(location.getCategory());
-        response.setRating(location.getRating());
-        response.setReviewCount(location.getReviewCount());
-        // response.setActive(location.getActive());
-        // response.setApproved(location.getApproved());
-        response.setOwnerUpdate(location.getOwnerUpdate());
-        response.setCreatedAt(location.getCreatedAt());
-        response.setUpdatedAt(location.getUpdatedAt());
+        response.setLocationId(normalizedLocation.getId());
+        response.setName(normalizedLocation.getName());
+        response.setDescription(normalizedLocation.getDescription());
+        response.setEmail(normalizedLocation.getEmail());
+        response.setPhoneNumber(normalizedLocation.getPhoneNumber());
+        response.setLogoUrl(normalizedLocation.getLogoUrl());
+        response.setCoverUrl(normalizedLocation.getCoverUrl());
+        response.setLatitude(normalizedLocation.getLatitude());
+        response.setLongitude(normalizedLocation.getLongitude());
+        if (normalizedLocation.getGovernorate() != null) {
+            response.setGovernorateName(normalizedLocation.getGovernorate().getName());
+            response.setGovernorateId(normalizedLocation.getGovernorate().getId());
+        }
+        response.setCategory(normalizedLocation.getCategory());
+        response.setRating(normalizedLocation.getRating());
+        response.setReviewCount(normalizedLocation.getReviewCount());
+        response.setOwnerUpdate(normalizedLocation.getOwnerUpdate());
+        response.setCreatedAt(normalizedLocation.getCreatedAt());
+        response.setUpdatedAt(normalizedLocation.getUpdatedAt());
 
-        if (location.getOwner() != null) {
-            response.setOwnerId(location.getOwner().getId());
-            response.setOwnerName(location.getOwner().getUsername());
+        if (normalizedLocation.getOwner() != null) {
+            response.setOwnerId(normalizedLocation.getOwner().getId());
+            response.setOwnerName(normalizedLocation.getOwner().getUsername());
         }
 
-        response.setStatus(location.getStatus());
-        response.setIsActive(location.getActive());
-        response.setIsApproved(location.getApproved());
-        response.setRejectionReason(location.getRejectionReason());
+        response.setStatus(normalizedLocation.getStatus());
+        response.setIsActive(normalizedLocation.getActive());
+        response.setIsApproved(normalizedLocation.getApproved());
+        response.setRejectionReason(normalizedLocation.getRejectionReason());
 
         return response;
     }
