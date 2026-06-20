@@ -21,6 +21,7 @@ import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -133,6 +134,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<LocationResponse> approveLocation(Long locationId) {
 
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
@@ -147,12 +149,13 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         location.setActive(true);
         location.setRejectionReason(null);
 
-        LocationList savedLocation = locationRepository.save(location);
+        LocationList savedLocation = locationRepository.saveAndFlush(location);
 
         return ApiResponse.success("Location approved and published successfully", mapLocationToResponse(savedLocation));
     }
 
     @Override
+    @Transactional
     public ApiResponse<LocationResponse> rejectLocation(Long locationId, String reason) {
 
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
@@ -172,13 +175,14 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         location.setActive(false);
         location.setRejectionReason(rejectionReason);
 
-        LocationList savedLocation = locationRepository.save(location);
+        LocationList savedLocation = locationRepository.saveAndFlush(location);
         sendLocationRejectedNotification(savedLocation, rejectionReason);
 
         return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
     }
 
     @Override
+    @Transactional
     public ApiResponse<LocationResponse> deactivateLocation(Long locationId) {
 
         Optional<LocationList> locationOptional = locationRepository.findById(locationId);
@@ -192,7 +196,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         location.setActive(false);
         location.setApproved(false);
 
-        LocationList savedLocation = locationRepository.save(location);
+        LocationList savedLocation = locationRepository.saveAndFlush(location);
 
         return ApiResponse.success("Location deactivated successfully", mapLocationToResponse(savedLocation));
     }
@@ -344,7 +348,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         String locationName = location.getName() == null ? "your location" : location.getName();
-        String text = "Your location \"" + locationName + "\" was rejected by admin. Reason: " + reason;
+        String text = "تم رفض منشأتك \"" + locationName + "\". السبب: " + reason;
 
         Notification notification = Notification.builder()
                 .text(text)
@@ -355,7 +359,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .isRead(false)
                 .build();
 
-        notificationRepository.save(notification);
+        notificationRepository.saveAndFlush(notification);
     }
 
     private AdminPostResponse mapPostToAdminResponse(Post post) {
