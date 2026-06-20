@@ -9,16 +9,13 @@ import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationStatus;
-import com.jomap.backend.Entities.Notifications.Notification;
-import com.jomap.backend.Entities.Notifications.NotificationCategory;
-import com.jomap.backend.Entities.Notifications.NotificationRepository;
-import com.jomap.backend.Entities.Notifications.NotificationType;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
 import com.jomap.backend.Entities.Reports.ReportRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
+import com.jomap.backend.Services.Notifications.LocationNotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +31,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final LocationRepo locationRepository;
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
-    private final NotificationRepository notificationRepository;
+    private final LocationNotificationService locationNotificationService;
 
     @Override
     public ApiResponse<AdminStatsResponse> getStats() {
@@ -176,7 +173,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         location.setRejectionReason(rejectionReason);
 
         LocationList savedLocation = locationRepository.saveAndFlush(location);
-        sendLocationRejectedNotification(savedLocation, rejectionReason);
+        locationNotificationService.sendLocationRejectedNotification(savedLocation, rejectionReason);
 
         return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
     }
@@ -340,26 +337,6 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setRejectionReason(normalizedLocation.getRejectionReason());
 
         return response;
-    }
-
-    private void sendLocationRejectedNotification(LocationList location, String reason) {
-        if (location.getOwner() == null) {
-            return;
-        }
-
-        String locationName = location.getName() == null ? "your location" : location.getName();
-        String text = "تم رفض منشأتك \"" + locationName + "\". السبب: " + reason;
-
-        Notification notification = Notification.builder()
-                .text(text)
-                .type(NotificationType.SYSTEM)
-                .category(NotificationCategory.OWNER)
-                .toUser(location.getOwner())
-                .locationId(location.getId())
-                .isRead(false)
-                .build();
-
-        notificationRepository.saveAndFlush(notification);
     }
 
     private AdminPostResponse mapPostToAdminResponse(Post post) {
