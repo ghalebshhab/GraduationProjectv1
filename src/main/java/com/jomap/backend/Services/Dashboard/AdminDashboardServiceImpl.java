@@ -364,6 +364,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .category(NotificationCategory.OWNER)
                 .toUser(location.getOwner())
                 .locationId(location.getId())
+                .adminNote(reason)
                 .isRead(false)
                 .build();
 
