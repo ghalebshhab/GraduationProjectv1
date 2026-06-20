@@ -181,13 +181,24 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         location.setRejectionReason(rejectionReason);
 
         LocationList savedLocation = locationRepository.saveAndFlush(location);
-        Notification savedNotification = createLocationRejectedNotification(savedLocation, rejectionReason);
+        Notification savedNotification = createLocationRejectedNotification(savedLocation);
 
         if (savedNotification == null || savedNotification.getId() == null) {
             return ApiResponse.error("Location was rejected, but notification was not saved. Please check notifications table mapping.");
         }
 
-        return ApiResponse.success("Location rejected successfully and notification was saved", mapLocationToResponse(savedLocation));
+        String savedText = savedNotification.getText() == null ? "" : savedNotification.getText();
+        if (!savedText.contains(savedLocation.getRejectionReason())) {
+            savedNotification.setText(buildLocationRejectedText(savedLocation));
+            savedNotification = notificationRepository.saveAndFlush(savedNotification);
+        }
+
+        String finalText = savedNotification.getText() == null ? "" : savedNotification.getText();
+        if (!finalText.contains(savedLocation.getRejectionReason())) {
+            return ApiResponse.error("Notification was saved but its text does not contain the rejection reason.");
+        }
+
+        return ApiResponse.success("Location rejected successfully. Notification text: " + finalText, mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -351,15 +362,9 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return response;
     }
 
-    private Notification createLocationRejectedNotification(LocationList location, String reason) {
-        String locationName = location.getName() == null || location.getName().trim().isEmpty()
-                ? "منشأتك"
-                : location.getName().trim();
-
-        String text = "تم رفض طلب اعتماد منشأة \"" + locationName + "\". السبب: " + reason;
-
+    private Notification createLocationRejectedNotification(LocationList location) {
         Notification notification = Notification.builder()
-                .text(text)
+                .text(buildLocationRejectedText(location))
                 .type(NotificationType.SYSTEM)
                 .category(NotificationCategory.OWNER)
                 .toUser(location.getOwner())
@@ -368,6 +373,18 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .build();
 
         return notificationRepository.saveAndFlush(notification);
+    }
+
+    private String buildLocationRejectedText(LocationList location) {
+        String locationName = location.getName() == null || location.getName().trim().isEmpty()
+                ? "منشأتك"
+                : location.getName().trim();
+
+        String rejectionReason = location.getRejectionReason() == null || location.getRejectionReason().trim().isEmpty()
+                ? "لم يتم تحديد السبب."
+                : location.getRejectionReason().trim();
+
+        return "تم رفض طلب اعتماد منشأة \"" + locationName + "\". السبب: " + rejectionReason;
     }
 
     private AdminPostResponse mapPostToAdminResponse(Post post) {
