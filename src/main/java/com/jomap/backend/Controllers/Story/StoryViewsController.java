@@ -6,6 +6,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.jomap.backend.DTOs.Stories.Views.StoryViewerResponse;
+import java.util.List;
+
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/stories")
@@ -19,7 +22,7 @@ public class StoryViewsController {
         return ResponseEntity.ok(views.countByStoryId(storyId));
     }
 
-    @PostMapping("/{storyId}/views")
+    @PostMapping({ "/{storyId}/views", "/{storyId}/view" })
     public ResponseEntity<ApiResponse<String>> addView(@PathVariable Long storyId) {
         return ResponseEntity.ok(views.addView(storyId));
     }
@@ -27,5 +30,10 @@ public class StoryViewsController {
     @GetMapping("/{storyId}/views/exist")
     public ResponseEntity<ApiResponse<Boolean>> exist(@PathVariable Long storyId) {
         return ResponseEntity.ok(views.existsByStoryId(storyId));
+    }
+
+    @GetMapping("/{storyId}/viewers")
+    public ResponseEntity<ApiResponse<List<StoryViewerResponse>>> getViewers(@PathVariable Long storyId) {
+        return ResponseEntity.ok(views.getViewersByStoryId(storyId));
     }
 }

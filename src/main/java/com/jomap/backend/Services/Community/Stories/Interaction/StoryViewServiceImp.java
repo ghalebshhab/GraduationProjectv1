@@ -11,7 +11,11 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jomap.backend.DTOs.Stories.Views.StoryViewerResponse;
 import java.util.List;
+import java.util.ArrayList;
+import java.time.Instant;
+import java.time.Duration;
 
 @Service
 @AllArgsConstructor
@@ -61,6 +65,10 @@ public class StoryViewServiceImp implements StoryViewService {
             return ApiResponse.error("Authenticated user not found");
         }
 
+        if (story.getAuthor() != null && story.getAuthor().getId().equals(currentUser.getId())) {
+            return ApiResponse.error("Cannot view your own story");
+        }
+
         TypedQuery<Long> q = entity.createQuery(
                 "SELECT COUNT(v) FROM StoryView v WHERE v.story.id = :storyId AND v.user.id = :userId",
                 Long.class
@@ -97,5 +105,80 @@ public class StoryViewServiceImp implements StoryViewService {
 
         List<User> users = q.getResultList();
         return users.isEmpty() ? null : users.get(0);
+    }
+
+    @Override
+    public ApiResponse<List<StoryViewerResponse>> getViewersByStoryId(Long storyId) {
+        TypedQuery<StoryView> q = entity.createQuery(
+                "SELECT v FROM StoryView v JOIN FETCH v.user u LEFT JOIN FETCH u.profile p WHERE v.story.id = :storyId ORDER BY v.viewedAt DESC",
+                StoryView.class
+        );
+        q.setParameter("storyId", storyId);
+        List<StoryView> views = q.getResultList();
+
+        List<StoryViewerResponse> responseList = new ArrayList<>();
+        for (StoryView v : views) {
+            User u = v.getUser();
+            StoryViewerResponse res = new StoryViewerResponse();
+            res.setUserId(u.getId());
+            res.setUsername(u.getUsername());
+            res.setProfileImageUrl(u.getProfileImageUrl());
+            if (u.getProfile() != null) {
+                res.setFirstName(u.getProfile().getFirstName());
+                res.setLastName(u.getProfile().getLastName());
+            } else {
+                res.setFirstName("");
+                res.setLastName("");
+            }
+            res.setViewedAt(formatRelativeTime(v.getViewedAt()));
+            responseList.add(res);
+        }
+
+        return ApiResponse.success("تم جلب المشاهدين بنجاح", responseList);
+    }
+
+    private String formatRelativeTime(Instant instant) {
+        if (instant == null) return "";
+        long diffSeconds = Duration.between(instant, Instant.now()).getSeconds();
+        if (diffSeconds < 0) {
+            diffSeconds = 0;
+        }
+        if (diffSeconds < 60) {
+            return "منذ ثوانٍ";
+        }
+        long diffMinutes = diffSeconds / 60;
+        if (diffMinutes < 60) {
+            if (diffMinutes == 1) {
+                return "منذ دقيقة";
+            } else if (diffMinutes == 2) {
+                return "منذ دقيقتين";
+            } else if (diffMinutes <= 10) {
+                return "منذ " + diffMinutes + " دقائق";
+            } else {
+                return "منذ " + diffMinutes + " دقيقة";
+            }
+        }
+        long diffHours = diffMinutes / 60;
+        if (diffHours < 24) {
+            if (diffHours == 1) {
+                return "منذ ساعة";
+            } else if (diffHours == 2) {
+                return "منذ ساعتين";
+            } else if (diffHours <= 10) {
+                return "منذ " + diffHours + " ساعات";
+            } else {
+                return "منذ " + diffHours + " ساعة";
+            }
+        }
+        long diffDays = diffHours / 24;
+        if (diffDays == 1) {
+            return "منذ يوم";
+        } else if (diffDays == 2) {
+            return "منذ يومين";
+        } else if (diffDays <= 10) {
+            return "منذ " + diffDays + " أيام";
+        } else {
+            return "منذ " + diffDays + " يوم";
+        }
     }
 }

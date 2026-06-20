@@ -200,7 +200,8 @@ public class StoriesServiceImpl implements StoryService {
         }
 
         story.setDeleted(true);
-        return ApiResponse.success("Story deleted successfully", "Story deleted successfully");
+        entity.merge(story);
+        return ApiResponse.success("تم حذف القصة بنجاح", "SUCCESS");
     }
 
     private StoryResponse toResponse(Story s) {
