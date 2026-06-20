@@ -20,6 +20,7 @@ import com.jomap.backend.Entities.Reports.ReportRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
     private final NotificationRepository notificationRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public ApiResponse<AdminStatsResponse> getStats() {
@@ -187,19 +189,13 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
             return ApiResponse.error("Location was rejected, but notification was not saved. Please check notifications table mapping.");
         }
 
-        String savedReason = savedNotification.getRejectionReason() == null ? "" : savedNotification.getRejectionReason();
-        if (!savedReason.equals(savedLocation.getRejectionReason())) {
-            savedNotification.setRejectionReason(savedLocation.getRejectionReason());
-            savedNotification.setText(buildLocationRejectedText(savedLocation));
-            savedNotification = notificationRepository.saveAndFlush(savedNotification);
+        String storedReason = persistNotificationRejectionReasonDirectly(savedNotification, savedLocation);
+
+        if (!rejectionReason.equals(storedReason)) {
+            return ApiResponse.error("Notification was saved, but the rejection reason was not stored in notifications.rejection_reason.");
         }
 
-        String finalReason = savedNotification.getRejectionReason() == null ? "" : savedNotification.getRejectionReason();
-        if (!finalReason.equals(savedLocation.getRejectionReason())) {
-            return ApiResponse.error("Notification was saved but its rejection reason was not stored.");
-        }
-
-        return ApiResponse.success("Location rejected successfully. Notification rejection reason: " + finalReason, mapLocationToResponse(savedLocation));
+        return ApiResponse.success("Location rejected successfully. Notification rejection reason: " + storedReason, mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -375,6 +371,45 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .build();
 
         return notificationRepository.saveAndFlush(notification);
+    }
+
+    private String persistNotificationRejectionReasonDirectly(Notification notification, LocationList location) {
+        ensureNotificationRejectionReasonColumnExists();
+
+        String text = buildLocationRejectedText(location);
+        String rejectionReason = location.getRejectionReason() == null ? "" : location.getRejectionReason().trim();
+
+        int updatedRows = jdbcTemplate.update(
+                "UPDATE notifications SET rejection_reason = ?, text = ? WHERE id = ?",
+                rejectionReason,
+                text,
+                notification.getId()
+        );
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Expected to update exactly one notification row, but updated " + updatedRows);
+        }
+
+        return jdbcTemplate.queryForObject(
+                "SELECT rejection_reason FROM notifications WHERE id = ?",
+                String.class,
+                notification.getId()
+        );
+    }
+
+    private void ensureNotificationRejectionReasonColumnExists() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE notifications ADD COLUMN rejection_reason VARCHAR(2000)");
+        } catch (Exception e) {
+            String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+            if (message.contains("duplicate")
+                    || message.contains("already exists")
+                    || message.contains("exists")
+                    || (message.contains("column") && message.contains("rejection_reason"))) {
+                return;
+            }
+            throw e;
+        }
     }
 
     private String buildLocationRejectedText(LocationList location) {
