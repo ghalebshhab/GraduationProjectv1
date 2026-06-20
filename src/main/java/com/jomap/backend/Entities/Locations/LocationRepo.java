@@ -27,6 +27,12 @@ public interface LocationRepo extends JpaRepository<LocationList, Long> {
 
     List<LocationList> findByApprovedFalseAndActiveTrue();
 
+    List<LocationList> findByStatus(LocationStatus status);
+
+    List<LocationList> findByStatusOrderByIdDesc(LocationStatus status);
+
+    long countByStatus(LocationStatus status);
+
     long countByActiveTrue();
     long countByActiveFalse();
     long countByApprovedTrueAndActiveTrue();
