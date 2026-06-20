@@ -290,6 +290,10 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .setParameter("user", user)
                 .executeUpdate();
 
+        entityManager.createQuery("UPDATE LocationList l SET l.isDeleted = true WHERE l.owner = :user")
+                .setParameter("user", user)
+                .executeUpdate();
+
         entityManager.createQuery("UPDATE Feedback f SET f.isDeleted = true WHERE f.user = :user")
                 .setParameter("user", user)
                 .executeUpdate();
