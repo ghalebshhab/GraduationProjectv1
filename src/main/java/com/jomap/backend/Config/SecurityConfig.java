@@ -39,6 +39,8 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                                 .requestMatchers("/api/auth/login").permitAll()
                                         .requestMatchers("/api/auth/register").permitAll()
+                                        .requestMatchers("/api/auth/google").permitAll()
+                                        .requestMatchers("/api/auth/facebook").permitAll()
                                                 .requestMatchers("/api/admin/auth/**").permitAll()
                                                 .requestMatchers("/api/test/**").authenticated()
                                                 .requestMatchers(
