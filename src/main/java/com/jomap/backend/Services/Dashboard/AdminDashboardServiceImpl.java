@@ -9,13 +9,16 @@ import com.jomap.backend.DTOs.Locations.LocationResponse;
 import com.jomap.backend.Entities.Locations.LocationList;
 import com.jomap.backend.Entities.Locations.LocationRepo;
 import com.jomap.backend.Entities.Locations.LocationStatus;
+import com.jomap.backend.Entities.Notifications.Notification;
+import com.jomap.backend.Entities.Notifications.NotificationCategory;
+import com.jomap.backend.Entities.Notifications.NotificationRepository;
+import com.jomap.backend.Entities.Notifications.NotificationType;
 import com.jomap.backend.Entities.Posts.Post;
 import com.jomap.backend.Entities.Posts.PostRepository;
 import com.jomap.backend.Entities.Reports.Report;
 import com.jomap.backend.Entities.Reports.ReportRepository;
 import com.jomap.backend.Entities.Users.User;
 import com.jomap.backend.Entities.Users.UserRepository;
-import com.jomap.backend.Services.Notifications.LocationNotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +34,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final LocationRepo locationRepository;
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
-    private final LocationNotificationService locationNotificationService;
+    private final NotificationRepository notificationRepository;
 
     @Override
     public ApiResponse<AdminStatsResponse> getStats() {
@@ -167,15 +170,24 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         LocationList location = locationOptional.get();
+
+        if (location.getOwner() == null || location.getOwner().getId() == null) {
+            return ApiResponse.error("Cannot reject this location because it has no owner to notify");
+        }
+
         location.setStatus(LocationStatus.REJECTED);
         location.setApproved(false);
         location.setActive(false);
         location.setRejectionReason(rejectionReason);
 
         LocationList savedLocation = locationRepository.saveAndFlush(location);
-        locationNotificationService.sendLocationRejectedNotification(savedLocation, rejectionReason);
+        Notification savedNotification = createLocationRejectedNotification(savedLocation, rejectionReason);
 
-        return ApiResponse.success("Location rejected successfully", mapLocationToResponse(savedLocation));
+        if (savedNotification == null || savedNotification.getId() == null) {
+            return ApiResponse.error("Location was rejected, but notification was not saved. Please check notifications table mapping.");
+        }
+
+        return ApiResponse.success("Location rejected successfully and notification was saved", mapLocationToResponse(savedLocation));
     }
 
     @Override
@@ -337,6 +349,25 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setRejectionReason(normalizedLocation.getRejectionReason());
 
         return response;
+    }
+
+    private Notification createLocationRejectedNotification(LocationList location, String reason) {
+        String locationName = location.getName() == null || location.getName().trim().isEmpty()
+                ? "منشأتك"
+                : location.getName().trim();
+
+        String text = "تم رفض طلب اعتماد منشأة \"" + locationName + "\". السبب: " + reason;
+
+        Notification notification = Notification.builder()
+                .text(text)
+                .type(NotificationType.SYSTEM)
+                .category(NotificationCategory.OWNER)
+                .toUser(location.getOwner())
+                .locationId(location.getId())
+                .isRead(false)
+                .build();
+
+        return notificationRepository.saveAndFlush(notification);
     }
 
     private AdminPostResponse mapPostToAdminResponse(Post post) {
