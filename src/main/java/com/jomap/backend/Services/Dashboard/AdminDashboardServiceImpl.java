@@ -411,7 +411,6 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
             throw e;
         }
     }
-
     private String buildLocationRejectedText(LocationList location) {
         String locationName = location.getName() == null || location.getName().trim().isEmpty()
                 ? "منشأتك"
@@ -436,6 +435,22 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         if (post.getAuthor() != null) {
             response.setAuthorId(post.getAuthor().getId());
             response.setAuthorName(post.getAuthor().getUsername());
+        }
+
+        return response;
+    }
+
+    private AdminReportResponse mapReportToResponse(Report report) {
+
+        AdminReportResponse response = new AdminReportResponse();
+
+        response.setId(report.getId());
+        response.setReason(report.getReason());
+        response.setResolved(report.getResolved());
+
+        if (report.getReportedBy() != null) {
+            response.setReportedById(report.getReportedBy().getId());
+            response.setReportedBy(report.getReportedBy().getUsername());
         }
 
         return response;
