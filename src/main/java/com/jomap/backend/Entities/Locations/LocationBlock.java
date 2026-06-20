@@ -37,9 +37,10 @@ public class LocationBlock {
     private LocalDateTime createdAt;
 
     @Builder
-    public LocationBlock(User blocker, LocationList blockedLocation) {
+    public LocationBlock(User blocker, LocationList blockedLocation, LocalDateTime blockedAt) {
         this.blocker = blocker;
         this.blockedLocation = blockedLocation;
+        this.createdAt = blockedAt;
     }
 
     @PrePersist
