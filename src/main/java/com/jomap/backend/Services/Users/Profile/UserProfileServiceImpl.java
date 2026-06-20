@@ -128,6 +128,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         if (request.getProfileImageUrl() != null) {
             profile.setProfileImageUrl(request.getProfileImageUrl().trim());
+            user.setProfileImageUrl(request.getProfileImageUrl().trim());
         }
 
         if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
