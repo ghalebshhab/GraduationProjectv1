@@ -15,4 +15,6 @@ public interface OfferService {
     ApiResponse<String> toggleFavoriteOffer(Long offerId, String userEmail);
     ApiResponse<List<OfferResponse>> getFavoriteOffers(String userEmail);
     ApiResponse<com.jomap.backend.DTOs.PaginatedResponse<OfferResponse>> getAllOffers(int page, int size);
+    ApiResponse<Void> incrementViews(Long id);
+    ApiResponse<Void> incrementClicks(Long id);
 }
