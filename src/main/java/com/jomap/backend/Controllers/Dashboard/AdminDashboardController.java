@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -65,8 +66,8 @@ public class AdminDashboardController {
     @PutMapping("/locations/{locationId}/reject")
     public ResponseEntity<ApiResponse<LocationResponse>> rejectLocation(
             @PathVariable Long locationId,
-            @RequestBody(required = false) java.util.Map<String, String> payload) {
-        String reason = payload != null ? payload.get("rejectionReason") : null;
+            @RequestBody(required = false) Map<String, String> payload) {
+        String reason = extractRejectionReason(payload);
         return ResponseEntity.ok(adminDashboardService.rejectLocation(locationId, reason));
     }
 
@@ -113,5 +114,29 @@ public class AdminDashboardController {
     public ResponseEntity<ApiResponse<ActivityResponse>> rejectActivity(
             @PathVariable Long ActivityId) {
         return ResponseEntity.ok(ActivityService.rejectActivity(ActivityId));
+    }
+
+    private String extractRejectionReason(Map<String, String> payload) {
+        if (payload == null) {
+            return null;
+        }
+
+        String[] possibleKeys = {
+                "rejectionReason",
+                "rejectReason",
+                "rejectedReason",
+                "reason",
+                "message",
+                "note"
+        };
+
+        for (String key : possibleKeys) {
+            String value = payload.get(key);
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+
+        return null;
     }
 }
