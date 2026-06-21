@@ -237,6 +237,21 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         return new ApiResponse<>(true, "Friends fetched successfully", responses);
     }
+
+    @Override
+    public ApiResponse<Long> getFriendsCount(String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user == null) {
+            return new ApiResponse<>(false, "User not found", null);
+        }
+
+        long count = friendshipRepository.countByRequesterAndStatusOrReceiverAndStatus(
+                user, FriendshipStatus.ACCEPTED,
+                user, FriendshipStatus.ACCEPTED
+        );
+
+        return new ApiResponse<>(true, "Friends count fetched successfully", count);
+    }
     @Override
     @Transactional
     public ApiResponse<String> removeFriend(Long friendshipId, String userEmail) {

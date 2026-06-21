@@ -24,4 +24,6 @@ public interface FriendshipService {
     ApiResponse<String> removeFriend(Long friendshipId, String userEmail);
 
     ApiResponse<FriendshipResponse> checkFriendshipStatus(String currentUserEmail, Long targetUserId);
+
+    ApiResponse<Long> getFriendsCount(String userEmail);
 }
