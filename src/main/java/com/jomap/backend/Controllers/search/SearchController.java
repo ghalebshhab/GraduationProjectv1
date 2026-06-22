@@ -10,7 +10,7 @@ import com.jomap.backend.Services.search.SearchService;
 
 import lombok.AllArgsConstructor;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "https://jomab-712232187160.europe-west1.run.app", "https://jomap-admin.web.app", "https://jomap-admin.firebaseapp.com"})
 @RestController
 @RequestMapping("/api/search")
 @AllArgsConstructor
