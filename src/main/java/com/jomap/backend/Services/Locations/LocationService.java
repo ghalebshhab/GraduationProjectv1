@@ -37,4 +37,7 @@ public interface LocationService {
     ApiResponse<String> unfollowLocation(Long locationId, String userEmail);
     ApiResponse<String> blockLocation(Long locationId, String userEmail);
     ApiResponse<String> unblockLocation(Long locationId, String userEmail);
+
+    // ✅ تسجيل زيارة ملف المنشأة (يتجاهل الأونر ويمنع التكرار خلال ساعة)
+    ApiResponse<Void> recordVisit(Long locationId, String currentUserEmail);
 }

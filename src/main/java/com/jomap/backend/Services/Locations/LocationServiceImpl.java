@@ -16,6 +16,8 @@ import com.jomap.backend.Entities.Users.UserRepository;
 import com.jomap.backend.Services.Auth.JwtService;
 import com.jomap.backend.Entities.Locations.LocationBlock;
 import com.jomap.backend.Entities.Locations.LocationBlockRepository;
+import com.jomap.backend.Entities.Locations.LocationVisit;
+import com.jomap.backend.Entities.Locations.LocationVisitRepository;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class LocationServiceImpl implements LocationService {
     private final GovernorateRepository governorateRepository;
     private final JwtService jwtService;
     private final LocationBlockRepository locationBlockRepository;
+    private final LocationVisitRepository locationVisitRepository;
 
     @Override
     @Transactional
@@ -646,5 +649,55 @@ public class LocationServiceImpl implements LocationService {
         if (location == null) return ApiResponse.error("Location not found");
         locationBlockRepository.deleteByBlockerAndBlockedLocation(user, location);
         return ApiResponse.success("تم إلغاء حظر المنشأة", null);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // ✅ تسجيل زيارة ملف المنشأة
+    // ─────────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public ApiResponse<Void> recordVisit(Long locationId, String currentUserEmail) {
+        // 1. جلب المنشأة
+        LocationList location = locationRepository.findById(locationId).orElse(null);
+        if (location == null) {
+            return ApiResponse.error("المنشأة غير موجودة");
+        }
+
+        // 2. جلب المستخدم الحالي (اختياري — قد يكون ضيفاً)
+        User visitor = null;
+        if (currentUserEmail != null) {
+            visitor = userRepository.findByEmail(currentUserEmail).orElse(null);
+        }
+
+        // 3. تجاهل الزيارة إذا كان الزائر هو صاحب المنشأة
+        if (visitor != null && location.getOwner() != null
+                && location.getOwner().getId().equals(visitor.getId())) {
+            return ApiResponse.success("تم تجاهل زيارة الأونر", null);
+        }
+
+        // 4. للمستخدمين المسجّلين: منع التكرار خلال ساعة واحدة (cooldown)
+        if (visitor != null) {
+            LocalDateTime cooldownStart = LocalDateTime.now().minusHours(1);
+            boolean alreadyVisited = locationVisitRepository
+                    .existsRecentVisitByUser(locationId, visitor.getId(), cooldownStart);
+            if (alreadyVisited) {
+                return ApiResponse.success("تم احتساب الزيارة مسبقاً", null);
+            }
+        }
+
+        // 5. تسجيل الزيارة في جدول location_visits
+        LocationVisit visit = LocationVisit.builder()
+                .location(location)
+                .visitor(visitor)
+                .visitedAt(LocalDateTime.now())
+                .build();
+        locationVisitRepository.save(visit);
+
+        // 6. زيادة العداد في المنشأة
+        int current = location.getProfileVisits() != null ? location.getProfileVisits() : 0;
+        location.setProfileVisits(current + 1);
+        locationRepository.save(location);
+
+        return ApiResponse.success("تم تسجيل الزيارة بنجاح", null);
     }
 }

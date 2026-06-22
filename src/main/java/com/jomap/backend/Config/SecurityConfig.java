@@ -64,6 +64,7 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/search/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/locations/*/visit").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/offers").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/offers/*/view").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/offers/*/click").permitAll()

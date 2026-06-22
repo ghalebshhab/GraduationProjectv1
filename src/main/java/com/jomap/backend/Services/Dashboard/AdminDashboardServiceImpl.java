@@ -345,6 +345,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setOwnerUpdate(normalizedLocation.getOwnerUpdate());
         response.setCreatedAt(normalizedLocation.getCreatedAt());
         response.setUpdatedAt(normalizedLocation.getUpdatedAt());
+        response.setProfileVisits(normalizedLocation.getProfileVisits());
 
         if (normalizedLocation.getOwner() != null) {
             response.setOwnerId(normalizedLocation.getOwner().getId());

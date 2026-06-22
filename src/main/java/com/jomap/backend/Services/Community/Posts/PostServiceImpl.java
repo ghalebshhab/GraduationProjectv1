@@ -752,6 +752,10 @@ public class PostServiceImpl implements PostsServices {
                 r.setOwnerId(post.getAuthor().getId());
                 r.setOwnerName(loc.getName());
                 r.setOwnerImageUrl(loc.getLogoUrl());
+                // ✅ يُعيَّن locationId دائماً لمنشورات المنشآت حتى يتمكن الفرونت من الانتقال لصفحة المنشأة
+                if (r.getLocationId() == null) {
+                    r.setLocationId(loc.getId());
+                }
             });
 
             // 2. Override author fields based on the specific CATEGORY requested

@@ -225,4 +225,15 @@ public class LocationController {
         }
         return ResponseEntity.ok(locationService.unblockLocation(id, principal.getName()));
     }
+
+    // ✅ تسجيل زيارة ملف المنشأة — صامت دائماً (لا يؤثر على تجربة المستخدم)
+    @PostMapping("/{id}/visit")
+    public ResponseEntity<ApiResponse<Void>> recordVisit(
+            @PathVariable Long id,
+            Principal principal
+    ) {
+        String userEmail = (principal != null) ? principal.getName() : null;
+        locationService.recordVisit(id, userEmail);
+        return ResponseEntity.ok(ApiResponse.success("OK", null));
+    }
 }
