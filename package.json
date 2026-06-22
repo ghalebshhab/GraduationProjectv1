@@ -1,0 +1,11 @@
+{
+  "name": "jo-map-api-tests",
+  "version": "1.0.0",
+  "scripts": {
+    "test:api": "newman run postman/collections/jo-map-api-tests.postman_collection.json -e postman/environments/jo-map-local.postman_environment.json --reporters cli,junit --reporter-junit-export postman/results/api-test-results.xml"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-junitfull": "^1.1.1"
+  }
+}
