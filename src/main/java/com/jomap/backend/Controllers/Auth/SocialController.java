@@ -13,11 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://jomab-712232187160.europe-west1.run.app"
-})
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "https://jomab-712232187160.europe-west1.run.app", "https://jomap-admin.web.app", "https://jomap-admin.firebaseapp.com"})
 public class SocialController {
 
     private final SocialAuthService socialAuthService;
