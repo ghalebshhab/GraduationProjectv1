@@ -123,24 +123,6 @@ public class ActivityServiceImpl implements ActivityService {
 
         Activity savedActivity = activityRepository.save(activity);
 
-        String postContent = "New Activity: " + (savedActivity.getTitle() != null ? savedActivity.getTitle() : "") 
-                           + "\n" + (savedActivity.getDescription() != null ? savedActivity.getDescription() : "");
-        if (postContent.length() > 2000) {
-            postContent = postContent.substring(0, 1997) + "...";
-        }
-
-        Post activityPost = new Post(
-                user,
-                postContent,
-                savedActivity.getImageUrl(),
-                Post.PostType.ACTIVITY
-        );
-        activityPost.setLatitude(savedActivity.getLatitude());
-        activityPost.setLongitude(savedActivity.getLongitude());
-        activityPost.setCategory("ACTIVITY");
-        activityPost.setActivityId(savedActivity.getId());
-        
-        postRepository.save(activityPost);
 
         return ApiResponse.success("تم إنشاء النشاط بنجاح وهو بانتظار موافقة المسؤول", mapToResponse(savedActivity));
     }
@@ -245,7 +227,29 @@ public class ActivityServiceImpl implements ActivityService {
         }
         Activity activity = activityOptional.get();
         activity.setStatus(ActivityStatus.APPROVED);
-        return ApiResponse.success("تمت الموافقة على النشاط", mapToResponse(activityRepository.save(activity)));
+        Activity savedActivity = activityRepository.save(activity);
+        
+        // إنشاء منشور الفعالية في المجتمع فقط إذا لم يكن موجوداً مسبقاً لمنع التكرار
+        if (postRepository.findActivePostsByActivityId(savedActivity.getId()).isEmpty()) {
+            String postContent = "New Activity: " + (savedActivity.getTitle() != null ? savedActivity.getTitle() : "") 
+                               + "\n" + (savedActivity.getDescription() != null ? savedActivity.getDescription() : "");
+            if (postContent.length() > 2000) {
+                postContent = postContent.substring(0, 1997) + "...";
+            }
+            Post activityPost = new Post(
+                    savedActivity.getCreatedBy(),
+                    postContent,
+                    savedActivity.getImageUrl(),
+                    Post.PostType.ACTIVITY
+            );
+            activityPost.setLatitude(savedActivity.getLatitude());
+            activityPost.setLongitude(savedActivity.getLongitude());
+            activityPost.setCategory("ACTIVITY");
+            activityPost.setActivityId(savedActivity.getId());
+            
+            postRepository.save(activityPost);
+        }
+        return ApiResponse.success("تمت الموافقة على النشاط", mapToResponse(savedActivity));
     }
 
     @Override

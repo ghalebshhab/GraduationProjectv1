@@ -33,7 +33,7 @@ public class PasswordResetService {
     private final EmailService emailSenderService;
     private final SmsSenderService smsSenderService;
 
-    private static final int OTP_EXPIRY_MINUTES = 1;
+    private static final int OTP_EXPIRY_MINUTES = 5;
     private static final int RESET_TOKEN_EXPIRY_MINUTES = 5;
     private static final int MAX_ATTEMPTS = 5;
 
@@ -89,7 +89,14 @@ public class PasswordResetService {
         } catch (Exception e) {
             System.out.println("Email failed but request will continue: " + e.getMessage());
         }
-        smsSenderService.sendPasswordResetOtp(user.getPhoneNumber(), otp);
+
+        if (user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank()) {
+            try {
+                smsSenderService.sendPasswordResetOtp(user.getPhoneNumber(), otp);
+            } catch (Exception e) {
+                System.out.println("SMS failed but request will continue: " + e.getMessage());
+            }
+        }
 
         return new ApiResponse<>(true, "OTP generated successfully.", null); }
 

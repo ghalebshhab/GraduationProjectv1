@@ -29,4 +29,11 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
             User receiver,
             FriendshipStatus status2
     );
+
+    long countByRequesterAndStatusOrReceiverAndStatus(
+            User requester,
+            FriendshipStatus status1,
+            User receiver,
+            FriendshipStatus status2
+    );
 }

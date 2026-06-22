@@ -106,6 +106,28 @@ public class FriendshipController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<ApiResponse<Long>> getFriendsCount(
+            Authentication authentication
+    ) {
+        String userEmail = authentication.getName();
+
+        ApiResponse<Long> response =
+                friendshipService.getFriendsCount(userEmail);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/count/{userId}")
+    public ResponseEntity<ApiResponse<Long>> getFriendsCountByUserId(
+            @PathVariable Long userId
+    ) {
+        ApiResponse<Long> response =
+                friendshipService.getFriendsCountByUserId(userId);
+
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/{friendshipId}/remove")
     public ResponseEntity<ApiResponse<String>> removeFriend(
             @PathVariable Long friendshipId,
