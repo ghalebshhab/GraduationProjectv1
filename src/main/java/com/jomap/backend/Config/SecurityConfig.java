@@ -82,7 +82,9 @@ public class SecurityConfig {
                 configuration.setAllowedOrigins(List.of(
                         "http://localhost:5173",
                         "http://localhost:3000",
-                        "https://jomab-712232187160.europe-west1.run.app"
+                        "https://jomab-712232187160.europe-west1.run.app",
+                        "https://jomap-admin.web.app",
+                        "https://jomap-admin.firebaseapp.com"
                 ));
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(List.of("*"));
